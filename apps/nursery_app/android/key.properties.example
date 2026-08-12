@@ -1,0 +1,9 @@
+# Copy to android/key.properties (DO NOT commit real passwords).
+# Create a Play upload keystore, then fill:
+#
+#   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=upload
+storeFile=upload-keystore.jks

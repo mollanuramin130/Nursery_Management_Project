@@ -1,0 +1,16 @@
+; Example Supervisor program for GreenLeaf API queue worker
+; Install on the API host (staging/production). Adjust user/paths.
+; Do NOT commit secrets here.
+
+[program:nursery-api-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/nursery-api/artisan queue:work database --sleep=3 --tries=3 --backoff=10 --max-time=3600 --timeout=120
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/log/nursery-api-worker.log
+stopwaitsecs=30

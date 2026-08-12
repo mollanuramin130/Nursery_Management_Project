@@ -1,0 +1,13 @@
+<?php
+
+namespace App\Modules\Catalog\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Tag extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = ['name', 'slug', 'status'];
+}

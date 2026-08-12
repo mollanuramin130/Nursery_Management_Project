@@ -1,0 +1,4 @@
+# Staging / production crontab fragment for Laravel scheduler
+# Replace path with the real API root on the host.
+
+* * * * * cd /var/www/nursery-api && php artisan schedule:run >> /dev/null 2>&1

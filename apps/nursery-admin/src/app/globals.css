@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+:root {
+  /* GreenLeaf Admin — operational tokens */
+  --admin-primary: #1a5c3a;
+  --admin-primary-hover: #154c30;
+  --admin-primary-soft: #e8f2eb;
+
+  --admin-bg: #f4f6f5;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #eef1ef;
+  --admin-sidebar: #143528;
+  --admin-sidebar-hover: #1a4434;
+  --admin-sidebar-active: #1f5240;
+  --admin-sidebar-text: #d5e3db;
+  --admin-sidebar-muted: #8fa89a;
+
+  --admin-ink: #152019;
+  --admin-ink-soft: #3a4640;
+  --admin-muted: #66756c;
+  --admin-border: #d8e0db;
+  --admin-border-strong: #b7c5bc;
+
+  --admin-success: #2f7d4a;
+  --admin-success-soft: #e6f4ea;
+  --admin-warning: #b7791f;
+  --admin-warning-soft: #fef3c7;
+  --admin-danger: #b42318;
+  --admin-danger-soft: #fee4e2;
+  --admin-info: #175cd3;
+  --admin-info-soft: #eff8ff;
+
+  --admin-radius: 6px;
+  --admin-radius-lg: 10px;
+  --admin-shadow: 0 1px 2px rgba(21, 32, 25, 0.06);
+  --admin-sidebar-w: 248px;
+  --admin-sidebar-collapsed: 72px;
+  --admin-topbar-h: 56px;
+
+  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --background: var(--admin-bg);
+  --foreground: var(--admin-ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--admin-primary);
+  --color-surface: var(--admin-surface);
+  --color-muted: var(--admin-muted);
+  --color-border: var(--admin-border);
+  --color-success: var(--admin-success);
+  --color-warning: var(--admin-warning);
+  --color-danger: var(--admin-danger);
+  --color-info: var(--admin-info);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--admin-bg);
+  color: var(--admin-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
+}
+
+.admin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.admin-scroll::-webkit-scrollbar-thumb {
+  background: #c5d0c9;
+  border-radius: 8px;
+}
