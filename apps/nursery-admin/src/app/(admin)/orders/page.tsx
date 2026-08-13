@@ -10,8 +10,13 @@ import { Input, Select } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api/client";
 import { fetchOrders } from "@/lib/api/orders";
 import { hasPermission } from "@/lib/auth/permissions";
-import { ORDER_STATUSES, statusTone } from "@/lib/auth/order-transitions";
+import {
+  ORDER_STATUSES,
+  orderStatusLabel,
+  statusTone,
+} from "@/lib/auth/order-transitions";
 import { formatDateTime, formatMoney } from "@/lib/format";
+import { paymentStatusLabel } from "@/lib/payment-status";
 import type { AdminOrderListItem, Pagination } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 
@@ -124,11 +129,13 @@ export default function OrdersPage() {
                   <td className="px-3 py-2.5">
                     <div className="text-xs uppercase">{order.payment_method ?? "—"}</div>
                     <div className="text-xs text-[var(--admin-muted)]">
-                      {order.payment_status ?? "—"}
+                      {paymentStatusLabel(order.payment_status)}
                     </div>
                   </td>
                   <td className="px-3 py-2.5">
-                    <Badge tone={statusTone(order.status)}>{order.status}</Badge>
+                    <Badge tone={statusTone(order.status)}>
+                      {orderStatusLabel(order.status)}
+                    </Badge>
                   </td>
                   <td className="px-3 py-2.5 text-xs">{formatDateTime(order.placed_at)}</td>
                   <td className="px-3 py-2.5">

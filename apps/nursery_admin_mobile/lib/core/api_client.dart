@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/core/session_storage.dart';
+import 'package:nursery_admin_mobile/core/token_refresh_coordinator.dart';
 
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode, this.errorCode});
@@ -13,8 +14,17 @@ class ApiException implements Exception {
   String toString() => message;
 
   String get userMessage {
+    final lower = message.toLowerCase();
     switch (statusCode) {
       case 401:
+        if (lower.contains('blocked') || lower.contains('unavailable')) {
+          return 'Your account is currently unavailable. Please contact support.';
+        }
+        if (lower.contains('invalid email') ||
+            lower.contains('invalid credentials') ||
+            errorCode == 'AUTH_INVALID_CREDENTIALS') {
+          return 'Invalid email or password.';
+        }
         return 'Session expired. Please sign in again.';
       case 403:
         return "You don't have permission to perform this action.";
@@ -29,7 +39,16 @@ class ApiException implements Exception {
             ? message
             : 'Please check the entered information.';
       case 429:
-        return 'Too many requests. Wait a moment and retry.';
+        return message.isNotEmpty &&
+                !message.toLowerCase().contains('too many attempts')
+            ? message
+            : 'You tried too many times. Please wait about a minute, then try again.';
+      case 500:
+      case 502:
+      case 503:
+        return message.isNotEmpty
+            ? message
+            : 'The server is temporarily unavailable. Please try again.';
       default:
         if (statusCode == null) {
           return 'Unable to connect. Check your internet connection.';
@@ -40,7 +59,7 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  ApiClient(this._storage) {
+  ApiClient(this._storage, {this.onSessionInvalid}) {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
@@ -81,7 +100,7 @@ class ApiClient {
               request.path.contains('/auth/logout');
 
           if (response?.statusCode == 401 && !alreadyRetried && !isAuthCall) {
-            final refreshed = await _refreshTokens();
+            final refreshed = await _refreshCoordinator.run(_refreshTokens);
             if (refreshed) {
               final opts = request.copyWith(
                 extra: {...request.extra, 'retried': true},
@@ -105,11 +124,27 @@ class ApiClient {
   }
 
   final SessionStorage _storage;
+  final Future<void> Function()? onSessionInvalid;
+  final TokenRefreshCoordinator _refreshCoordinator = TokenRefreshCoordinator();
   late final Dio _dio;
+
+  /// Exposed for unit tests.
+  TokenRefreshCoordinator get refreshCoordinator => _refreshCoordinator;
+
+  Future<void> _invalidateSession() async {
+    await _storage.clearTokens();
+    final cb = onSessionInvalid;
+    if (cb != null) {
+      await cb();
+    }
+  }
 
   Future<bool> _refreshTokens() async {
     final refresh = await _storage.getRefreshToken();
-    if (refresh == null || refresh.isEmpty) return false;
+    if (refresh == null || refresh.isEmpty) {
+      await _invalidateSession();
+      return false;
+    }
     try {
       final res = await Dio(
         BaseOptions(
@@ -121,17 +156,34 @@ class ApiClient {
         ),
       ).post('/auth/refresh', data: {'refresh_token': refresh});
       final body = res.data;
-      if (body is! Map || body['success'] != true) return false;
+      if (body is! Map || body['success'] != true) {
+        await _invalidateSession();
+        return false;
+      }
       final data = body['data'];
-      if (data is! Map) return false;
+      if (data is! Map) {
+        await _invalidateSession();
+        return false;
+      }
       final access = data['access_token']?.toString();
       final nextRefresh = data['refresh_token']?.toString();
-      if (access == null || nextRefresh == null) return false;
+      if (access == null || nextRefresh == null) {
+        await _invalidateSession();
+        return false;
+      }
       await _storage.saveTokens(
         accessToken: access,
         refreshToken: nextRefresh,
       );
       return true;
+    } on DioException catch (e) {
+      // QA-37: network/timeout during refresh must not force staff logout.
+      if (e.response == null) return false;
+      final status = e.response?.statusCode;
+      if (status == 401 || status == 403) {
+        await _invalidateSession();
+      }
+      return false;
     } catch (_) {
       return false;
     }

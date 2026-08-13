@@ -7,6 +7,10 @@ import { apiGet } from "@/lib/api";
 import type { CampaignSummary, Category, ProductSummary } from "@/lib/types";
 import { money } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import {
+  nextSearchGeneration,
+  shouldApplySearchResult,
+} from "@/lib/search-suggestions";
 
 const RECENT_KEY = "gl_recent_searches";
 const POPULAR = ["money plant", "snake plant", "indoor", "pots", "beginner"];
@@ -49,6 +53,7 @@ export function SearchBox({
   const [recent, setRecent] = useState<string[]>([]);
   const [activeIdx, setActiveIdx] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
+  const searchGenRef = useRef(0);
 
   useEffect(() => {
     queueMicrotask(() => setRecent(readRecent()));
@@ -70,6 +75,7 @@ export function SearchBox({
 
   useEffect(() => {
     if (q.trim().length < 2) {
+      searchGenRef.current = nextSearchGeneration(searchGenRef.current);
       queueMicrotask(() => {
         setProducts([]);
         setMatchedFromApi([]);
@@ -77,12 +83,15 @@ export function SearchBox({
       });
       return;
     }
+    const gen = nextSearchGeneration(searchGenRef.current);
+    searchGenRef.current = gen;
     queueMicrotask(() => setLoading(true));
     const t = window.setTimeout(() => {
       void apiGet<
         Array<{ type: string; label: string; slug: string; product_type?: string }>
       >("/search/suggestions", { q: q.trim() })
         .then((res) => {
+          if (!shouldApplySearchResult(gen, searchGenRef.current)) return;
           const rows = res.data ?? [];
           setMatchedFromApi(rows.filter((r) => r.type === "category").slice(0, 4));
           setProducts(
@@ -105,10 +114,15 @@ export function SearchBox({
           );
         })
         .catch(() => {
+          if (!shouldApplySearchResult(gen, searchGenRef.current)) return;
           setProducts([]);
           setMatchedFromApi([]);
         })
-        .finally(() => setLoading(false));
+        .finally(() => {
+          if (shouldApplySearchResult(gen, searchGenRef.current)) {
+            setLoading(false);
+          }
+        });
     }, 220);
     return () => window.clearTimeout(t);
   }, [q]);

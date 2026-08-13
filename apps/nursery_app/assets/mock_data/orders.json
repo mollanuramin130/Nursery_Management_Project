@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 5010,
+      "order_number": "ORD-20260813-00010",
+      "status": "CONFIRMED",
+      "grand_total": 49.0,
+      "item_count": 1,
+      "created_at": "2026-08-10T10:00:00+05:30",
+      "placed_at": "2026-08-10T10:00:00+05:30",
+      "thumbnail": null,
+      "preview_name": "Tulsi (Holy Basil)",
+      "estimated_delivery": "2026-08-15",
+      "can_cancel": false,
+      "can_reorder": true,
+      "can_return": false,
+      "payment_status": "PAID",
+      "currency": "INR"
+    },
+    {
+      "id": 5007,
+      "order_number": "ORD-20260813-00007",
+      "status": "DELIVERED",
+      "grand_total": 199.0,
+      "item_count": 1,
+      "created_at": "2026-08-01T14:30:00+05:30",
+      "placed_at": "2026-08-01T14:30:00+05:30",
+      "thumbnail": null,
+      "preview_name": "Aloe Vera",
+      "estimated_delivery": "2026-08-05",
+      "can_cancel": false,
+      "can_reorder": true,
+      "can_return": true,
+      "payment_status": "PAID",
+      "currency": "INR"
+    }
+  ],
+  "errors": null,
+  "meta": { "source": "mock", "stale": true }
+}

@@ -69,9 +69,15 @@ class ApiResponse
 
         if ($e instanceof HttpExceptionInterface) {
             $status = $e->getStatusCode();
+            $message = $e->getMessage() !== '' ? $e->getMessage() : self::defaultMessage($status);
+
+            // Replace Laravel's terse "Too Many Attempts." with actionable copy.
+            if ($status === 429) {
+                $message = self::friendlyRateLimitMessage();
+            }
 
             return self::error(
-                message: $e->getMessage() !== '' ? $e->getMessage() : self::defaultMessage($status),
+                message: $message,
                 status: $status,
                 errorCode: self::defaultErrorCode($status),
             );
@@ -122,8 +128,27 @@ class ApiResponse
             404 => 'Not found',
             409 => 'Conflict',
             422 => 'Validation failed',
-            429 => 'Too many requests',
+            429 => 'Please wait about a minute, then try again.',
             default => 'Request failed',
         };
+    }
+
+    private static function friendlyRateLimitMessage(): string
+    {
+        $path = (string) request()->path();
+
+        if (request()->isMethod('POST') && preg_match('#(^|/)orders$#', $path) === 1) {
+            return 'You tried to place an order too many times. Please wait about a minute, then try again.';
+        }
+
+        if (str_contains($path, 'auth/login') || str_contains($path, 'auth/register')) {
+            return 'Too many sign-in attempts. Please wait about a minute, then try again.';
+        }
+
+        if (str_contains($path, 'checkout')) {
+            return 'Checkout is temporarily limited. Please wait about a minute, then try again.';
+        }
+
+        return 'You\'re doing that too quickly. Please wait about a minute, then try again.';
     }
 }

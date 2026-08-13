@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/features/auth/login_screen.dart';
 import 'package:nursery_admin_mobile/features/dashboard/dashboard_screen.dart';
+import 'package:nursery_admin_mobile/features/fulfillment/fulfillment_screens.dart';
 import 'package:nursery_admin_mobile/features/inventory/inventory_screens.dart';
 import 'package:nursery_admin_mobile/features/more/more_screens.dart';
 import 'package:nursery_admin_mobile/features/orders/orders_screens.dart';
@@ -101,6 +102,24 @@ GoRouter createOpsRouter(AuthProvider auth) {
                 builder: (context, state) => const MoreScreen(),
               ),
             ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/fulfillment',
+        builder: (context, state) => const FulfillmentHubScreen(),
+        routes: [
+          GoRoute(
+            path: 'queue/:queue',
+            builder: (context, state) => FulfillmentQueueScreen(
+              queue: state.pathParameters['queue']!,
+            ),
+          ),
+          GoRoute(
+            path: 'orders/:id',
+            builder: (context, state) => FulfillmentOrderScreen(
+              orderId: int.parse(state.pathParameters['id']!),
+            ),
           ),
         ],
       ),

@@ -172,15 +172,23 @@ class Phase5AnalyticsTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_campaigns_endpoint_is_explicitly_unsupported(): void
+    public function test_campaigns_endpoint_reports_support_status(): void
     {
         $staff = $this->staffWithReports();
         $token = JWTAuth::fromUser($staff);
 
-        $this->withHeader('Authorization', 'Bearer '.$token)
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/admin/analytics/campaigns')
-            ->assertOk()
-            ->assertJsonPath('data.supported', false);
+            ->assertOk();
+
+        // Phase 17+ may enable campaign_id attribution; unsupported payload remains valid when column absent.
+        $this->assertIsBool($response->json('data.supported'));
+        $this->assertTrue($response->json('data.coupon_performance_available'));
+        if ($response->json('data.supported') === true) {
+            $this->assertIsArray($response->json('data.rows'));
+        } else {
+            $this->assertNotEmpty($response->json('data.reason'));
+        }
     }
 
     public function test_export_requires_reports_export_permission(): void

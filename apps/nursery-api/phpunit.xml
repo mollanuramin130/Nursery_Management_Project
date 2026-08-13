@@ -32,5 +32,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="PAYMENT_ALLOW_UNSIGNED_WEBHOOKS" value="true"/>
+        <env name="RAZORPAY_WEBHOOK_SECRET" value=""/>
     </php>
 </phpunit>

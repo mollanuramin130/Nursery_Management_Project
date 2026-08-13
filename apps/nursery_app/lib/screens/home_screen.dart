@@ -1,15 +1,19 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/config.dart';
+import 'package:nursery_app/data/catalog_repository.dart';
+import 'package:nursery_app/data/mock_data_mode.dart';
 import 'package:nursery_app/models/models.dart';
+import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_header.dart';
 import 'package:nursery_app/widgets/app_motion.dart';
 import 'package:nursery_app/widgets/app_search_field.dart';
 import 'package:nursery_app/widgets/mini_cart_sheet.dart';
 import 'package:nursery_app/widgets/product_card.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
@@ -22,9 +26,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<_HomeBundle> _future;
+  _HomeBundle? _bundle;
+  Object? _error;
+  bool _loading = true;
+  bool _softUpdating = false;
   final _page = PageController(viewportFraction: 0.92);
   final _bannerIndex = ValueNotifier<int>(0);
+  int _lastSyncGen = -1;
 
   static const _needs = [
     ('Beginner plants', '/catalog?difficulty_level=easy&product_type=plant'),
@@ -36,7 +44,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final gen = context.watch<OfflineController>().syncGeneration;
+    if (_lastSyncGen >= 0 && gen != _lastSyncGen && _bundle != null) {
+      _lastSyncGen = gen;
+      unawaited(_load(soft: true));
+    } else {
+      _lastSyncGen = gen;
+    }
   }
 
   @override
@@ -46,52 +66,93 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<_HomeBundle> _load() async {
-    final api = context.read<ApiClient>();
-    final home = await api.getData(
-      '/home',
-      map: (data) => HomeFeed.fromJson(Map<String, dynamic>.from(data as Map)),
-    );
-    List<CategoryChip> cats = [];
+  Future<void> _load({bool soft = false}) async {
+    final repo = context.read<CatalogRepository>();
+    if (!soft || _bundle == null) {
+      // Cache-first peek for instant paint.
+      final peeked = await repo.peekHome();
+      if (peeked != null && mounted) {
+        setState(() {
+          _bundle = _HomeBundle(
+            home: peeked.data,
+            categories: peeked.data.categories,
+            source: peeked.source,
+            stale: peeked.stale,
+          );
+          _loading = false;
+          _softUpdating = true;
+          _error = null;
+        });
+      } else if (!soft && mounted) {
+        setState(() => _loading = true);
+      }
+    } else if (mounted) {
+      setState(() => _softUpdating = true);
+    }
+
     try {
-      cats = await api.getData(
-        '/categories',
-        map: (data) => (data as List)
-            .whereType<Map>()
-            .map((e) {
-              final m = Map<String, dynamic>.from(e);
-              return CategoryChip(
-                name: m['name'] as String,
-                slug: m['slug'] as String,
-                imageUrl: m['image_url'] as String?,
-                parentId: m['parent_id'] as int?,
-              );
-            })
-            .where((c) => c.parentId == null)
-            .take(10)
-            .toList(),
+      final homeRes = await repo.getHome(
+        onImmediate: (immediate) {
+          if (!mounted || _bundle != null) return;
+          setState(() {
+            _bundle = _HomeBundle(
+              home: immediate.data,
+              categories: immediate.data.categories,
+              source: immediate.source,
+              stale: immediate.stale,
+            );
+            _loading = false;
+            _softUpdating = immediate.updating;
+          });
+        },
       );
-    } catch (_) {}
-    return _HomeBundle(home: home, categories: cats);
+      List<CategoryChip> cats = [];
+      try {
+        final catRes = await repo.getCategories();
+        cats = catRes.data.take(10).toList();
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        _bundle = _HomeBundle(
+          home: homeRes.data,
+          categories: cats,
+          source: homeRes.source,
+          stale: homeRes.stale,
+        );
+        _loading = false;
+        _softUpdating = false;
+        _error = null;
+      });
+      context.read<OfflineController>().endSync(
+            success: homeRes.source == DataSourceKind.remote,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _softUpdating = false;
+        if (_bundle == null) _error = e;
+      });
+      context.read<OfflineController>().endSync(success: false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<_HomeBundle>(
-        future: _future,
-        builder: (context, snap) {
-          if (snap.connectionState != ConnectionState.done) {
+      body: Builder(
+        builder: (context) {
+          if (_loading && _bundle == null) {
             return const HomeSkeleton();
           }
-          if (snap.hasError) {
+          if (_error != null && _bundle == null) {
             return ErrorStateView(
               title: 'Unable to load home',
               message: 'We couldn’t reach the nursery catalog.',
-              onRetry: () => setState(() => _future = _load()),
+              onRetry: () => _load(),
             );
           }
-          final bundle = snap.data!;
+          final bundle = _bundle!;
           final home = bundle.home;
           final banners = home.banners;
           final featured = home.featuredProducts;
@@ -105,10 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
               : bundle.categories;
 
           return RefreshIndicator(
-            onRefresh: () async {
-              setState(() => _future = _load());
-              await _future;
-            },
+            onRefresh: () => _load(soft: true),
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -125,6 +183,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+
+                if (_softUpdating)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Text(
+                        'Updating…',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ),
+                  ),
 
                 if (banners.isNotEmpty) ...[
                   const SliverToBoxAdapter(
@@ -197,31 +270,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: Stack(
                                           fit: StackFit.expand,
                                           children: [
-                                            CachedNetworkImage(
-                                              imageUrl: b.imageUrl,
+                                            ResilientNetworkImage(
+                                              url: b.imageUrl,
                                               fit: BoxFit.cover,
-                                              memCacheWidth: 900,
-                                              placeholder: (context, url) =>
-                                                  Container(
-                                                    color:
-                                                        AppColors.surfaceMuted,
-                                                  ),
-                                              errorWidget:
-                                                  (
-                                                    context,
-                                                    url,
-                                                    error,
-                                                  ) => Container(
-                                                    color:
-                                                        AppColors.primarySoft,
-                                                    alignment: Alignment.center,
-                                                    child: Text(
-                                                      b.title,
-                                                      style: Theme.of(
-                                                        context,
-                                                      ).textTheme.titleMedium,
-                                                    ),
-                                                  ),
                                             ),
                                             Container(
                                               decoration: const BoxDecoration(
@@ -324,17 +375,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   CircleAvatar(
                                     radius: 30,
                                     backgroundColor: AppColors.primarySoft,
-                                    backgroundImage: c.imageUrl != null
-                                        ? CachedNetworkImageProvider(
-                                            c.imageUrl!,
-                                          )
-                                        : null,
-                                    child: c.imageUrl == null
-                                        ? const Icon(
-                                            Icons.local_florist,
-                                            color: AppColors.primaryDeep,
-                                          )
-                                        : null,
+                                    child: ClipOval(
+                                      child: ResilientNetworkImage(
+                                        url: c.imageUrl,
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
@@ -555,13 +603,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  if (image != null)
-                                    CachedNetworkImage(
-                                      imageUrl: image,
-                                      fit: BoxFit.cover,
-                                    )
-                                  else
-                                    Container(color: AppColors.primaryDeep),
+                                  ResilientNetworkImage(
+                                    url: image,
+                                    fit: BoxFit.cover,
+                                  ),
                                   Container(color: Colors.black38),
                                   Positioned(
                                     left: 16,
@@ -635,10 +680,17 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomeBundle {
-  _HomeBundle({required this.home, required this.categories});
+  _HomeBundle({
+    required this.home,
+    required this.categories,
+    this.source = DataSourceKind.remote,
+    this.stale = false,
+  });
 
   final HomeFeed home;
   final List<CategoryChip> categories;
+  final DataSourceKind source;
+  final bool stale;
 }
 
 class _TrustRow extends StatelessWidget {

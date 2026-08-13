@@ -12,13 +12,17 @@ import { FormSection } from "@/components/ui/FormSection";
 import { Input, Select, TextArea } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api/client";
 import {
+  assignDriver,
   completePicking,
   failDelivery,
+  fetchDrivers,
   fetchFulfillmentOrder,
   markDelivered,
   markOutForDelivery,
   packOrder,
+  pickScan,
   recordPickException,
+  rescheduleDelivery,
   resolveException,
   retryDelivery,
   shipOrder,
@@ -59,6 +63,12 @@ export default function FulfillmentOrderPage() {
   const [excItem, setExcItem] = useState<number | null>(null);
   const [excActual, setExcActual] = useState("");
   const [excNote, setExcNote] = useState("");
+  const [scanCode, setScanCode] = useState("");
+  const [drivers, setDrivers] = useState<Array<{ id: number; name: string }>>([]);
+  const [driverId, setDriverId] = useState("");
+  const [rescheduleEta, setRescheduleEta] = useState("");
+  const [rescheduleNote, setRescheduleNote] = useState("");
+  const [podNote, setPodNote] = useState("");
 
   const load = useCallback(async () => {
     if (!canView || !Number.isFinite(id)) {
@@ -89,6 +99,13 @@ export default function FulfillmentOrderPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!canShip) return;
+    void fetchDrivers()
+      .then((res) => setDrivers(res.data ?? []))
+      .catch(() => setDrivers([]));
+  }, [canShip]);
 
   async function run(action: () => Promise<unknown>, ok: string) {
     setBusy(true);
@@ -165,7 +182,16 @@ export default function FulfillmentOrderPage() {
           </Button>
         ) : null}
         {order.actions.can_deliver && canShip ? (
-          <Button type="button" disabled={busy} onClick={() => void run(() => markDelivered(id), "Delivered")}>
+          <Button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run(
+                () => markDelivered(id, podNote.trim() ? { method: "note", note: podNote.trim() } : undefined),
+                "Delivered",
+              )
+            }
+          >
             Mark delivered
           </Button>
         ) : null}
@@ -177,6 +203,28 @@ export default function FulfillmentOrderPage() {
       </div>
 
       <FormSection title="Line items" description="Required = ordered qty (stock already committed at payment).">
+        {order.actions.can_scan_pick && canPick ? (
+          <div className="mb-3 flex max-w-xl flex-wrap items-end gap-2">
+            <Input
+              label="Scan / enter SKU"
+              value={scanCode}
+              onChange={(e) => setScanCode(e.target.value)}
+              placeholder="SKU or barcode"
+            />
+            <Button
+              type="button"
+              disabled={busy || !scanCode.trim()}
+              onClick={() =>
+                void run(async () => {
+                  await pickScan(id, scanCode.trim(), 1);
+                  setScanCode("");
+                }, "Scan accepted")
+              }
+            >
+              Verify scan (+1)
+            </Button>
+          </div>
+        ) : null}
         <form onSubmit={savePick}>
           <table className="mb-3 min-w-full text-left text-sm">
             <thead className="border-b border-[var(--admin-border)] text-xs uppercase text-[var(--admin-muted)]">
@@ -285,6 +333,70 @@ export default function FulfillmentOrderPage() {
                 </Button>
               </div>
             </div>
+          </FormSection>
+        </div>
+      ) : null}
+
+      {order.actions.can_assign_driver && canShip ? (
+        <div className="mt-4">
+          <FormSection title="Assign driver" description="Staff users with delivery/order roles. Backend validates assignment.">
+            <div className="grid max-w-xl gap-3 sm:grid-cols-2">
+              <Select label="Driver" value={driverId} onChange={(e) => setDriverId(e.target.value)}>
+                <option value="">Select…</option>
+                {drivers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </Select>
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  disabled={busy || !driverId}
+                  onClick={() =>
+                    void run(() => assignDriver(id, Number(driverId)), "Driver assigned")
+                  }
+                >
+                  Assign
+                </Button>
+              </div>
+              {order.shipment?.assigned_driver ? (
+                <p className="col-span-full text-sm text-[var(--admin-muted)]">
+                  Current: {order.shipment.assigned_driver.name} ({order.shipment.assigned_driver.email})
+                </p>
+              ) : null}
+            </div>
+          </FormSection>
+        </div>
+      ) : null}
+
+      {order.actions.can_reschedule && canShip ? (
+        <div className="mt-4">
+          <FormSection title="Reschedule ETA" description="Updates shipment ETA and notifies the customer. Not a slot-capacity system.">
+            <div className="grid max-w-xl gap-3 sm:grid-cols-2">
+              <Input label="New ETA" type="date" value={rescheduleEta} onChange={(e) => setRescheduleEta(e.target.value)} />
+              <Input label="Note" value={rescheduleNote} onChange={(e) => setRescheduleNote(e.target.value)} />
+              <Button
+                type="button"
+                disabled={busy || !rescheduleEta}
+                onClick={() =>
+                  void run(
+                    () => rescheduleDelivery(id, rescheduleEta, rescheduleNote || undefined),
+                    "Rescheduled",
+                  )
+                }
+              >
+                Save ETA
+              </Button>
+            </div>
+          </FormSection>
+        </div>
+      ) : null}
+
+      {order.actions.can_deliver && canShip ? (
+        <div className="mt-4">
+          <FormSection title="Proof of delivery (optional)" description="Stored on shipment.meta.pod — not a separate POD table.">
+            <Input label="Delivery note" value={podNote} onChange={(e) => setPodNote(e.target.value)} placeholder="Left with guard / OTP confirmed" />
           </FormSection>
         </div>
       ) : null}

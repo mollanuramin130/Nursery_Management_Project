@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ProductPrice } from "@/components/product/ProductPrice";
 import { ProductRating } from "@/components/product/ProductRating";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { loginHref } from "@/lib/auth-redirect";
 import type { ProductSummary } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
@@ -39,6 +39,7 @@ export function ProductCard({ product }: { product: ProductSummary }) {
   const openMiniCart = useUiStore((s) => s.openMiniCart);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [wishBusy, setWishBusy] = useState(false);
   const badge = primaryBadge(
     product.badges,
     product.stock_status,
@@ -68,6 +69,9 @@ export function ProductCard({ product }: { product: ProductSummary }) {
       router.push(loginHref(`/product/${product.slug}`));
       return;
     }
+    // QA-36-004: ignore rapid double-taps while in flight.
+    if (wishBusy) return;
+    setWishBusy(true);
     try {
       if (wishHas) {
         await wishRemove(product.id);
@@ -78,6 +82,8 @@ export function ProductCard({ product }: { product: ProductSummary }) {
       }
     } catch (err) {
       toast(err instanceof Error ? err.message : "Wishlist failed", "error");
+    } finally {
+      setWishBusy(false);
     }
   }
 
@@ -86,15 +92,13 @@ export function ProductCard({ product }: { product: ProductSummary }) {
       <div className="relative overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)]">
         <Link href={`/product/${product.slug}`} className="block">
           <div className="relative aspect-[4/5]">
-            {product.thumbnail_url ? (
-              <Image
-                src={product.thumbnail_url}
-                alt={product.name}
-                fill
-                sizes="(max-width:768px) 50vw, 25vw"
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-              />
-            ) : null}
+            <SafeImage
+              src={product.thumbnail_url}
+              alt={product.name}
+              fill
+              sizes="(max-width:768px) 50vw, 25vw"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+            />
           </div>
         </Link>
         {badge ? (
@@ -105,8 +109,9 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         <button
           type="button"
           onClick={onWish}
+          disabled={wishBusy}
           aria-label={wishHas ? "Remove from wishlist" : "Add to wishlist"}
-          className="absolute right-2.5 top-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-[var(--shadow-sm)] backdrop-blur transition hover:bg-white"
+          className="absolute right-2.5 top-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-[var(--shadow-sm)] backdrop-blur transition hover:bg-white disabled:opacity-60"
         >
           {wishHas ? "♥" : "♡"}
         </button>

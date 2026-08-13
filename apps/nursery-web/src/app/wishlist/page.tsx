@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { loginHref } from "@/lib/auth-redirect";
@@ -17,10 +17,12 @@ export default function WishlistPage() {
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const items = useWishlistStore((s) => s.items);
   const loading = useWishlistStore((s) => s.loading);
+  const error = useWishlistStore((s) => s.error);
   const fetchWishlist = useWishlistStore((s) => s.fetchWishlist);
   const remove = useWishlistStore((s) => s.remove);
   const moveToCart = useWishlistStore((s) => s.moveToCart);
   const toast = useToastStore((s) => s.push);
+  const [busyIds, setBusyIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (bootstrapped && user) void fetchWishlist();
@@ -45,7 +47,24 @@ export default function WishlistPage() {
     );
   }
 
-  if (!loading && !items.length) {
+  // QA-36-004: fetch error ≠ empty wishlist.
+  if (!loading && error && !items.length) {
+    return (
+      <section className="section">
+        <div className="container mx-auto max-w-md px-4 py-16 text-center">
+          <h2 className="display text-3xl text-[var(--color-primary-deep)]">
+            Couldn’t load wishlist
+          </h2>
+          <p className="mt-3 text-[var(--color-muted)] leading-relaxed">{error}</p>
+          <div className="mt-6">
+            <Button onClick={() => void fetchWishlist()}>Try again</Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!loading && !error && !items.length) {
     return (
       <EmptyState
         title="Your wishlist is empty."
@@ -95,25 +114,50 @@ export default function WishlistPage() {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button
                       size="sm"
-                      disabled={p.stock_status === "out_of_stock"}
+                      disabled={p.stock_status === "out_of_stock" || busyIds.has(p.id)}
                       onClick={async () => {
+                        if (busyIds.has(p.id)) return;
+                        setBusyIds((prev) => new Set(prev).add(p.id));
                         try {
                           const cart = await moveToCart(p.id);
                           useCartStore.setState({ cart });
                           toast("Moved to cart");
                         } catch (e) {
                           toast(e instanceof Error ? e.message : "Failed", "error");
+                        } finally {
+                          setBusyIds((prev) => {
+                            const next = new Set(prev);
+                            next.delete(p.id);
+                            return next;
+                          });
                         }
                       }}
                     >
-                      {p.stock_status === "out_of_stock" ? "Unavailable" : "Move to cart"}
+                      {p.stock_status === "out_of_stock"
+                        ? "Unavailable"
+                        : busyIds.has(p.id)
+                          ? "…"
+                          : "Move to cart"}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
+                      disabled={busyIds.has(p.id)}
                       onClick={async () => {
-                        await remove(p.id);
-                        toast("Removed from wishlist", "info");
+                        if (busyIds.has(p.id)) return;
+                        setBusyIds((prev) => new Set(prev).add(p.id));
+                        try {
+                          await remove(p.id);
+                          toast("Removed from wishlist", "info");
+                        } catch (e) {
+                          toast(e instanceof Error ? e.message : "Remove failed", "error");
+                        } finally {
+                          setBusyIds((prev) => {
+                            const next = new Set(prev);
+                            next.delete(p.id);
+                            return next;
+                          });
+                        }
                       }}
                     >
                       Remove

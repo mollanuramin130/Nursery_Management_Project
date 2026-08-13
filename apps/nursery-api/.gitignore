@@ -3,6 +3,10 @@
 .env
 .env.backup
 .env.production
+firebase-service-account.json
+**/firebase-adminsdk*.json
+storage/app/*-sa.json
+storage/app/qa23-fake-sa*.json
 .phpactor.json
 .phpunit.result.cache
 /.codex

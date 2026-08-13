@@ -10,16 +10,16 @@ Artisan::command('inspire', function () {
 
 Schedule::command('inventory:release-expired-reservations --hours=24')
     ->hourly()
-    ->withoutOverlapping();
+    ->withoutOverlapping(55);
 
 Schedule::command('subscriptions:process-due --limit=100')
     ->everyFifteenMinutes()
-    ->withoutOverlapping();
+    ->withoutOverlapping(10);
 
 Schedule::command('marketing:process-abandoned-carts --limit=100')
     ->hourly()
-    ->withoutOverlapping();
+    ->withoutOverlapping(55);
 
 Schedule::command('marketing:process-post-purchase --limit=100')
     ->dailyAt('10:00')
-    ->withoutOverlapping();
+    ->withoutOverlapping(55);

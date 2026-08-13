@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/checkout_preview_rules.dart';
 import 'package:nursery_app/core/config.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/services/razorpay_checkout.dart';
+import 'package:nursery_app/services/upi_payment.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_button.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
@@ -52,6 +55,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool previewLoading = false;
   String? previewError;
   String? _previewCoupon;
+  int _previewGen = 0;
 
   final _name = TextEditingController();
   final _phone = TextEditingController();
@@ -171,6 +175,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
     if (previewLoading && !force) return;
 
+    final gen = CheckoutPreviewRules.nextPreviewGeneration(_previewGen);
+    _previewGen = gen;
+
     setState(() {
       previewLoading = true;
       previewError = null;
@@ -182,6 +189,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       final cart = context.read<CartProvider>().cart;
       if (cart.items.isEmpty) {
+        if (!CheckoutPreviewRules.shouldApplyPreviewResult(gen, _previewGen)) {
+          return;
+        }
         setState(() {
           previewLoading = false;
           error = 'empty';
@@ -201,6 +211,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         map: (data) => Map<String, dynamic>.from(data as Map),
       );
       if (!mounted) return;
+      if (!CheckoutPreviewRules.shouldApplyPreviewResult(gen, _previewGen)) {
+        return;
+      }
 
       final previewCoupon = data['coupon_code']?.toString();
       // Coupon mismatch: cart had a code but preview dropped it.
@@ -225,6 +238,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      if (!CheckoutPreviewRules.shouldApplyPreviewResult(gen, _previewGen)) {
+        return;
+      }
       setState(() {
         previewLoading = false;
         previewError = ErrorStateView.sanitize(e.toString());
@@ -273,6 +289,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _placeOrder() async {
     if (_submissionLocked || _busy) return;
+    final cartState = context.read<CartProvider>();
+    // NEVER fake a server order while offline / local-only cart.
+    if (cartState.localOnly) {
+      AppFeedback.error(
+        context,
+        "You're offline. Your order can't be placed until we reconnect to GreenLeaf. Your cart is safe.",
+      );
+      return;
+    }
     if (addressId == null || shippingMethodId == null) {
       setState(() => step = 0);
       AppFeedback.error(context, 'Select address and delivery method');
@@ -293,7 +318,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
       return;
     }
-    if (preview == null || preview!['grand_total'] == null) {
+    if (CheckoutPreviewRules.payableTotal(preview) == null) {
       setState(() => phase = _CheckoutPhase.idle);
       AppFeedback.error(
         context,
@@ -331,7 +356,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _placedOrderId = order['id'] as int?;
       _placedOrderNumber = order['order_number']?.toString();
 
-      if (paymentMethod == 'razorpay') {
+      if (paymentMethod == 'upi') {
         if (!AppConfig.onlinePaymentsEnabled) {
           await cartProvider.fetch();
           if (!mounted) return;
@@ -347,18 +372,100 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             'POST',
             '/payments/initiate',
             headers: {'X-Request-Id': '${requestId}_pay'},
-            body: {'order_id': order['id'], 'method': 'razorpay'},
+            body: {
+              'order_id': order['id'],
+              'method': 'upi',
+              'mode': 'upi_intent',
+            },
             map: (data) => Map<String, dynamic>.from(data as Map),
           );
           final clientPayload = Map<String, dynamic>.from(
             (pay['client_payload'] as Map?) ?? {},
           );
+          final providerOrderId =
+              pay['provider_order_id']?.toString() ??
+              clientPayload['order_id']?.toString() ??
+              '';
+
+          // Prefer UPI Intent deep-link when provided (return ≠ paid).
+          // If no UPI app can open the link, fall through to Razorpay Checkout (QA-30).
+          final intent = clientPayload['upi_intent_url']?.toString();
+          final isStub = clientPayload['mode']?.toString() == 'local_stub';
+          final upiMode = clientPayload['upi_mode']?.toString() ?? 'upi_intent';
+          if (!isStub &&
+              intent != null &&
+              intent.isNotEmpty &&
+              (upiMode == 'upi_intent' || upiMode == 'dynamic_qr')) {
+            final uri = Uri.tryParse(intent);
+            var launched = false;
+            if (uri != null) {
+              try {
+                launched = await launchUrl(
+                  uri,
+                  mode: LaunchMode.externalApplication,
+                );
+              } catch (_) {
+                launched = false;
+              }
+            }
+            if (shouldPollAfterUpiIntentLaunch(launched)) {
+              final paymentId = pay['payment_id'];
+              final started = DateTime.now();
+              var uiStatus = UpiUiStatus.polling;
+              while (shouldContinueUpiPoll(
+                status: uiStatus,
+                startedAt: started,
+                now: DateTime.now(),
+              )) {
+                await Future<void>.delayed(const Duration(seconds: 3));
+                final statusRes = await api.getData(
+                  '/payments/$paymentId',
+                  map: (data) => Map<String, dynamic>.from(data as Map),
+                );
+                uiStatus = mapPaymentApiStatus(
+                  statusRes['payment_status']?.toString(),
+                );
+                // QA-36-001: payment paid alone is not order confirmed.
+                if (uiStatus == UpiUiStatus.paid &&
+                    statusRes['order_status']?.toString() == 'CONFIRMED') {
+                  setState(() => phase = _CheckoutPhase.finishing);
+                  await cartProvider.fetch();
+                  if (!mounted) return;
+                  context.go(
+                    '/orders/${order['id']}?placed=${Uri.encodeQueryComponent(order['order_number'].toString())}&paid=1',
+                  );
+                  return;
+                }
+                if (uiStatus == UpiUiStatus.failed ||
+                    uiStatus == UpiUiStatus.cancelled ||
+                    uiStatus == UpiUiStatus.expired) {
+                  break;
+                }
+              }
+              // App return / poll timeout ≠ paid. Leave order PENDING_PAYMENT.
+              await cartProvider.fetch();
+              if (!mounted) return;
+              AppFeedback.info(
+                context,
+                uiStatus == UpiUiStatus.failed ||
+                        uiStatus == UpiUiStatus.cancelled ||
+                        uiStatus == UpiUiStatus.expired
+                    ? 'Payment ${upiStatusLabel(uiStatus).toLowerCase()}. Order is still unpaid.'
+                    : 'Still waiting for bank confirmation. Check this order again shortly.',
+              );
+              setState(() => phase = _CheckoutPhase.finishing);
+              context.go(
+                '/orders/${order['id']}?placed=${Uri.encodeQueryComponent(order['order_number'].toString())}&pay=pending',
+              );
+              return;
+            }
+          }
+
+          // Stub / Checkout fallback: still requires server verify (never trust return alone).
           final gateway = await openRazorpayCheckout(
             clientPayload: {
               ...clientPayload,
-              'order_id':
-                  pay['provider_order_id']?.toString() ??
-                  clientPayload['order_id'],
+              'order_id': providerOrderId,
             },
             description: 'Order ${order['order_number']}',
           );
@@ -527,12 +634,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
     }
 
-    final payable = (preview?['grand_total'] as num?)?.toDouble();
-    final canPlace =
-        preview != null &&
-        payable != null &&
-        !previewLoading &&
-        !_submissionLocked;
+    final payable = CheckoutPreviewRules.payableTotal(preview);
+    final canPlace = CheckoutPreviewRules.canPlace(
+          preview: preview,
+          busy: _busy || previewLoading,
+          submissionLocked: _submissionLocked,
+        );
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final blockPop = _busy || _submissionLocked;
 
@@ -897,9 +1004,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         if (AppConfig.onlinePaymentsEnabled)
           option(
-            value: 'razorpay',
-            title: 'Pay online',
-            subtitle: 'Secure card / UPI checkout',
+            value: 'upi',
+            title: 'UPI / Razorpay',
+            subtitle:
+                'UPI Intent, then Razorpay Checkout if needed — confirmed by the server',
           )
         else
           AppSurfaceCard(
@@ -911,7 +1019,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(width: AppSpace.sm),
                 Expanded(
                   child: Text(
-                    'Online payment will appear here once Razorpay is configured for this build.',
+                    'UPI payment will appear here once Razorpay is configured for this build.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -975,7 +1083,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           const SizedBox(height: AppSpace.md),
         ],
         Text(
-          'Payment · ${paymentMethod == 'cod' ? 'Cash on delivery' : 'Online'}',
+          'Payment · ${paymentMethod == 'cod' ? 'Cash on delivery' : 'UPI / Razorpay'}',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         if (_previewCoupon != null && _previewCoupon!.isNotEmpty) ...[

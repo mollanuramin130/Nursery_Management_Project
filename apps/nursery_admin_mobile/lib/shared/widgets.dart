@@ -1,6 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:nursery_admin_mobile/theme/app_theme.dart';
 
+/// Canonical payment status labels (QA-35).
+String opsPaymentStatusLabel(String raw) {
+  const labels = <String, String>{
+    'success': 'Paid',
+    'pending': 'Pending',
+    'failed': 'Failed',
+    'refund_pending': 'Refund pending',
+    'refunded': 'Refunded',
+    'cod': 'COD',
+  };
+  final key = raw.trim().toLowerCase();
+  return labels[key] ?? raw.replaceAll('_', ' ');
+}
+
+/// Canonical ops labels for order (and similar) status chips (QA-32).
+String opsStatusLabel(String raw) {
+  const labels = <String, String>{
+    'PENDING_PAYMENT': 'Pending payment',
+    'PAYMENT_FAILED': 'Payment failed',
+    'CONFIRMED': 'Confirmed',
+    'PROCESSING': 'Processing',
+    'PACKED': 'Packed',
+    'SHIPPED': 'Shipped',
+    'OUT_FOR_DELIVERY': 'Out for delivery',
+    'DELIVERED': 'Delivered',
+    'CANCELLED': 'Cancelled',
+    'RETURN_REQUESTED': 'Return requested',
+    'RETURNED': 'Returned',
+    'REFUNDED': 'Refunded',
+    'DELIVERY_FAILED': 'Delivery failed',
+  };
+  final key = raw.trim().toUpperCase();
+  return labels[key] ?? raw.replaceAll('_', ' ');
+}
+
 class OpsStatusChip extends StatelessWidget {
   const OpsStatusChip(this.label, {super.key});
 
@@ -16,7 +51,7 @@ class OpsStatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        label.replaceAll('_', ' '),
+        opsStatusLabel(label),
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w700,

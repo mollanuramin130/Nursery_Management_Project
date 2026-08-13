@@ -10,7 +10,12 @@ import { Input, Select, TextArea } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api/client";
 import { fetchOrder, updateOrderStatus } from "@/lib/api/orders";
 import { hasPermission } from "@/lib/auth/permissions";
-import { allowedOrderTransitions, statusTone } from "@/lib/auth/order-transitions";
+import {
+  allowedOrderTransitions,
+  orderStatusLabel,
+  statusTone,
+} from "@/lib/auth/order-transitions";
+import { paymentStatusLabel } from "@/lib/payment-status";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import type { AdminOrderDetail } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
@@ -125,7 +130,11 @@ export default function OrderDetailPage() {
         title={order?.order_number ?? "Order detail"}
         description="Server-authoritative order state and history."
         actions={
-          order ? <Badge tone={statusTone(order.status)}>{order.status}</Badge> : undefined
+          order ? (
+            <Badge tone={statusTone(order.status)}>
+              {orderStatusLabel(order.status)}
+            </Badge>
+          ) : undefined
         }
       />
 
@@ -148,11 +157,15 @@ export default function OrderDetailPage() {
                 </div>
                 <div>
                   <dt className="text-xs text-[var(--admin-muted)]">Payment method</dt>
-                  <dd>{order.payment_method ?? "—"}</dd>
+                  <dd>
+                    {(order.payment_method ?? "—").toUpperCase()}
+                    {order.payment?.upi_mode ? ` · ${order.payment.upi_mode}` : ""}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs text-[var(--admin-muted)]">Payment status</dt>
-                  <dd>{order.payment?.status ?? "—"}</dd>
+                  {/* QA-36-006: human label (parity with list + payment card) */}
+                  <dd>{paymentStatusLabel(order.payment?.status)}</dd>
                 </div>
               </dl>
             </section>
@@ -249,11 +262,24 @@ export default function OrderDetailPage() {
               <h2 className="mb-3 text-sm font-semibold">Payment</h2>
               {order.payment ? (
                 <dl className="space-y-1 text-sm">
-                  <div>Method: {order.payment.method}</div>
+                  <div>Method: {(order.payment.method ?? "—").toUpperCase()}</div>
+                  {order.payment.upi_mode ? (
+                    <div>UPI mode: {order.payment.upi_mode}</div>
+                  ) : null}
                   <div>ID: {order.payment.id}</div>
                   <div>Amount: {formatMoney(order.payment.amount)}</div>
-                  <div>Status: {order.payment.status}</div>
+                  <div>Status: {paymentStatusLabel(order.payment.status)}</div>
                   <div>Paid: {formatDateTime(order.payment.paid_at)}</div>
+                  {order.payment.provider_payment_id ? (
+                    <div className="break-all font-mono text-xs">
+                      Txn: {order.payment.provider_payment_id}
+                    </div>
+                  ) : null}
+                  {order.payment.provider_order_id ? (
+                    <div className="break-all font-mono text-xs">
+                      Provider order: {order.payment.provider_order_id}
+                    </div>
+                  ) : null}
                 </dl>
               ) : (
                 <p className="text-sm text-[var(--admin-muted)]">No payment record.</p>
@@ -292,7 +318,7 @@ export default function OrderDetailPage() {
                   >
                     {transitions.map((s) => (
                       <option key={s} value={s}>
-                        {s}
+                        {orderStatusLabel(s)}
                       </option>
                     ))}
                   </Select>

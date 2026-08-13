@@ -44,7 +44,7 @@ Future<RazorpayCheckoutResult> openRazorpayCheckout({
   if (mode == 'local_stub') {
     if (kReleaseMode) {
       throw RazorpayCheckoutFailed(
-        'Online payments are not configured. Please try again later or use cash on delivery.',
+        'Test payment mode is not available in production. Please use cash on delivery or try again later.',
       );
     }
     final paymentId =

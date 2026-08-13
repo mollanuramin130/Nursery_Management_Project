@@ -12,7 +12,11 @@ import { Input, Select, TextArea } from "@/components/ui/Input";
 import { ApiError } from "@/lib/api/client";
 import { fetchOrders } from "@/lib/api/orders";
 import { createRefund, fetchRefunds, type AdminRefund } from "@/lib/api/refunds";
-import { hasPermission } from "@/lib/auth/permissions";
+import { hasPermission, permissionDeniedMessage } from "@/lib/auth/permissions";
+import {
+  assertLocalStubRefundAllowed,
+  canOfferLocalStubRefund,
+} from "@/lib/refund-safety";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import type { AdminOrderListItem, Pagination } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
@@ -21,6 +25,7 @@ import { useToastStore } from "@/store/toast";
 export default function RefundsPage() {
   const user = useAuthStore((s) => s.user);
   const canRefund = hasPermission(user, "payments.refund");
+  const stubRefundsAllowed = canOfferLocalStubRefund();
   const push = useToastStore((s) => s.push);
 
   const [page, setPage] = useState(1);
@@ -40,7 +45,7 @@ export default function RefundsPage() {
   const load = useCallback(async () => {
     if (!canRefund) {
       setLoading(false);
-      setError("Missing permission: payments.refund");
+      setError(permissionDeniedMessage("payments.refund"));
       return;
     }
     setLoading(true);
@@ -75,6 +80,7 @@ export default function RefundsPage() {
   async function onCreate() {
     setSaving(true);
     try {
+      assertLocalStubRefundAllowed();
       await createRefund({
         order_id: Number(orderId),
         amount: Number(amount),
@@ -105,11 +111,19 @@ export default function RefundsPage() {
 
       <div className="mb-4 rounded-[var(--admin-radius-lg)] border border-[var(--admin-warning)]/40 bg-[var(--admin-warning)]/10 px-3 py-2 text-sm text-[var(--admin-ink)]">
         Refunds are <strong>not live payment-provider payouts</strong>. Non-production records
-        them as <code>recorded_local</code> without moving money or marking orders REFUNDED.
-        Production refuses stub refunds until gateway integration ships.
+        them as <code>recorded_local</code> / <code>local_stub</code> without moving money or
+        marking orders REFUNDED. Production refuses stub refunds until gateway integration ships
+        (API 503 — backend authoritative).
       </div>
 
-      {canRefund ? (
+      {!stubRefundsAllowed ? (
+        <div className="mb-4 rounded-[var(--admin-radius-lg)] border border-[var(--admin-danger)]/30 bg-[var(--admin-danger-soft)] px-3 py-2 text-sm text-[var(--admin-danger)]">
+          Production build: create-refund is disabled in this UI. Backend also rejects{" "}
+          <code>local_stub</code> refunds.
+        </div>
+      ) : null}
+
+      {canRefund && stubRefundsAllowed ? (
         <FormSection title="Create refund" description="Confirm before submit.">
           <form
             className="grid gap-3 md:grid-cols-2"

@@ -1,13 +1,14 @@
 import 'package:flutter/foundation.dart';
-import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/data/catalog_repository.dart';
+import 'package:nursery_app/data/mock_data_mode.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/widgets/catalog_filters.dart';
 
-/// Shared catalog listing state: search, filters, sort, pagination.
+/// Shared catalog listing — cache-first, soft refresh (QA-38).
 class CatalogProvider extends ChangeNotifier {
-  CatalogProvider(this._api);
+  CatalogProvider(this._repo);
 
-  final ApiClient _api;
+  final CatalogRepository _repo;
 
   CatalogFilters filters = const CatalogFilters();
   List<ProductSummary> items = [];
@@ -17,6 +18,9 @@ class CatalogProvider extends ChangeNotifier {
   bool loadingMore = false;
   bool hasMore = true;
   String? error;
+  DataSourceKind? source;
+  bool stale = false;
+  bool softUpdating = false;
 
   int _requestId = 0;
 
@@ -29,11 +33,27 @@ class CatalogProvider extends ChangeNotifier {
     final requestId = ++_requestId;
 
     if (reset) {
-      loading = true;
       error = null;
       page = 1;
       hasMore = true;
+      if (items.isEmpty) {
+        loading = true;
+      } else {
+        softUpdating = true;
+      }
       notifyListeners();
+
+      // Cache-first paint.
+      final peeked = await _repo.peekCatalog(filters: filters);
+      if (requestId != _requestId) return;
+      if (peeked != null && peeked.data.isNotEmpty) {
+        items = peeked.data;
+        source = peeked.source;
+        stale = peeked.stale;
+        loading = false;
+        softUpdating = true;
+        notifyListeners();
+      }
     } else {
       if (!hasMore || loadingMore || loading) return;
       loadingMore = true;
@@ -42,39 +62,26 @@ class CatalogProvider extends ChangeNotifier {
 
     final nextPage = reset ? 1 : page + 1;
     try {
-      final q = filters.q?.trim();
-      final path = (q != null && q.isNotEmpty) ? '/search' : '/products';
-      final result = await _api.getDataWithMeta(
-        path,
-        query: filters.toApiQuery(page: nextPage),
-        map: (data) {
-          if (data is List) {
-            return data
-                .whereType<Map>()
-                .map(
-                  (e) => ProductSummary.fromJson(Map<String, dynamic>.from(e)),
-                )
-                .toList();
-          }
-          final map = Map<String, dynamic>.from(data as Map);
-          final list = (map['products'] ?? map['items'] ?? []) as List;
-          return list
-              .whereType<Map>()
-              .map((e) => ProductSummary.fromJson(Map<String, dynamic>.from(e)))
-              .toList();
+      final result = await _repo.listProducts(
+        filters: filters,
+        page: nextPage,
+        onImmediate: (immediate) {
+          if (requestId != _requestId || !reset) return;
+          if (items.isNotEmpty) return;
+          items = immediate.data;
+          source = immediate.source;
+          stale = immediate.stale;
+          softUpdating = immediate.updating;
+          loading = false;
+          notifyListeners();
         },
       );
 
       if (requestId != _requestId) return;
 
-      final pagination = result.meta?['pagination'];
-      int? lastPage;
-      if (pagination is Map) {
-        total = (pagination['total'] as num?)?.toInt();
-        lastPage = (pagination['last_page'] as num?)?.toInt();
-      }
-
       page = nextPage;
+      source = result.source;
+      stale = result.stale;
       if (reset) {
         items = result.data;
       } else {
@@ -84,18 +91,23 @@ class CatalogProvider extends ChangeNotifier {
           ...result.data.where((p) => !existing.contains(p.id)),
         ];
       }
-      hasMore = lastPage != null
-          ? nextPage < lastPage
-          : result.data.length >= 24;
+      hasMore = result.source == DataSourceKind.remote
+          ? result.data.length >= 24
+          : false;
+      total = items.length;
       loading = false;
       loadingMore = false;
+      softUpdating = false;
       error = null;
       notifyListeners();
     } catch (e) {
       if (requestId != _requestId) return;
       loading = false;
       loadingMore = false;
-      error = e.toString();
+      softUpdating = false;
+      if (items.isEmpty) {
+        error = e.toString();
+      }
       notifyListeners();
     }
   }

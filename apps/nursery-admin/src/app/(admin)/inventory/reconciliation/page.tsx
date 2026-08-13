@@ -14,6 +14,7 @@ import {
   type InventoryItemRow,
 } from "@/lib/api/inventory";
 import { hasPermission } from "@/lib/auth/permissions";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
@@ -34,6 +35,7 @@ export default function InventoryReconciliationPage() {
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
 
   const load = useCallback(async () => {
     if (!canAdjust) {
@@ -44,7 +46,7 @@ export default function InventoryReconciliationPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchInventory({ q: q || undefined });
+      const res = await fetchInventory({ q: debouncedQ || undefined });
       setRows(res.data);
       setDrafts((prev) => {
         const next = { ...prev };
@@ -60,7 +62,7 @@ export default function InventoryReconciliationPage() {
     } finally {
       setLoading(false);
     }
-  }, [canAdjust, q]);
+  }, [canAdjust, debouncedQ]);
 
   useEffect(() => {
     void load();

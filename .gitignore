@@ -1,0 +1,4 @@
+# Local secrets — never commit
+api_kay/
+*.pem
+.DS_Store

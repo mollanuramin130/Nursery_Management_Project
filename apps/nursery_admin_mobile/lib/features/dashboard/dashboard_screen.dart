@@ -107,6 +107,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                if (auth.can('fulfillment.view'))
+                  ActionChip(
+                    label: const Text('Fulfillment'),
+                    onPressed: () => context.push('/fulfillment'),
+                  ),
                 if (auth.can('orders.view'))
                   ActionChip(
                     label: const Text('Orders'),

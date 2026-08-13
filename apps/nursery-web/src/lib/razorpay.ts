@@ -7,6 +7,8 @@ export type RazorpayCheckoutOptions = {
   order_id: string;
   prefill?: { name?: string; email?: string; contact?: string };
   notes?: Record<string, string>;
+  /** Prefer methods returned by the API (e.g. UPI-only). */
+  method?: Record<string, boolean>;
   theme?: { color?: string };
   handler: (response: RazorpaySuccessResponse) => void;
   modal?: { ondismiss?: () => void };
@@ -71,11 +73,42 @@ export async function openRazorpayCheckout(
   });
 }
 
-/** Dev-only stub when API returns mode=local_stub (no real keys). */
+/** True when the site build / deploy is production-tier. */
+export function isProductionSite(): boolean {
+  return (
+    process.env.NODE_ENV === "production" ||
+    process.env.NEXT_PUBLIC_SITE_ENV === "production"
+  );
+}
+
+/** Dev-only stub when API returns mode=local_stub (no real keys). Never in production. */
 export function localStubPayment(providerOrderId: string, paymentId: number): RazorpaySuccessResponse {
+  if (isProductionSite()) {
+    throw new Error(
+      "Test payment mode is not available in production. Please use a configured payment method or cash on delivery.",
+    );
+  }
   return {
     razorpay_order_id: providerOrderId,
     razorpay_payment_id: `local_${paymentId}_${Date.now()}`,
     razorpay_signature: `local_${providerOrderId}`,
   };
+}
+
+/** Pure helpers for checkout payable display (QA-CHK-001). */
+export function checkoutPayableTotal(
+  preview: { grand_total?: number | null } | null | undefined,
+): number | null {
+  if (preview?.grand_total == null || Number.isNaN(Number(preview.grand_total))) {
+    return null;
+  }
+  return Number(preview.grand_total);
+}
+
+export function canPlaceOrder(opts: {
+  previewReady: boolean;
+  busy: boolean;
+  previewLoading?: boolean;
+}): boolean {
+  return opts.previewReady && !opts.busy && !opts.previewLoading;
 }

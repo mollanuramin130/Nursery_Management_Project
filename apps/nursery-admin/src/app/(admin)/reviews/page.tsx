@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/reviews";
 import { hasPermission } from "@/lib/auth/permissions";
 import { formatDateTime } from "@/lib/format";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useAuthStore } from "@/store/auth";
 
 function tone(status: string) {
@@ -29,6 +30,7 @@ export default function ReviewsPage() {
   const canView = hasPermission(user, "reviews.view");
   const [status, setStatus] = useState("pending");
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
   const [rows, setRows] = useState<AdminReview[]>([]);
   const [dash, setDash] = useState<ReviewsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,12 @@ export default function ReviewsPage() {
     setError(null);
     try {
       const [list, d] = await Promise.all([
-        fetchReviews({ status: status || undefined, q: q || undefined, page, per_page: 30 }),
+        fetchReviews({
+          status: status || undefined,
+          q: debouncedQ || undefined,
+          page,
+          per_page: 30,
+        }),
         fetchReviewsDashboard(),
       ]);
       setRows(list.data);
@@ -57,7 +64,7 @@ export default function ReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [canView, status, q, page]);
+  }, [canView, status, debouncedQ, page]);
 
   useEffect(() => {
     void load();

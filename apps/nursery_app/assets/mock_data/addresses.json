@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 1,
+      "name": "Asha Rahman",
+      "phone": "9876543210",
+      "line1": "12 Green Lane",
+      "line2": "Kothrud",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "postal_code": "411001",
+      "label": "Home",
+      "country": "IN",
+      "is_default": true
+    }
+  ],
+  "errors": null,
+  "meta": { "source": "mock", "local_only": true }
+}

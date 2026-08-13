@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
+import { orderStatusLabel, orderStatusTone } from "@/lib/order-status";
 
 const FILTERS = [
   { id: "", label: "All" },
@@ -26,13 +27,6 @@ const FILTERS = [
   { id: "DELIVERED", label: "Delivered" },
   { id: "CANCELLED", label: "Cancelled" },
 ] as const;
-
-function statusTone(status: string): "brand" | "success" | "warning" | "error" {
-  if (status === "DELIVERED") return "success";
-  if (status === "CANCELLED" || status === "PAYMENT_FAILED") return "error";
-  if (status === "PENDING_PAYMENT") return "warning";
-  return "brand";
-}
 
 function formatDate(iso?: string | null) {
   if (!iso) return "";
@@ -218,7 +212,7 @@ export function OrdersClient() {
                       Placed {formatDate(o.placed_at ?? o.created_at)}
                     </p>
                   </div>
-                  <Badge tone={statusTone(o.status)}>{o.status.replaceAll("_", " ")}</Badge>
+                  <Badge tone={orderStatusTone(o.status)}>{orderStatusLabel(o.status)}</Badge>
                 </div>
                 <div className="mt-3 flex gap-3">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">

@@ -39,7 +39,11 @@ void main() {
     );
     expect(
       AuthMessages.sanitize('Invalid email or password', statusCode: 401),
-      'Email or password is incorrect.',
+      'Invalid email or password.',
+    );
+    expect(
+      AuthMessages.sanitize('Account is blocked', statusCode: 401),
+      'Your account is currently unavailable. Please contact support.',
     );
   });
 

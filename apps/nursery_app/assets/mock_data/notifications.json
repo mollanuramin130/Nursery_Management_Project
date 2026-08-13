@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 1,
+      "title": "Welcome to GreenLeaf",
+      "body": "Browse plants anytime — even when you're offline.",
+      "read": false,
+      "created_at": "2026-08-13T09:00:00+05:30"
+    },
+    {
+      "id": 2,
+      "title": "Order tip",
+      "body": "Orders and payments need an internet connection.",
+      "read": true,
+      "created_at": "2026-08-12T12:00:00+05:30"
+    }
+  ],
+  "errors": null,
+  "meta": { "source": "mock", "fcm": false }
+}

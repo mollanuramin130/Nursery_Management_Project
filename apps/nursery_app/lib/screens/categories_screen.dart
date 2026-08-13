@@ -1,8 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/data/mock_asset_store.dart';
 import 'package:nursery_app/theme/tokens.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:nursery_app/widgets/app_bottom_sheet.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
@@ -51,14 +52,22 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     _future = _load();
   }
 
-  Future<List<CategoryItem>> _load() {
-    return context.read<ApiClient>().getData(
-      '/categories',
-      map: (data) => (data as List)
+  Future<List<CategoryItem>> _load() async {
+    try {
+      return await context.read<ApiClient>().getData(
+        '/categories',
+        map: (data) => (data as List)
+            .whereType<Map>()
+            .map((e) => CategoryItem.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+      );
+    } catch (_) {
+      final data = await MockAssetStore().dataOf('categories.json');
+      return (data as List)
           .whereType<Map>()
           .map((e) => CategoryItem.fromJson(Map<String, dynamic>.from(e)))
-          .toList(),
-    );
+          .toList();
+    }
   }
 
   @override
@@ -174,20 +183,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(AppRadii.lg),
                               ),
-                              child: c.imageUrl == null
-                                  ? Container(
-                                      color: AppColors.primarySoft,
-                                      alignment: Alignment.center,
-                                      child: const Icon(
-                                        Icons.local_florist_rounded,
-                                        color: AppColors.primaryDeep,
-                                      ),
-                                    )
-                                  : CachedNetworkImage(
-                                      imageUrl: c.imageUrl!,
-                                      fit: BoxFit.cover,
-                                      memCacheWidth: 600,
-                                    ),
+                              child: ResilientNetworkImage(
+                                url: c.imageUrl,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                           Padding(

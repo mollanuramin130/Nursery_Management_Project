@@ -10,7 +10,8 @@ class OrderStateMachine
 {
     private const TRANSITIONS = [
         'PENDING_PAYMENT' => ['CONFIRMED', 'PAYMENT_FAILED', 'CANCELLED'],
-        'PAYMENT_FAILED' => ['PENDING_PAYMENT', 'CANCELLED'],
+        // CONFIRMED: late payment.captured / verify after an earlier failed attempt (QA-30).
+        'PAYMENT_FAILED' => ['PENDING_PAYMENT', 'CANCELLED', 'CONFIRMED'],
         'CONFIRMED' => ['PROCESSING', 'CANCELLED'],
         'PROCESSING' => ['PACKED', 'CANCELLED'],
         'PACKED' => ['SHIPPED', 'CANCELLED'],

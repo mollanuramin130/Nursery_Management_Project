@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
@@ -20,8 +21,9 @@ const _filters = [
   (id: 'CANCELLED', label: 'Cancelled'),
 ];
 
+/// Aligned with order detail + Customer Web (`Order placed` for PENDING_PAYMENT).
 const _statusLabels = {
-  'PENDING_PAYMENT': 'Payment pending',
+  'PENDING_PAYMENT': 'Order placed',
   'PAYMENT_FAILED': 'Payment failed',
   'CONFIRMED': 'Confirmed',
   'PROCESSING': 'Processing',
@@ -30,6 +32,10 @@ const _statusLabels = {
   'OUT_FOR_DELIVERY': 'Out for delivery',
   'DELIVERED': 'Delivered',
   'CANCELLED': 'Cancelled',
+  'RETURN_REQUESTED': 'Return requested',
+  'RETURNED': 'Returned',
+  'REFUNDED': 'Refunded',
+  'DELIVERY_FAILED': 'Delivery failed',
 };
 
 class OrdersScreen extends StatefulWidget {
@@ -77,14 +83,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final query = <String, String>{'per_page': '20'};
     if (_filter.isNotEmpty) query['status'] = _filter;
     setState(() {
-      _future = context.read<ApiClient>().getData(
-        '/orders',
-        query: query,
-        map: (data) => (data as List)
-            .whereType<Map>()
-            .map((e) => OrderSummary.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-      );
+      _future = context.read<CatalogRepository>().getOrders().then((r) {
+        var list = r.data;
+        if (_filter.isNotEmpty) {
+          list = list
+              .where((o) => o.status.toUpperCase() == _filter.toUpperCase())
+              .toList();
+        }
+        return list;
+      });
     });
   }
 

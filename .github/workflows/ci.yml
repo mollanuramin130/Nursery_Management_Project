@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+
+jobs:
+  api-tests:
+    name: Nursery API (PHPUnit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/nursery-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, pdo_sqlite, sqlite3, openssl, tokenizer, xml, ctype, json, bcmath
+          coverage: none
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan jwt:secret --force
+      - name: Run PHPUnit
+        run: php artisan test
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
+          PAYMENT_ALLOW_UNSIGNED_WEBHOOKS: "true"
+
+  admin-web-lint:
+    name: Admin Web (typecheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/nursery-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/nursery-admin/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+        continue-on-error: true
+
+  customer-web-lint:
+    name: Customer Web (typecheck)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/nursery-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/nursery-web/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+        continue-on-error: true

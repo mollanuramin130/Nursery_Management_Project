@@ -117,7 +117,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "System",
     items: [
-      { label: "Users & Roles", href: "/coming-soon?feature=Users", permission: "users.manage" },
+      { label: "Users & Roles", href: "/users", permission: "users.manage" },
       { label: "Settings", href: "/settings", permission: "users.manage" },
       { label: "Audit Logs", href: "/audit-logs", permission: "users.manage" },
     ],

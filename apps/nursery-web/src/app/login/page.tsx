@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState, Suspense } from "react";
+import { FormEvent, useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { sanitizeNext } from "@/lib/auth-redirect";
+import { authUserMessage } from "@/lib/auth-messages";
+import { resolveBrowserApiBaseUrl } from "@/lib/api-base";
+import { probeApiHealth, type ApiHealthState } from "@/lib/api-health";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
@@ -22,18 +25,27 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [apiHealth, setApiHealth] = useState<ApiHealthState>({ status: "checking" });
 
   const showDemo = process.env.NODE_ENV === "development";
 
+  useEffect(() => {
+    void probeApiHealth(resolveBrowserApiBaseUrl()).then(setApiHealth);
+  }, []);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (apiHealth.status === "down") {
+      toast(apiHealth.detail, "error");
+      return;
+    }
     try {
       await login(email, password);
       await fetchCart();
       toast("Welcome back");
       router.push(next);
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Login failed", "error");
+      toast(authUserMessage(err, "Login failed"), "error");
     }
   }
 
@@ -53,6 +65,24 @@ function LoginForm() {
           onSubmit={onSubmit}
           className="space-y-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-[var(--shadow-sm)]"
         >
+          {apiHealth.status === "checking" ? (
+            <p className="rounded-md bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-muted)]">
+              Checking API connection…
+            </p>
+          ) : null}
+          {apiHealth.status === "down" ? (
+            <p
+              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+              role="alert"
+            >
+              {apiHealth.detail}
+            </p>
+          ) : null}
+          {apiHealth.status === "ok" && showDemo ? (
+            <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+              API ready · demo: asha@example.com / Secret@123
+            </p>
+          ) : null}
           <Field label="Email" htmlFor="email">
             <Input
               id="email"

@@ -39,6 +39,11 @@ class AdminFulfillmentController extends Controller
         return ApiResponse::success($this->fulfillment->showOrder($id), 'Fulfillment order retrieved');
     }
 
+    public function drivers(): JsonResponse
+    {
+        return ApiResponse::success($this->fulfillment->listAssignableDrivers(), 'Drivers retrieved');
+    }
+
     public function startPicking(Request $request, int $id): JsonResponse
     {
         /** @var User $user */
@@ -101,6 +106,26 @@ class AdminFulfillmentController extends Controller
         );
     }
 
+    public function pickScan(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:120'],
+            'increment_by' => ['nullable', 'integer', 'min:0', 'max:999'],
+        ]);
+        /** @var User $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            $this->fulfillment->verifyPickScan(
+                $id,
+                $validated['code'],
+                (int) ($validated['increment_by'] ?? 1),
+                $user->id,
+            ),
+            'Pick scan verified',
+        );
+    }
+
     public function pack(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
@@ -153,12 +178,53 @@ class AdminFulfillmentController extends Controller
 
     public function deliver(Request $request, int $id): JsonResponse
     {
+        $validated = $request->validate([
+            'method' => ['nullable', 'string', 'in:note,otp,photo_url,signature_url'],
+            'note' => ['nullable', 'string', 'max:255'],
+            'otp_last4' => ['nullable', 'string', 'max:4'],
+            'photo_url' => ['nullable', 'url', 'max:500'],
+            'signature_url' => ['nullable', 'url', 'max:500'],
+        ]);
         /** @var User $user */
         $user = $request->user();
 
         return ApiResponse::success(
-            $this->fulfillment->markDelivered($id, $user->id),
+            $this->fulfillment->markDelivered($id, $user->id, $validated),
             'Marked delivered',
+        );
+    }
+
+    public function assignDriver(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'driver_user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+        /** @var User $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            $this->fulfillment->assignDriver($id, (int) $validated['driver_user_id'], $user->id),
+            'Driver assigned',
+        );
+    }
+
+    public function reschedule(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'eta_date' => ['required', 'date', 'after_or_equal:today'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ]);
+        /** @var User $user */
+        $user = $request->user();
+
+        return ApiResponse::success(
+            $this->fulfillment->rescheduleDelivery(
+                $id,
+                $validated['eta_date'],
+                $validated['note'] ?? null,
+                $user->id,
+            ),
+            'Delivery rescheduled',
         );
     }
 

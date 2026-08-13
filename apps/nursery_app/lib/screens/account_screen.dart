@@ -159,6 +159,18 @@ class AccountScreen extends StatelessWidget {
           ),
           _tile(
             context,
+            title: 'My returns',
+            icon: Icons.assignment_return_outlined,
+            onTap: () => context.push('/account/returns'),
+          ),
+          _tile(
+            context,
+            title: 'My reviews',
+            icon: Icons.rate_review_outlined,
+            onTap: () => context.push('/account/reviews'),
+          ),
+          _tile(
+            context,
             title: 'Addresses',
             icon: Icons.location_on_outlined,
             onTap: () => context.push('/account/addresses'),

@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "suggestions": [
+      { "term": "money plant", "product_ids": [101, 204] },
+      { "term": "money", "product_ids": [101, 204] },
+      { "term": "snake", "product_ids": [102] },
+      { "term": "plant", "product_ids": [101, 102, 103, 104, 105, 107, 112, 119, 201, 202, 203, 204] },
+      { "term": "indoor", "product_ids": [101, 102, 103, 104, 105, 112, 201, 202, 204] },
+      { "term": "tulsi", "product_ids": [107] },
+      { "term": "palm", "product_ids": [104] },
+      { "term": "aloe", "product_ids": [112] },
+      { "term": "monstera", "product_ids": [201] },
+      { "term": "bamboo", "product_ids": [202] },
+      { "term": "rose", "product_ids": [203] },
+      { "term": "hibiscus", "product_ids": [119] },
+      { "term": "jade", "product_ids": [105] }
+    ]
+  },
+  "errors": null,
+  "meta": { "source": "mock" }
+}

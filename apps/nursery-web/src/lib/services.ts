@@ -3,8 +3,8 @@ import type { Cart, ProductSummary } from "@/lib/types";
 
 export const cartService = {
   get: () => apiGet<Cart>("/cart"),
-  addItem: (product_id: number, quantity = 1, product_variant_id?: number) =>
-    apiSend<Cart>("post", "/cart/items", { product_id, quantity, product_variant_id }),
+  addItem: (product_id: number, quantity = 1, variant_id?: number) =>
+    apiSend<Cart>("post", "/cart/items", { product_id, quantity, variant_id }),
   updateItem: (itemId: number, quantity: number) =>
     apiSend<Cart>("put", `/cart/items/${itemId}`, { quantity }),
   removeItem: (itemId: number) => apiSend<Cart>("delete", `/cart/items/${itemId}`),

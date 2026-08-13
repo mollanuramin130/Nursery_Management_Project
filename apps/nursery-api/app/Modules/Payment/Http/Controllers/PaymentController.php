@@ -17,8 +17,11 @@ class PaymentController extends Controller
     {
         $validated = $request->validate([
             'order_id' => ['required', 'integer'],
-            'method' => ['nullable', 'string', 'in:razorpay'],
+            'method' => ['nullable', 'string', 'in:razorpay,upi'],
+            'mode' => ['nullable', 'string', 'in:dynamic_qr,upi_intent,checkout'],
             'return_url' => ['nullable', 'url'],
+            // Amount is never authoritative from client; rejected in service if mismatched.
+            'amount' => ['nullable', 'numeric'],
         ]);
 
         /** @var User $user */

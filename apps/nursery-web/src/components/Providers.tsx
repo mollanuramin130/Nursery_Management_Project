@@ -7,6 +7,7 @@ import { useWishlistStore } from "@/store/wishlist";
 import { ToastViewport } from "@/components/ui/ToastViewport";
 import { MiniCartDrawer } from "@/components/cart/MiniCartDrawer";
 import { MobileSearchOverlay } from "@/components/layout/MobileSearchOverlay";
+import { NetworkStatusBanner } from "@/components/layout/NetworkStatusBanner";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const bootstrap = useAuthStore((s) => s.bootstrap);
@@ -29,6 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <NetworkStatusBanner />
       {children}
       <MiniCartDrawer />
       <MobileSearchOverlay />

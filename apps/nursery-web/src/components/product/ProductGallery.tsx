@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { SafeImage } from "@/components/ui/SafeImage";
 
 type Img = { id?: number; url: string; alt?: string | null; is_primary?: boolean };
 
@@ -52,7 +52,7 @@ export function ProductGallery({
         onClick={() => setLightbox(true)}
         aria-label={`View larger image of ${name}`}
       >
-        <Image
+        <SafeImage
           key={current.url}
           src={current.url}
           alt={current.alt || name}
@@ -81,7 +81,7 @@ export function ProductGallery({
                   : "border-transparent opacity-80 hover:opacity-100",
               )}
             >
-              <Image src={img.url} alt="" fill className="object-cover" sizes="64px" />
+              <SafeImage src={img.url} alt="" fill className="object-cover" sizes="64px" />
             </button>
           ))}
         </div>
@@ -106,7 +106,7 @@ export function ProductGallery({
             className="relative h-[min(85vh,900px)] w-full max-w-4xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
+            <SafeImage
               src={(list[active] ?? current).url}
               alt={(list[active] ?? current).alt || name}
               fill

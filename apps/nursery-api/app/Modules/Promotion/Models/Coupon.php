@@ -3,6 +3,7 @@
 namespace App\Modules\Promotion\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Coupon extends Model
@@ -28,6 +29,11 @@ class Coupon extends Model
             'stackable' => 'boolean',
             'meta' => 'array',
         ];
+    }
+
+    public function redemptions(): HasMany
+    {
+        return $this->hasMany(CouponRedemption::class);
     }
 
     public function isCurrentlyValid(): bool

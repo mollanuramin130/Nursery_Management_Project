@@ -1112,7 +1112,7 @@ Snapshot columns protect history if product name/price changes later.
 #### `refunds` / `return_requests` / `return_items` / `shipments` / `shipment_events`
 
 Mirror order style: FKs + status + money/qty snapshots + `meta` + timestamps.  
-Tracking fields on `shipments`: `carrier`, `tracking_number`, `tracking_url`, `status`.
+Tracking fields on `shipments`: `carrier`, `tracking_number`, `tracking_url`, `status`, `eta_date`, `assigned_driver_user_id` (Phase 20), `meta` (POD / reschedule).
 
 ---
 

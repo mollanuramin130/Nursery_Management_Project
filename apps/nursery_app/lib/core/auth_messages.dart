@@ -26,11 +26,29 @@ abstract final class AuthMessages {
       return 'The request timed out. Please try again.';
     }
 
-    if (statusCode == 401 ||
-        lower.contains('invalid email or password') ||
+    if (lower.contains('account is blocked') ||
+        lower.contains('auth_account_blocked') ||
+        lower.contains('currently unavailable')) {
+      return 'Your account is currently unavailable. Please contact support.';
+    }
+
+    if (lower.contains('invalid email or password') ||
         lower.contains('invalid credentials') ||
-        lower.contains('unauthenticated')) {
-      return 'Email or password is incorrect.';
+        lower.contains('auth_invalid_credentials')) {
+      return 'Invalid email or password.';
+    }
+
+    // Generic 401 on login endpoints often means bad credentials (legacy mapping).
+    if (statusCode == 401 &&
+        (lower.contains('unauthenticated') || text.isEmpty)) {
+      return 'Invalid email or password.';
+    }
+
+    if (statusCode == 429 ||
+        lower.contains('too many attempts') ||
+        lower.contains('too many requests') ||
+        lower.contains('rate_limited')) {
+      return 'You tried too many times. Please wait about a minute, then try again.';
     }
 
     if (statusCode == 409 || lower.contains('already registered')) {

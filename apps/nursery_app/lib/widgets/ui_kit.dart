@@ -242,6 +242,12 @@ class ErrorStateView extends StatelessWidget {
       return 'Something went wrong while connecting to the nursery. Please try again.';
     }
     final lower = raw.toLowerCase();
+    if (lower.contains('too many attempts') ||
+        lower.contains('too many requests') ||
+        lower.contains('rate_limited') ||
+        lower.contains('rate limit')) {
+      return 'You tried too many times. Please wait about a minute, then try again.';
+    }
     if (lower.contains('exception') ||
         lower.contains('dio') ||
         lower.contains('socket') ||
@@ -481,12 +487,14 @@ class QtySelector extends StatelessWidget {
     required this.onChanged,
     this.min = 1,
     this.max = 99,
+    this.enabled = true,
   });
 
   final int value;
   final ValueChanged<int> onChanged;
   final int min;
   final int max;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -506,7 +514,9 @@ class QtySelector extends StatelessWidget {
                 minWidth: AppTouch.min,
                 minHeight: AppTouch.min,
               ),
-              onPressed: value <= min ? null : () => onChanged(value - 1),
+              onPressed: !enabled || value <= min
+                  ? null
+                  : () => onChanged(value - 1),
               icon: const Icon(Icons.remove_rounded, size: 20),
             ),
             ConstrainedBox(
@@ -523,7 +533,9 @@ class QtySelector extends StatelessWidget {
                 minWidth: AppTouch.min,
                 minHeight: AppTouch.min,
               ),
-              onPressed: value >= max ? null : () => onChanged(value + 1),
+              onPressed: !enabled || value >= max
+                  ? null
+                  : () => onChanged(value + 1),
               icon: const Icon(Icons.add_rounded, size: 20),
             ),
           ],

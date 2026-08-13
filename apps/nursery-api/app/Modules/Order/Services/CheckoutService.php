@@ -10,6 +10,7 @@ use App\Modules\Delivery\Models\ShippingMethod;
 use App\Modules\Inventory\Models\Warehouse;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Notification\Services\NotificationService;
+use App\Modules\Notification\Services\OrderNotificationDispatcher;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Order\Models\Order;
 use App\Modules\Order\Models\OrderItem;
@@ -29,6 +30,7 @@ class CheckoutService
         private readonly InventoryService $inventory,
         private readonly OrderStateMachine $stateMachine,
         private readonly NotificationService $notifications,
+        private readonly OrderNotificationDispatcher $orderNotifications,
     ) {}
 
     public function preview(User $user, array $payload): array
@@ -126,7 +128,7 @@ class CheckoutService
             $warehouseId = Warehouse::query()->where('is_default', true)->value('id')
                 ?? Warehouse::query()->value('id');
 
-            $order = Order::query()->create([
+            $orderPayload = [
                 'order_number' => $this->nextOrderNumber(),
                 'user_id' => $user->id,
                 'status' => 'PENDING_PAYMENT',
@@ -137,7 +139,6 @@ class CheckoutService
                 'shipping_total' => $totals['shipping_total'],
                 'grand_total' => $totals['grand_total'],
                 'coupon_code' => $totals['coupon_code'],
-                'campaign_id' => isset($payload['campaign_id']) ? (int) $payload['campaign_id'] : null,
                 'payment_method' => $payload['payment_method'] ?? 'razorpay',
                 'shipping_method_id' => $totals['shipping_method']?->id,
                 'notes' => $payload['notes'] ?? null,
@@ -148,7 +149,14 @@ class CheckoutService
                 'platform' => $platform,
                 'request_id' => $requestId,
                 'warehouse_id' => $warehouseId,
-            ]);
+            ];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'campaign_id')) {
+                $orderPayload['campaign_id'] = isset($payload['campaign_id'])
+                    ? (int) $payload['campaign_id']
+                    : null;
+            }
+
+            $order = Order::query()->create($orderPayload);
 
             foreach ($totals['items'] as $line) {
                 OrderItem::query()->create([
@@ -192,14 +200,11 @@ class CheckoutService
                 $order = $this->stateMachine->transition($order, 'CONFIRMED', $user->id, 'COD accepted', $requestId);
                 $this->recordCouponRedemption($order);
                 $this->clearUserCart($user);
-                $this->notifications->notify(
-                    $user->id,
-                    'order_confirmed',
-                    'Order confirmed',
-                    "Order {$order->order_number} is confirmed (COD).",
-                    ['order_id' => $order->id, 'order_number' => $order->order_number],
-                );
+                $this->orderNotifications->notifyCustomerStatus($order, 'CONFIRMED');
             }
+
+            // Staff: new order after successful create (COD confirmed or PENDING_PAYMENT online).
+            $this->orderNotifications->notifyNewOrder($order->fresh());
 
             return $this->summary($order->fresh(['items']));
         });
@@ -250,7 +255,7 @@ class CheckoutService
             ->where('user_id', $user->id)
             ->withCount('items')
             ->with([
-                'items' => fn ($rel) => $rel->orderBy('id'),
+                'items' => fn ($rel) => $rel->orderBy('id')->limit(1),
                 'latestPayment',
                 'shipment',
                 'returnRequests',
@@ -510,7 +515,7 @@ class CheckoutService
             if ($wasCommitted
                 && $payment
                 && $payment->status === 'success'
-                && ($order->payment_method === 'razorpay' || $payment->provider === 'razorpay')) {
+                && ($order->payment_method === 'razorpay' || $order->payment_method === 'upi' || $payment->provider === 'razorpay')) {
                 $payment->status = 'refund_pending';
                 $payment->failure_code = 'cancel_refund_pending';
                 $payment->failure_message = 'Refund pending after customer cancellation';
@@ -523,6 +528,8 @@ class CheckoutService
             }
 
             $order = $this->stateMachine->transition($order, 'CANCELLED', $user->id, $note);
+
+            $this->orderNotifications->notifyCustomerCancelled($order->fresh(), true);
 
             return [
                 'id' => $order->id,
@@ -673,6 +680,13 @@ class CheckoutService
 
     public function canReorder(Order $order): bool
     {
+        if (isset($order->items_count)) {
+            return (int) $order->items_count > 0;
+        }
+        if ($order->relationLoaded('items')) {
+            return $order->items->isNotEmpty();
+        }
+
         return $order->items()->exists();
     }
 
@@ -717,7 +731,8 @@ class CheckoutService
 
         if ($order->status === 'PENDING_PAYMENT') {
             $steps = [
-                'PENDING_PAYMENT' => ['title' => 'Awaiting payment', 'description' => 'Complete payment to confirm your order.'],
+                // Customer-facing badge/timeline parity (QA-35): "Order placed".
+                'PENDING_PAYMENT' => ['title' => 'Order placed', 'description' => 'Complete payment to confirm your order.'],
             ];
         } elseif ($order->status === 'PAYMENT_FAILED') {
             $steps = [
@@ -893,32 +908,13 @@ class CheckoutService
             'shipping_total' => $shippingTotal,
             'grand_total' => $grand,
             'shipping_method' => $shipping,
-            'free_delivery' => [
-                'enabled' => $threshold > 0,
-                'threshold' => $threshold,
-                'remaining' => round(max(0, $threshold - $merchandise), 2),
-                'qualifies' => $qualifiesFree,
-            ],
+            'free_delivery' => $this->carts->freeDeliveryMeta($merchandise),
         ];
     }
 
     private function assertCouponUsageAvailable(Coupon $coupon, User $user): void
     {
-        if ($coupon->usage_limit_total !== null) {
-            $total = CouponRedemption::query()->where('coupon_id', $coupon->id)->count();
-            if ($total >= (int) $coupon->usage_limit_total) {
-                throw new ApiException('This coupon has reached its usage limit', 400, 'BAD_REQUEST');
-            }
-        }
-        if ($coupon->usage_limit_per_user !== null) {
-            $perUser = CouponRedemption::query()
-                ->where('coupon_id', $coupon->id)
-                ->where('user_id', $user->id)
-                ->count();
-            if ($perUser >= (int) $coupon->usage_limit_per_user) {
-                throw new ApiException('You have already used this coupon the maximum number of times', 400, 'BAD_REQUEST');
-            }
-        }
+        $this->carts->assertCouponUsageAvailable($coupon, $user);
     }
 
     private function nextOrderNumber(): string

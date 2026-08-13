@@ -18,6 +18,7 @@ import {
 import { hasPermission } from "@/lib/auth/permissions";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { useAuthStore } from "@/store/auth";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 function tone(status: string) {
   if (status === "COMPLETED") return "success" as const;
@@ -33,6 +34,7 @@ function ReturnsPageInner() {
   const canView = hasPermission(user, "returns.view");
   const [status, setStatus] = useState(initialStatus);
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
   const [rows, setRows] = useState<AdminReturnRow[]>([]);
   const [dash, setDash] = useState<ReturnsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,12 @@ function ReturnsPageInner() {
     setError(null);
     try {
       const [list, d] = await Promise.all([
-        fetchReturns({ status: status || undefined, q: q || undefined, page, per_page: 30 }),
+        fetchReturns({
+          status: status || undefined,
+          q: debouncedQ || undefined,
+          page,
+          per_page: 30,
+        }),
         fetchReturnsDashboard(),
       ]);
       setRows(list.data);
@@ -66,7 +73,7 @@ function ReturnsPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [canView, status, q, page]);
+  }, [canView, status, debouncedQ, page]);
 
   useEffect(() => {
     void load();

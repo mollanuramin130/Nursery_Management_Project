@@ -23,6 +23,10 @@ import {
   type AdminReturnDetail,
 } from "@/lib/api/returns";
 import { hasPermission } from "@/lib/auth/permissions";
+import {
+  assertLocalStubRefundAllowed,
+  canOfferLocalStubRefund,
+} from "@/lib/refund-safety";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
@@ -37,6 +41,7 @@ export default function ReturnDetailPage() {
   const canManage = hasPermission(user, "returns.manage");
   const canInspect = hasPermission(user, "returns.inspect");
   const canRefund = hasPermission(user, "payments.refund");
+  const stubRefundsAllowed = canOfferLocalStubRefund();
   const push = useToastStore((s) => s.push);
 
   const [ret, setRet] = useState<AdminReturnDetail | null>(null);
@@ -157,23 +162,27 @@ export default function ReturnDetailPage() {
             Mark picked up
           </Button>
         ) : null}
-        {actions.can_refund && canRefund ? (
+        {actions.can_refund && canRefund && stubRefundsAllowed ? (
           <Button
             type="button"
             disabled={busy}
             onClick={() =>
-              void run(
-                () =>
-                  refundReturn(id, {
-                    amount: ret.suggested_refund_amount,
-                    idempotency_key: `return-${id}-refund`,
-                  }),
-                "Refund recorded",
-              )
+              void run(async () => {
+                assertLocalStubRefundAllowed();
+                return refundReturn(id, {
+                  amount: ret.suggested_refund_amount,
+                  idempotency_key: `return-${id}-refund`,
+                });
+              }, "Refund recorded")
             }
           >
             Record refund ({formatMoney(ret.suggested_refund_amount ?? 0)})
           </Button>
+        ) : null}
+        {actions.can_refund && canRefund && !stubRefundsAllowed ? (
+          <p className="text-sm text-[var(--admin-danger)]">
+            Production build: stub refund actions are disabled (API also refuses).
+          </p>
         ) : null}
       </div>
 
@@ -376,7 +385,12 @@ export default function ReturnDetailPage() {
                 </div>
               ))}
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={createRefund} onChange={(e) => setCreateRefund(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={createRefund && stubRefundsAllowed}
+                  disabled={!stubRefundsAllowed || !canRefund}
+                  onChange={(e) => setCreateRefund(e.target.checked)}
+                />
                 Create refund after inspection (local stub outside production)
               </label>
               <Button
@@ -392,7 +406,7 @@ export default function ReturnDetailPage() {
                           rejected_qty: Math.floor(Number(insp[item.id]?.rejected) || 0),
                           disposition: insp[item.id]?.disposition ?? "SELLABLE",
                         })),
-                        create_refund: createRefund && canRefund,
+                        create_refund: createRefund && canRefund && stubRefundsAllowed,
                         idempotency_key: `return-${id}-refund`,
                       }),
                     "Inspection completed",

@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:nursery_app/core/config.dart';
+import 'package:nursery_app/core/network_errors.dart';
 import 'package:nursery_app/core/session_storage.dart';
+import 'package:nursery_app/core/token_refresh_coordinator.dart';
+import 'package:nursery_app/data/mock_data_mode.dart';
 
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode, this.errorCode});
@@ -14,7 +17,7 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
-  ApiClient(this._storage) {
+  ApiClient(this._storage, {this.onSessionExpired}) {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
@@ -32,6 +35,50 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          // QA-37 DEBUG — network simulation / offline simulation (no Wi‑Fi toggle).
+          final sim = networkSimulation?.call() ?? NetworkSimulation.off;
+          final mode = mockDataMode?.call() ?? MockDataMode.auto;
+          // reconnect is a UI control — treated as off for transport.
+          if (mode == MockDataMode.offlineSimulation ||
+              sim == NetworkSimulation.offline) {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.connectionError,
+                error: 'Simulated offline',
+                message: 'Failed host lookup (simulated)',
+              ),
+            );
+          }
+          if (sim == NetworkSimulation.timeout) {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.receiveTimeout,
+                message: 'Simulated timeout',
+              ),
+            );
+          }
+          if (sim == NetworkSimulation.apiError) {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.badResponse,
+                response: Response(
+                  requestOptions: options,
+                  statusCode: 503,
+                  data: {
+                    'success': false,
+                    'message': 'GreenLeaf is temporarily unavailable.',
+                  },
+                ),
+              ),
+            );
+          }
+          if (sim == NetworkSimulation.slow) {
+            await Future<void>.delayed(const Duration(seconds: 3));
+          }
+
           final access = await _storage.getAccessToken();
           if (access != null && access.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $access';
@@ -65,7 +112,7 @@ class ApiClient {
               request.path.contains('/auth/reset-password');
 
           if (response?.statusCode == 401 && !alreadyRetried && !isAuthCall) {
-            final refreshed = await _refreshTokens();
+            final refreshed = await _refreshCoordinator.run(_refreshTokens);
             if (refreshed) {
               final opts = request.copyWith(
                 extra: {...request.extra, 'retried': true},
@@ -90,6 +137,22 @@ class ApiClient {
 
   final SessionStorage _storage;
   late final Dio _dio;
+  final TokenRefreshCoordinator _refreshCoordinator = TokenRefreshCoordinator();
+
+  /// Called after refresh fails and tokens are cleared (QA-28).
+  /// Clears in-memory auth so UI does not keep a stale signed-in user.
+  void Function()? onSessionExpired;
+
+  /// QA-37 — optional hooks for global connectivity banner.
+  void Function(ClassifiedNetworkError error)? onTransportFailure;
+  void Function()? onTransportSuccess;
+
+  /// QA-37 DEBUG — wired from OfflineController in main.dart.
+  NetworkSimulation Function()? networkSimulation;
+  MockDataMode Function()? mockDataMode;
+
+  /// Exposed for unit tests (QA-12).
+  TokenRefreshCoordinator get refreshCoordinator => _refreshCoordinator;
 
   Dio get raw => _dio;
 
@@ -114,6 +177,8 @@ class ApiClient {
       final res = await Dio(
         BaseOptions(
           baseUrl: AppConfig.apiBaseUrl,
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -124,6 +189,7 @@ class ApiClient {
       final body = res.data as Map<String, dynamic>;
       if (body['success'] != true) {
         await _storage.clearTokens();
+        onSessionExpired?.call();
         return false;
       }
       final data = body['data'] as Map<String, dynamic>;
@@ -132,8 +198,19 @@ class ApiClient {
         refreshToken: data['refresh_token'] as String,
       );
       return true;
+    } on DioException catch (e) {
+      // QA-37: transport failures must NOT log the user out.
+      if (e.response == null) {
+        return false;
+      }
+      final status = e.response?.statusCode;
+      if (status == 401 || status == 403) {
+        await _storage.clearTokens();
+        onSessionExpired?.call();
+      }
+      return false;
     } catch (_) {
-      await _storage.clearTokens();
+      // Unknown non-Dio failure — keep tokens; treat as transient.
       return false;
     }
   }
@@ -145,8 +222,11 @@ class ApiClient {
   }) async {
     try {
       final res = await _dio.get(path, queryParameters: query);
+      onTransportSuccess?.call();
       return _unwrap(res.data, map);
     } on DioException catch (e) {
+      final classified = classifyDioException(e);
+      onTransportFailure?.call(classified);
       throw _toApiException(e);
     }
   }
@@ -159,6 +239,7 @@ class ApiClient {
   }) async {
     try {
       final res = await _dio.get(path, queryParameters: query);
+      onTransportSuccess?.call();
       final body = res.data as Map<String, dynamic>;
       if (body['success'] != true) {
         throw ApiException(
@@ -171,6 +252,7 @@ class ApiClient {
           : null;
       return (data: map(body['data']), meta: meta);
     } on DioException catch (e) {
+      onTransportFailure?.call(classifyDioException(e));
       throw _toApiException(e);
     }
   }
@@ -188,8 +270,10 @@ class ApiClient {
         data: body,
         options: Options(method: method, headers: headers),
       );
+      onTransportSuccess?.call();
       return _unwrap(res.data, map);
     } on DioException catch (e) {
+      onTransportFailure?.call(classifyDioException(e));
       throw _toApiException(e);
     }
   }
@@ -205,32 +289,65 @@ class ApiClient {
     return map(body['data']);
   }
 
+  String? _metaErrorCode(dynamic data) {
+    if (data is! Map) return null;
+    final meta = data['meta'];
+    if (meta is Map) return meta['error_code']?.toString();
+    return null;
+  }
+
   ApiException _toApiException(DioException e) {
+    // Keep classification aligned with network_errors.dart.
     final data = e.response?.data;
-    if (data is Map && data['message'] != null) {
-      return ApiException(
-        data['message'].toString(),
-        statusCode: e.response?.statusCode,
-        errorCode: (data['meta'] as Map?)?['error_code']?.toString(),
-      );
-    }
+    final status = e.response?.statusCode;
+    final apiMsg =
+        data is Map && data['message'] != null ? data['message'].toString() : null;
+    final code = _metaErrorCode(data);
+
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout) {
       return ApiException(
-        'The request timed out. Please try again.',
-        statusCode: e.response?.statusCode,
+        'Connection is taking too long. Please try again.',
+        statusCode: status,
       );
     }
-    if (e.type == DioExceptionType.connectionError) {
+    if (e.type == DioExceptionType.connectionError ||
+        (e.type == DioExceptionType.unknown && e.response == null)) {
       return ApiException(
-        'Unable to connect. Please check your internet connection.',
-        statusCode: e.response?.statusCode,
+        "You're offline. Check your internet connection.",
+        statusCode: status,
       );
+    }
+    if (status == 429) {
+      return ApiException(
+        apiMsg != null &&
+                !RegExp(r'^too many attempts\.?$', caseSensitive: false)
+                    .hasMatch(apiMsg.trim())
+            ? apiMsg
+            : "You're doing that too quickly. Please wait a moment, then try again.",
+        statusCode: status,
+        errorCode: code,
+      );
+    }
+    if (status == 502 || status == 503 || status == 504) {
+      return ApiException(
+        'GreenLeaf is temporarily unavailable. Please try again.',
+        statusCode: status,
+      );
+    }
+    if (status == 500) {
+      return ApiException(
+        'Something went wrong on our side. Please try again.',
+        statusCode: status,
+      );
+    }
+    if (apiMsg != null && apiMsg.isNotEmpty) {
+      return ApiException(apiMsg, statusCode: status, errorCode: code);
     }
     return ApiException(
-      'Unable to connect. Please check your internet connection.',
-      statusCode: e.response?.statusCode,
+      'GreenLeaf is temporarily unavailable. Please try again.',
+      statusCode: status,
     );
   }
 }

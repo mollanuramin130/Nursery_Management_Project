@@ -15,17 +15,60 @@ class InventoryService
 {
     public function sellableQty(int $productId, ?int $variantId = null): int
     {
-        $query = InventoryItem::query()->where('product_id', $productId);
+        $map = $this->sellableQtyMap([[
+            'product_id' => $productId,
+            'variant_id' => $variantId,
+        ]]);
 
-        if ($variantId) {
-            $query->where('product_variant_id', $variantId);
-        } else {
-            $query->whereNull('product_variant_id');
+        return $map[$this->sellableKey($productId, $variantId)] ?? 0;
+    }
+
+    /**
+     * Batch sellable quantities for many product/variant pairs (QA-12 — avoids cart N+1).
+     *
+     * @param  list<array{product_id:int, variant_id?:int|null}>  $pairs
+     * @return array<string, int> keyed by "{productId}:{variantId|0}"
+     */
+    public function sellableQtyMap(array $pairs): array
+    {
+        $keys = [];
+        $productIds = [];
+        foreach ($pairs as $pair) {
+            $pid = (int) ($pair['product_id'] ?? 0);
+            if ($pid <= 0) {
+                continue;
+            }
+            $vid = $pair['variant_id'] ?? null;
+            $vid = $vid !== null ? (int) $vid : null;
+            $key = $this->sellableKey($pid, $vid);
+            $keys[$key] = ['product_id' => $pid, 'variant_id' => $vid];
+            $productIds[$pid] = true;
         }
 
-        return (int) $query->get()->sum(function (InventoryItem $item) {
-            return $this->sellable($item);
-        });
+        if ($keys === []) {
+            return [];
+        }
+
+        $items = InventoryItem::query()
+            ->whereIn('product_id', array_keys($productIds))
+            ->get(['product_id', 'product_variant_id', 'qty_on_hand', 'qty_reserved', 'qty_damaged']);
+
+        $totals = array_fill_keys(array_keys($keys), 0);
+        foreach ($items as $item) {
+            $vid = $item->product_variant_id !== null ? (int) $item->product_variant_id : null;
+            $key = $this->sellableKey((int) $item->product_id, $vid);
+            if (! array_key_exists($key, $totals)) {
+                continue;
+            }
+            $totals[$key] += $this->sellable($item);
+        }
+
+        return $totals;
+    }
+
+    public function sellableKey(int $productId, ?int $variantId): string
+    {
+        return $productId.':'.($variantId ?? 0);
     }
 
     public function sellable(InventoryItem $item): int
@@ -181,6 +224,15 @@ class InventoryService
         int $perPage = 50,
         int $page = 1,
     ): array {
+        $perPage = min(100, max(1, $perPage));
+        $page = max(1, $page);
+
+        $sellableExpr = 'GREATEST(0, qty_on_hand - qty_reserved - qty_damaged)';
+        // SQLite lacks GREATEST in older builds — use MAX of two args via CASE.
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $sellableExpr = 'CASE WHEN (qty_on_hand - qty_reserved - qty_damaged) > 0 THEN (qty_on_hand - qty_reserved - qty_damaged) ELSE 0 END';
+        }
+
         $query = InventoryItem::query()
             ->with(['product.categories', 'product.images', 'warehouse'])
             ->orderBy('id');
@@ -198,32 +250,36 @@ class InventoryService
             });
         }
 
-        // Status/low-stock filters need sellable math — filter in PHP after load for correctness on SQLite.
-        $all = $query->get()->map(function (InventoryItem $item) use ($lowStockOnly, $status) {
+        if ($lowStockOnly === true) {
+            $query->whereRaw("{$sellableExpr} <= low_stock_threshold");
+        }
+
+        $status = $status ? strtoupper($status) : null;
+        if ($status === 'OUT_OF_STOCK') {
+            $query->whereRaw("{$sellableExpr} <= 0");
+        } elseif ($status === 'LOW_STOCK') {
+            $query->whereRaw("{$sellableExpr} > 0 AND {$sellableExpr} <= low_stock_threshold");
+        } elseif ($status === 'IN_STOCK') {
+            $query->whereRaw("{$sellableExpr} > low_stock_threshold");
+        }
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        $rows = collect($paginator->items())->map(function (InventoryItem $item) {
             $sellable = $this->sellable($item);
             $isLow = $sellable <= (int) $item->low_stock_threshold;
             $stockStatus = $sellable <= 0 ? 'OUT_OF_STOCK' : ($isLow ? 'LOW_STOCK' : 'IN_STOCK');
 
-            if ($lowStockOnly === true && ! $isLow) {
-                return null;
-            }
-            if ($status && $stockStatus !== strtoupper($status)) {
-                return null;
-            }
-
             return $this->serializeItem($item, $sellable, $isLow, $stockStatus);
-        })->filter()->values();
-
-        $total = $all->count();
-        $rows = $all->forPage($page, $perPage)->values()->all();
+        })->values()->all();
 
         return [
             'data' => $rows,
             'pagination' => [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => $total,
-                'last_page' => max(1, (int) ceil($total / max(1, $perPage))),
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ],
         ];
     }

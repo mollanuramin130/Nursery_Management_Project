@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { sanitizeNext } from "@/lib/auth-redirect";
+import { authUserMessage } from "@/lib/auth-messages";
+import { isPasswordValid, PASSWORD_HINT, passwordRequirementErrors } from "@/lib/password-rules";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
@@ -26,8 +28,14 @@ function RegisterForm() {
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const reqErrors = passwordRequirementErrors(password);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!isPasswordValid(password)) {
+      toast(PASSWORD_HINT, "error");
+      return;
+    }
     if (password !== confirm) {
       toast("Passwords do not match", "error");
       return;
@@ -44,7 +52,7 @@ function RegisterForm() {
       toast("Welcome to the nursery");
       router.push(next);
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Registration failed", "error");
+      toast(authUserMessage(err, "Registration failed"), "error");
     }
   }
 
@@ -111,6 +119,14 @@ function RegisterForm() {
                 {showPassword ? "Hide" : "Show"}
               </button>
             </div>
+            <p className="mt-1 text-xs text-[var(--color-muted)]">{PASSWORD_HINT}</p>
+            {password.length > 0 && reqErrors.length > 0 ? (
+              <ul className="mt-1 list-inside list-disc text-xs text-red-700">
+                {reqErrors.map((err) => (
+                  <li key={err}>{err}</li>
+                ))}
+              </ul>
+            ) : null}
           </Field>
           <Field label="Confirm password" htmlFor="confirm">
             <Input

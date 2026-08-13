@@ -1,0 +1,4 @@
+-- PHASE 20 — no bulk seed data required.
+-- Migration only: shipments.assigned_driver_user_id (see phase20 migration).
+-- Use existing staff users (admin@nursery.test, delivery roles) as assignable drivers.
+-- NO DATABASE CHANGE REQUIRED beyond that single nullable FK column.

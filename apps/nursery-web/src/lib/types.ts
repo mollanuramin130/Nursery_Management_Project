@@ -168,7 +168,8 @@ export type Category = {
 export type CartItem = {
   id: number;
   product_id: number;
-  product_variant_id?: number | null;
+  /** Canonical API field (DB column remains product_variant_id). */
+  variant_id?: number | null;
   name: string;
   sku?: string;
   unit_price: number;

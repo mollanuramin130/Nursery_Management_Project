@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/password_rules.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/providers/wishlist_provider.dart';
@@ -52,7 +53,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  bool get _hasMinLen => password.text.length >= 8;
+  bool get _hasMinLen => PasswordRules.hasMinLen(password.text);
+  bool get _hasMixed => PasswordRules.hasMixedCase(password.text);
+  bool get _hasNumber => PasswordRules.hasNumber(password.text);
 
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
@@ -206,18 +209,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) {
-                        return 'Enter a password.';
-                      }
-                      if (v.length < 8) {
-                        return 'Password must be at least 8 characters.';
-                      }
-                      return null;
-                    },
+                    validator: PasswordRules.validate,
                   ),
                   const SizedBox(height: AppSpace.sm),
                   _RequirementRow(met: _hasMinLen, label: '8+ characters'),
+                  _RequirementRow(met: _hasMixed, label: 'Upper & lower case'),
+                  _RequirementRow(met: _hasNumber, label: 'At least one number'),
                   const SizedBox(height: AppSpace.md),
                   TextFormField(
                     controller: confirm,

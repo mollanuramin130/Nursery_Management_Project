@@ -3,9 +3,11 @@
 import { create } from "zustand";
 import { loginRequest, logoutRequest, meRequest } from "@/lib/api/auth";
 import { setUnauthorizedHandler } from "@/lib/api/client";
+import { ensureCsrf } from "@/lib/csrf";
 import { isStaffUser } from "@/lib/auth/permissions";
 import { storage } from "@/lib/storage";
 import type { AdminUser } from "@/lib/types";
+import { deactivateAdminPushDevice, registerAdminPushDevice } from "@/lib/push-register";
 
 type AuthState = {
   user: AdminUser | null;
@@ -23,29 +25,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: false,
 
   clearSession: () => {
-    storage.clearTokens();
+    storage.clearLegacyAuthTokens();
     set({ user: null });
   },
 
   bootstrap: async () => {
     setUnauthorizedHandler(() => get().clearSession());
-    const access = storage.getAccess();
-    const refresh = storage.getRefresh();
-    if (!access && !refresh) {
-      set({ user: null, bootstrapped: true });
-      return;
+    storage.clearLegacyAuthTokens();
+    try {
+      await ensureCsrf();
+    } catch {
+      /* mutations retry CSRF */
     }
 
     try {
       const res = await meRequest();
       if (!isStaffUser(res.data)) {
-        storage.clearTokens();
+        await logoutRequest().catch(() => undefined);
         set({ user: null, bootstrapped: true });
         return;
       }
       set({ user: res.data, bootstrapped: true });
+      void registerAdminPushDevice();
     } catch {
-      storage.clearTokens();
       set({ user: null, bootstrapped: true });
     }
   },
@@ -53,28 +55,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email, password) => {
     set({ loading: true });
     try {
-      const res = await loginRequest(email, password);
-      storage.setTokens(res.data.access_token, res.data.refresh_token);
+      await loginRequest(email, password);
+      storage.clearLegacyAuthTokens();
 
       const me = await meRequest();
       if (!isStaffUser(me.data)) {
-        storage.clearTokens();
+        await logoutRequest().catch(() => undefined);
         throw new Error("This account does not have admin access.");
       }
       set({ user: me.data });
+      void registerAdminPushDevice();
     } finally {
       set({ loading: false });
     }
   },
 
   logout: async () => {
-    const refresh = storage.getRefresh();
     try {
-      if (refresh) await logoutRequest(refresh);
+      await logoutRequest();
     } catch {
       /* always clear local session */
     }
-    storage.clearTokens();
+    await deactivateAdminPushDevice();
+    storage.clearLegacyAuthTokens();
     set({ user: null });
   },
 }));

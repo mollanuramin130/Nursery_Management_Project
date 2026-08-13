@@ -8,6 +8,7 @@ use App\Modules\Cart\Models\CartItem;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Promotion\Models\Coupon;
+use App\Modules\Promotion\Models\CouponRedemption;
 use App\Modules\Wishlist\Models\Wishlist;
 use App\Shared\Exceptions\ApiException;
 use Illuminate\Http\Request;
@@ -96,6 +97,18 @@ class CartService
     {
         $cart->load(['items.product.images', 'items.variant']);
 
+        $pairs = [];
+        foreach ($cart->items as $item) {
+            if (! $item->product) {
+                continue;
+            }
+            $pairs[] = [
+                'product_id' => (int) $item->product_id,
+                'variant_id' => $item->product_variant_id !== null ? (int) $item->product_variant_id : null,
+            ];
+        }
+        $sellableMap = $this->inventory->sellableQtyMap($pairs);
+
         $items = [];
         $subtotal = 0.0;
         $itemCount = 0;
@@ -114,6 +127,9 @@ class CartService
             $subtotal += $lineTotal;
             $itemCount += $item->quantity;
 
+            $vid = $item->product_variant_id !== null ? (int) $item->product_variant_id : null;
+            $maxQty = $sellableMap[$this->inventory->sellableKey((int) $item->product_id, $vid)] ?? 0;
+
             $items[] = [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
@@ -125,7 +141,7 @@ class CartService
                 'quantity' => $item->quantity,
                 'line_total' => $lineTotal,
                 'stock_status' => $item->product->stock_status,
-                'max_qty' => $this->inventory->sellableQty($item->product_id, $item->product_variant_id),
+                'max_qty' => $maxQty,
             ];
         }
 
@@ -147,6 +163,9 @@ class CartService
         $shipping = 0.0;
         $grand = round(max(0, $subtotal - $discount + $tax + $shipping), 2);
 
+        // Same free-delivery basis as CheckoutService: merchandise after discount.
+        $merchandise = round(max(0, $subtotal - $discount), 2);
+
         $warnings = $this->buildWarnings($items, $cart->coupon_code);
 
         return [
@@ -161,7 +180,7 @@ class CartService
             'tax_total' => $tax,
             'shipping_total' => $shipping,
             'grand_total' => $grand,
-            'free_delivery' => $this->freeDeliveryMeta($subtotal),
+            'free_delivery' => $this->freeDeliveryMeta($merchandise),
             'warnings' => $warnings,
             'checkout_blocked' => collect($warnings)->contains(fn ($w) => ($w['severity'] ?? false) === true),
         ];
@@ -218,17 +237,20 @@ class CartService
         return $warnings;
     }
 
-    /** Free-delivery progress for cart UI (shipping amount still resolved at checkout). */
-    public function freeDeliveryMeta(float $subtotal): array
+    /**
+     * Free-delivery progress for cart/checkout UI.
+     * $merchandiseAfterDiscount must be subtotal − discount (shipping still resolved at checkout).
+     */
+    public function freeDeliveryMeta(float $merchandiseAfterDiscount): array
     {
         $threshold = (float) env('FREE_DELIVERY_THRESHOLD', 999);
-        $remaining = round(max(0, $threshold - $subtotal), 2);
+        $remaining = round(max(0, $threshold - $merchandiseAfterDiscount), 2);
 
         return [
             'enabled' => $threshold > 0,
             'threshold' => $threshold,
             'remaining' => $remaining,
-            'qualifies' => $threshold > 0 && $subtotal >= $threshold,
+            'qualifies' => $threshold > 0 && $merchandiseAfterDiscount >= $threshold,
         ];
     }
 
@@ -322,16 +344,48 @@ class CartService
             throw new ApiException('Invalid or expired coupon', 400, 'BAD_REQUEST');
         }
 
-
         $presented = $this->present($cart);
         if ($coupon->min_order_amount !== null && $presented['subtotal'] < (float) $coupon->min_order_amount) {
             throw new ApiException('Cart does not meet coupon minimum order amount', 400, 'BAD_REQUEST');
+        }
+
+        // Align with checkout: reject exhausted coupons at apply-time when possible.
+        if ($cart->user_id) {
+            $user = User::query()->find((int) $cart->user_id);
+            if ($user) {
+                $this->assertCouponUsageAvailable($coupon, $user);
+            }
+        } else {
+            $this->assertCouponUsageAvailable($coupon, null);
         }
 
         $cart->coupon_code = $coupon->code;
         $cart->save();
 
         return $this->present($cart->fresh());
+    }
+
+    /**
+     * Shared coupon usage-cap check for cart apply + checkout.
+     * Per-user limits require an authenticated user; total limits always apply.
+     */
+    public function assertCouponUsageAvailable(Coupon $coupon, ?User $user): void
+    {
+        if ($coupon->usage_limit_total !== null) {
+            $total = CouponRedemption::query()->where('coupon_id', $coupon->id)->count();
+            if ($total >= (int) $coupon->usage_limit_total) {
+                throw new ApiException('This coupon has reached its usage limit', 400, 'BAD_REQUEST');
+            }
+        }
+        if ($user && $coupon->usage_limit_per_user !== null) {
+            $perUser = CouponRedemption::query()
+                ->where('coupon_id', $coupon->id)
+                ->where('user_id', $user->id)
+                ->count();
+            if ($perUser >= (int) $coupon->usage_limit_per_user) {
+                throw new ApiException('You have already used this coupon the maximum number of times', 400, 'BAD_REQUEST');
+            }
+        }
     }
 
     public function removeCoupon(Cart $cart): array

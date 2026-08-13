@@ -1,0 +1,56 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "product_id": 101,
+      "product": {
+        "id": 101,
+        "name": "Money Plant",
+        "slug": "money-plant",
+        "price": 299.0,
+        "compare_at_price": 349.0,
+        "currency": "INR",
+        "stock_status": "in_stock",
+        "thumbnail_url": null,
+        "rating_avg": 4.6,
+        "rating_count": 128,
+        "badges": ["bestseller"]
+      }
+    },
+    {
+      "product_id": 201,
+      "product": {
+        "id": 201,
+        "name": "Monstera Deliciosa",
+        "slug": "monstera-deliciosa",
+        "price": 899.0,
+        "compare_at_price": 1099.0,
+        "currency": "INR",
+        "stock_status": "in_stock",
+        "thumbnail_url": null,
+        "rating_avg": 4.75,
+        "rating_count": 156,
+        "badges": ["bestseller"]
+      }
+    },
+    {
+      "product_id": 107,
+      "product": {
+        "id": 107,
+        "name": "Tulsi (Holy Basil)",
+        "slug": "tulsi-holy-basil",
+        "price": 199.0,
+        "compare_at_price": 249.0,
+        "currency": "INR",
+        "stock_status": "in_stock",
+        "thumbnail_url": null,
+        "rating_avg": 4.8,
+        "rating_count": 320,
+        "badges": ["bestseller"]
+      }
+    }
+  ],
+  "errors": null,
+  "meta": { "source": "mock", "local_only": true }
+}

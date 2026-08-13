@@ -115,7 +115,7 @@ class OrdersProvider extends ChangeNotifier {
 
   Future<String?> updateStatus(int id, String status, {String? note}) async {
     try {
-      detail = await _api.sendData(
+      await _api.sendData(
         'POST',
         '/admin/orders/$id/status',
         body: {
@@ -124,7 +124,8 @@ class OrdersProvider extends ChangeNotifier {
         },
         map: (d) => Map<String, dynamic>.from(d as Map),
       );
-      notifyListeners();
+      // QA-29: status endpoint may omit payment fields — reload full detail.
+      await loadDetail(id);
       return null;
     } catch (e) {
       return e is ApiException ? e.userMessage : e.toString();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/providers/catalog_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_search_field.dart';
@@ -24,8 +24,8 @@ class CatalogScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       key: ValueKey(initialFilters.toRouteQuery().toString()),
-      create: (ctx) =>
-          CatalogProvider(ctx.read<ApiClient>())..applyFilters(initialFilters),
+      create: (ctx) => CatalogProvider(ctx.read<CatalogRepository>())
+        ..applyFilters(initialFilters),
       child: _CatalogView(
         initialFilters: initialFilters,
         focusSearch: focusSearch,

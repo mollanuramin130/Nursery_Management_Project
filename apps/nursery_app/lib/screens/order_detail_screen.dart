@@ -33,6 +33,10 @@ const _labels = {
   'OUT_FOR_DELIVERY': 'Out for delivery',
   'DELIVERED': 'Delivered',
   'CANCELLED': 'Cancelled',
+  'RETURN_REQUESTED': 'Return requested',
+  'RETURNED': 'Returned',
+  'REFUNDED': 'Refunded',
+  'DELIVERY_FAILED': 'Delivery failed',
 };
 
 const _cancelReasons = [
@@ -613,10 +617,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               children: [
+                // QA-36-001: paid=1 query must not invent "Order confirmed".
                 if (widget.placedNumber != null ||
                     order.status == 'PENDING_PAYMENT' ||
                     order.status == 'PAYMENT_FAILED' ||
-                    widget.paid ||
                     order.status == 'CONFIRMED') ...[
                   AppSurfaceCard(
                     padding: const EdgeInsets.all(AppSpace.lg),
@@ -624,33 +628,38 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.paymentPending ||
-                                  order.status == 'PENDING_PAYMENT'
-                              ? 'Payment pending'
+                          // QA-35-002: customer PENDING_PAYMENT title = "Order placed"
+                          order.status == 'PENDING_PAYMENT' ||
+                                  widget.paymentPending
+                              ? 'Order placed'
                               : order.status == 'PAYMENT_FAILED'
                               ? 'Payment failed'
-                              : widget.paid || order.status == 'CONFIRMED'
+                              : order.status == 'CONFIRMED'
                               ? 'Order confirmed'
                               : 'Order ${widget.placedNumber ?? order.orderNumber} placed',
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             color:
-                                widget.paymentPending ||
-                                    order.status == 'PENDING_PAYMENT'
+                                order.status == 'PENDING_PAYMENT' ||
+                                    widget.paymentPending
                                 ? AppColors.warning
                                 : order.status == 'PAYMENT_FAILED'
                                 ? AppColors.error
-                                : AppColors.success,
+                                : order.status == 'CONFIRMED'
+                                ? AppColors.success
+                                : AppColors.ink,
                           ),
                         ),
                         const SizedBox(height: AppSpace.xs),
                         Text(
-                          widget.paymentPending ||
-                                  order.status == 'PENDING_PAYMENT'
+                          order.status == 'PENDING_PAYMENT' ||
+                                  widget.paymentPending
                               ? 'Complete payment to confirm. Your cart remains available if you cancel this unpaid order.'
                               : order.status == 'PAYMENT_FAILED'
                               ? 'Retry payment or return to cart. No charge was confirmed.'
-                              : 'Thank you for your purchase! ${order.orderNumber} · ${money(order.grandTotal)}',
+                              : order.status == 'CONFIRMED'
+                              ? 'Thank you for your purchase! ${order.orderNumber} · ${money(order.grandTotal)}'
+                              : 'Order ${order.orderNumber} · ${money(order.grandTotal)}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         if (order.status == 'PENDING_PAYMENT' ||
@@ -1032,9 +1041,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   ),
                   const SizedBox(height: 6),
                   ...order.returns.map(
-                    (r) => Text(
-                      'Return #${r['id']} · ${r['status'] ?? ''}',
-                    ),
+                    (r) {
+                      final id = (r['id'] as num?)?.toInt();
+                      final status = r['status']?.toString() ?? '';
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text('Return #${id ?? ''}'),
+                        subtitle: Text(status.replaceAll('_', ' ')),
+                        trailing: id == null
+                            ? null
+                            : const Icon(Icons.chevron_right),
+                        onTap: id == null
+                            ? null
+                            : () => context.push('/account/returns/$id'),
+                      );
+                    },
                   ),
                 ],
                 const SizedBox(height: 20),

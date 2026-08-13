@@ -12,8 +12,14 @@ Future<void> main() async {
   AppConfig.assertReleaseConfiguration();
 
   final storage = SessionStorage();
-  final api = ApiClient(storage);
-  final auth = AuthProvider(api, storage);
+  late final AuthProvider auth;
+  final api = ApiClient(
+    storage,
+    onSessionInvalid: () async {
+      await auth.clearLocalSession();
+    },
+  );
+  auth = AuthProvider(api, storage);
   await auth.bootstrap();
 
   final router = createOpsRouter(auth);

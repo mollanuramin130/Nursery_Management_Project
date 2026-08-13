@@ -5,6 +5,7 @@ namespace App\Modules\Admin\Services;
 use App\Modules\Inventory\Models\Warehouse;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Notification\Services\NotificationService;
+use App\Modules\Notification\Services\OrderNotificationDispatcher;
 use App\Modules\Order\Models\Order;
 use App\Modules\Order\Models\OrderItem;
 use App\Modules\Order\Models\Shipment;
@@ -21,6 +22,7 @@ class AdminOrderService
         private readonly OrderStateMachine $stateMachine,
         private readonly InventoryService $inventory,
         private readonly NotificationService $notifications,
+        private readonly OrderNotificationDispatcher $orderNotifications,
     ) {}
 
     public function list(?string $status, ?string $q, int $perPage = 20): array
@@ -97,6 +99,11 @@ class AdminOrderService
                 'method' => $order->latestPayment->method,
                 'amount' => (float) $order->latestPayment->amount,
                 'paid_at' => optional($order->latestPayment->paid_at)?->toIso8601String(),
+                'provider' => $order->latestPayment->provider,
+                'provider_payment_id' => $order->latestPayment->provider_payment_id,
+                'provider_order_id' => $order->latestPayment->provider_order_id,
+                'upi_mode' => data_get($order->latestPayment->meta, 'upi_mode'),
+                'channel' => data_get($order->latestPayment->meta, 'channel'),
             ] : null,
             'shipment' => $order->shipment ? [
                 'status' => $order->shipment->status,
@@ -191,24 +198,7 @@ class AdminOrderService
 
     private function notifyStatusChange(Order $order, string $to): void
     {
-        if (! $order->user_id) {
-            return;
-        }
-        $map = [
-            'PACKED' => ['order_packed', 'Order packed', "Order {$order->order_number} is packed and ready to ship."],
-            'SHIPPED' => ['order_shipped', 'Order shipped', "Order {$order->order_number} has shipped."],
-            'OUT_FOR_DELIVERY' => ['order_out_for_delivery', 'Out for delivery', "Order {$order->order_number} is out for delivery."],
-            'DELIVERED' => ['order_delivered', 'Order delivered', "Order {$order->order_number} was delivered."],
-            'DELIVERY_FAILED' => ['delivery_failed', 'Delivery failed', "Delivery for {$order->order_number} could not be completed."],
-        ];
-        if (! isset($map[$to])) {
-            return;
-        }
-        [$type, $title, $body] = $map[$to];
-        $this->notifications->notify($order->user_id, $type, $title, $body, [
-            'order_id' => $order->id,
-            'order_number' => $order->order_number,
-        ]);
+        $this->orderNotifications->notifyCustomerStatus($order, $to);
     }
 
     private function handleCancelInventory(Order $order, ?int $actorUserId): void

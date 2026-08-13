@@ -151,7 +151,7 @@ class AuthService
             [
                 'email' => $payload['email'],
                 'password' => $payload['password'],
-                'password_confirmation' => $payload['password_confirmation'],
+                'password_confirmation' => $payload['password_confirmation'] ?? $payload['password'],
                 'token' => $payload['token'],
             ],
             function (User $user, string $password) {

@@ -12,6 +12,7 @@ import { ApiError } from "@/lib/api/client";
 import { fetchFulfillmentQueue, fetchShipments, type ShipmentListRow } from "@/lib/api/fulfillment";
 import { hasPermission } from "@/lib/auth/permissions";
 import { formatDateTime } from "@/lib/format";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useAuthStore } from "@/store/auth";
 
 export default function ShipmentsPage() {
@@ -20,6 +21,7 @@ export default function ShipmentsPage() {
   const canView = hasPermission(user, "fulfillment.view");
   const [status, setStatus] = useState(search.get("status") ?? "");
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
   const [rows, setRows] = useState<ShipmentListRow[]>([]);
   const [readyOrders, setReadyOrders] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ export default function ShipmentsPage() {
       } else {
         const res = await fetchShipments({
           status: status || undefined,
-          q: q || undefined,
+          q: debouncedQ || undefined,
           per_page: 50,
         });
         setRows(res.data);
@@ -63,7 +65,7 @@ export default function ShipmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [canView, status, q, search]);
+  }, [canView, status, debouncedQ, search]);
 
   useEffect(() => {
     void load();

@@ -42,19 +42,44 @@ class WishlistService
             throw new NotFoundHttpException('Product not found');
         }
 
-        $existing = Wishlist::query()
+        // Soft-deleted rows still occupy the unique (user_id, product_id) index.
+        // Restore instead of insert to avoid SQL 23000 → opaque 500 (QA-29-003 / QA-30).
+        $existing = Wishlist::withTrashed()
             ->where('user_id', $user->id)
             ->where('product_id', $productId)
             ->first();
 
         if ($existing) {
+            if ($existing->trashed()) {
+                $existing->restore();
+
+                return [
+                    'wishlist_item_id' => $existing->id,
+                    'product_id' => $productId,
+                ];
+            }
+
             throw new ApiException('Product already in wishlist', 409, 'CONFLICT');
         }
 
-        $item = Wishlist::query()->create([
-            'user_id' => $user->id,
-            'product_id' => $productId,
-        ]);
+        try {
+            $item = Wishlist::query()->create([
+                'user_id' => $user->id,
+                'product_id' => $productId,
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            $item = Wishlist::withTrashed()
+                ->where('user_id', $user->id)
+                ->where('product_id', $productId)
+                ->first();
+            if ($item?->trashed()) {
+                $item->restore();
+            }
+            if ($item) {
+                throw new ApiException('Product already in wishlist', 409, 'CONFLICT');
+            }
+            throw $e;
+        }
 
         return [
             'wishlist_item_id' => $item->id,

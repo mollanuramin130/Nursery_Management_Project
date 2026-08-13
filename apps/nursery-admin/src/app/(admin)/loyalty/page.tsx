@@ -18,6 +18,7 @@ import {
 } from "@/lib/api/loyalty";
 import { hasPermission } from "@/lib/auth/permissions";
 import { formatDateTime } from "@/lib/format";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
@@ -28,6 +29,7 @@ export default function LoyaltyPage() {
   const push = useToastStore((s) => s.push);
 
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
   const [accounts, setAccounts] = useState<LoyaltyAccountRow[]>([]);
   const [txs, setTxs] = useState<LoyaltyTx[]>([]);
   const [dash, setDash] = useState<LoyaltyDashboard | null>(null);
@@ -49,7 +51,7 @@ export default function LoyaltyPage() {
     setError(null);
     try {
       const [a, t, d] = await Promise.all([
-        fetchLoyaltyAccounts({ q: q || undefined, page: 1, per_page: 30 }),
+        fetchLoyaltyAccounts({ q: debouncedQ || undefined, page: 1, per_page: 30 }),
         fetchLoyaltyTransactions({ page: 1, per_page: 30 }),
         fetchLoyaltyDashboard(),
       ]);
@@ -61,7 +63,7 @@ export default function LoyaltyPage() {
     } finally {
       setLoading(false);
     }
-  }, [canView, q]);
+  }, [canView, debouncedQ]);
 
   useEffect(() => {
     void load();

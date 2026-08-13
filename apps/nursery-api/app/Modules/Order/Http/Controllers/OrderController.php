@@ -23,7 +23,7 @@ class OrderController extends Controller
             'address_id' => ['required', 'integer'],
             'shipping_method_id' => ['required', 'integer'],
             'coupon_code' => ['nullable', 'string', 'max:40'],
-            'payment_method' => ['required', 'string', 'in:razorpay,cod'],
+            'payment_method' => ['required', 'string', 'in:razorpay,upi,cod'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 

@@ -1,0 +1,90 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "5010": {
+      "id": 5010,
+      "order_number": "ORD-20260813-00010",
+      "status": "CONFIRMED",
+      "payment_status": "PAID",
+      "grand_total": 49.0,
+      "subtotal": 199.0,
+      "discount_total": 199.0,
+      "shipping_total": 49.0,
+      "tax_total": 0,
+      "currency": "INR",
+      "placed_at": "2026-08-10T10:00:00+05:30",
+      "can_cancel": false,
+      "can_reorder": true,
+      "can_return": false,
+      "items": [
+        {
+          "id": 1,
+          "product_id": 107,
+          "name": "Tulsi (Holy Basil)",
+          "quantity": 1,
+          "unit_price": 199.0,
+          "line_total": 199.0,
+          "slug": "tulsi-holy-basil",
+          "thumbnail_url": null
+        }
+      ],
+      "shipping_address": {
+        "name": "Asha Rahman",
+        "phone": "9876543210",
+        "line1": "12 Green Lane",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "postal_code": "411001"
+      },
+      "timeline": [
+        { "status": "PLACED", "at": "2026-08-10T10:00:00+05:30" },
+        { "status": "CONFIRMED", "at": "2026-08-10T10:05:00+05:30" }
+      ]
+    },
+    "5007": {
+      "id": 5007,
+      "order_number": "ORD-20260813-00007",
+      "status": "DELIVERED",
+      "payment_status": "PAID",
+      "grand_total": 199.0,
+      "subtotal": 249.0,
+      "discount_total": 99.0,
+      "shipping_total": 49.0,
+      "tax_total": 0,
+      "currency": "INR",
+      "placed_at": "2026-08-01T14:30:00+05:30",
+      "can_cancel": false,
+      "can_reorder": true,
+      "can_return": true,
+      "items": [
+        {
+          "id": 1,
+          "product_id": 112,
+          "name": "Aloe Vera",
+          "quantity": 1,
+          "unit_price": 249.0,
+          "line_total": 249.0,
+          "slug": "aloe-vera",
+          "thumbnail_url": null
+        }
+      ],
+      "shipping_address": {
+        "name": "Asha Rahman",
+        "phone": "9876543210",
+        "line1": "12 Green Lane",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "postal_code": "411001"
+      },
+      "timeline": [
+        { "status": "PLACED", "at": "2026-08-01T14:30:00+05:30" },
+        { "status": "CONFIRMED", "at": "2026-08-01T14:35:00+05:30" },
+        { "status": "SHIPPED", "at": "2026-08-03T09:00:00+05:30" },
+        { "status": "DELIVERED", "at": "2026-08-05T16:00:00+05:30" }
+      ]
+    }
+  },
+  "errors": null,
+  "meta": { "source": "mock", "stale": true }
+}

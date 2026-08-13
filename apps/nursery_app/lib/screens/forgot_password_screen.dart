@@ -88,6 +88,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   AppSurfaceSuccess(
                     message: 'Check your email for instructions.',
                   ),
+                  const SizedBox(height: AppSpace.md),
+                  TextButton(
+                    onPressed: () => context.push(
+                      '/reset-password?email=${Uri.encodeComponent(email.text.trim())}',
+                    ),
+                    child: const Text('Already have a reset token?'),
+                  ),
                   const SizedBox(height: AppSpace.xl),
                   AppButton(
                     label: 'Back to sign in',

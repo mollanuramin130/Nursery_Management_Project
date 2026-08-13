@@ -266,7 +266,20 @@ class DeliverNotificationChannelsJob implements ShouldQueue
     {
         $base = rtrim((string) env('CUSTOMER_WEB_URL', env('APP_URL', 'http://127.0.0.1:3000')), '/');
         if (! empty($data['order_id']) && is_numeric($data['order_id'])) {
-            return ['label' => 'View order', 'url' => $base.'/account/orders/'.$data['order_id']];
+            $basePath = (($data['audience'] ?? 'customer') === 'admin')
+                ? '/orders/'
+                : '/account/orders/';
+            $webBase = (($data['audience'] ?? 'customer') === 'admin')
+                ? rtrim((string) env('ADMIN_WEB_URL', env('APP_URL', 'http://127.0.0.1:3001')), '/')
+                : $base;
+
+            return [
+                'label' => 'View order',
+                'url' => ((($data['audience'] ?? 'customer') === 'admin') ? $webBase : $base).$basePath.$data['order_id'],
+            ];
+        }
+        if (! empty($data['return_id']) && is_numeric($data['return_id'])) {
+            return ['label' => 'View return', 'url' => $base.'/account/returns/'.$data['return_id']];
         }
         if (! empty($data['subscription_id']) && is_numeric($data['subscription_id'])) {
             return ['label' => 'View subscription', 'url' => $base.'/account/subscriptions/'.$data['subscription_id']];

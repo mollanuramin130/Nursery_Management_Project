@@ -263,7 +263,7 @@ class BannerItem {
   factory BannerItem.fromJson(Map<String, dynamic> json) => BannerItem(
     id: json['id'] as int,
     title: json['title'] as String,
-    imageUrl: json['image_url'] as String,
+    imageUrl: (json['image_url'] as String?) ?? '',
     linkType: json['link_type'] as String?,
     linkValue: json['link_value'] as String?,
   );
@@ -353,6 +353,7 @@ class CartItem {
     required this.unitPrice,
     required this.quantity,
     required this.lineTotal,
+    this.variantId,
     this.thumbnailUrl,
     this.slug,
     this.stockStatus,
@@ -361,6 +362,8 @@ class CartItem {
 
   final int id;
   final int productId;
+  /// Canonical API field (`variant_id`). DB column remains product_variant_id.
+  final int? variantId;
   final String name;
   final double unitPrice;
   final int quantity;
@@ -376,6 +379,7 @@ class CartItem {
   factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
     id: json['id'] as int,
     productId: json['product_id'] as int,
+    variantId: (json['variant_id'] as num?)?.toInt(),
     name: json['name'] as String,
     unitPrice: (json['unit_price'] as num).toDouble(),
     quantity: json['quantity'] as int,

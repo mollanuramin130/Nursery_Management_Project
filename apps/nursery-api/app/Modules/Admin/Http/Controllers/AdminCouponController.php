@@ -18,8 +18,10 @@ class AdminCouponController extends Controller
     {
         $q = $request->query('q');
         $status = $request->query('status');
+        $perPage = min(100, max(1, (int) $request->query('per_page', 50)));
 
-        $rows = Coupon::query()
+        $paginator = Coupon::query()
+            ->withCount('redemptions')
             ->when($q, function ($query) use ($q) {
                 $query->where(function ($inner) use ($q) {
                     $inner->where('code', 'like', "%{$q}%")
@@ -28,12 +30,21 @@ class AdminCouponController extends Controller
             })
             ->when($status, fn ($query) => $query->where('status', $status))
             ->orderByDesc('id')
-            ->get()
+            ->paginate($perPage);
+
+        $rows = collect($paginator->items())
             ->map(fn (Coupon $c) => $this->summary($c))
             ->values()
             ->all();
 
-        return ApiResponse::success($rows, 'Coupons retrieved successfully');
+        return ApiResponse::success($rows, 'Coupons retrieved successfully', 200, [
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
+        ]);
     }
 
     public function show(int $id): JsonResponse
@@ -150,7 +161,7 @@ class AdminCouponController extends Controller
             'max_discount_amount' => $c->max_discount_amount !== null ? (float) $c->max_discount_amount : null,
             'usage_limit_total' => $c->usage_limit_total,
             'usage_limit_per_user' => $c->usage_limit_per_user,
-            'used_count' => CouponRedemption::query()->where('coupon_id', $c->id)->count(),
+            'used_count' => (int) ($c->redemptions_count ?? CouponRedemption::query()->where('coupon_id', $c->id)->count()),
             'status' => $c->status,
             'is_public' => (bool) $c->is_public,
             'stackable' => (bool) $c->stackable,

@@ -1,7 +1,9 @@
-const ACCESS = "gl_access_token";
-const REFRESH = "gl_refresh_token";
 const CART = "gl_cart_token";
 const GUEST = "gl_guest_token";
+
+/** Legacy JWT keys (QA-SEC-001) — must never be written again. */
+const LEGACY_ACCESS = "gl_access_token";
+const LEGACY_REFRESH = "gl_refresh_token";
 
 function randomToken(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -11,13 +13,13 @@ function randomToken(): string {
 }
 
 export const storage = {
+  /** @deprecated QA-33 — JWTs are HttpOnly cookies; always null in JS. */
   getAccess(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(ACCESS);
+    return null;
   },
+  /** @deprecated QA-33 — JWTs are HttpOnly cookies; always null in JS. */
   getRefresh(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(REFRESH);
+    return null;
   },
   getCartToken(): string | null {
     if (typeof window === "undefined") return null;
@@ -32,15 +34,23 @@ export const storage = {
     }
     return t;
   },
-  setTokens(access: string, refresh: string) {
-    localStorage.setItem(ACCESS, access);
-    localStorage.setItem(REFRESH, refresh);
+  /** No-op — tokens must not be stored in JS-accessible storage. */
+  setTokens(_access: string, _refresh: string) {
+    /* QA-33: intentionally empty */
   },
   clearTokens() {
-    localStorage.removeItem(ACCESS);
-    localStorage.removeItem(REFRESH);
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(LEGACY_ACCESS);
+    localStorage.removeItem(LEGACY_REFRESH);
+  },
+  /** Wipe any pre-QA-33 JWT leftovers from localStorage. */
+  clearLegacyAuthTokens() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(LEGACY_ACCESS);
+    localStorage.removeItem(LEGACY_REFRESH);
   },
   setCartToken(token: string | null) {
+    if (typeof window === "undefined") return;
     if (!token) {
       localStorage.removeItem(CART);
       return;

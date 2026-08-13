@@ -22,14 +22,17 @@ export default function ReturnsPage() {
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const [items, setItems] = useState<ReturnRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await apiGet<ReturnRow[]>("/customer/returns", { per_page: 30 });
       setItems(Array.isArray(res.data) ? res.data : []);
-    } catch {
+    } catch (e) {
       setItems([]);
+      setError(e instanceof Error ? e.message : "Unable to load returns");
     } finally {
       setLoading(false);
     }
@@ -69,6 +72,13 @@ export default function ReturnsPage() {
         </div>
         {loading ? (
           <Skeleton className="h-24 w-full" />
+        ) : error ? (
+          <EmptyState
+            title="Unable to load returns"
+            description={error}
+            actionHref="/account/returns"
+            actionLabel="Try again"
+          />
         ) : !items.length ? (
           <EmptyState
             title="No return requests"
@@ -79,26 +89,22 @@ export default function ReturnsPage() {
         ) : (
           <ul className="space-y-3">
             {items.map((r) => (
-              <li
-                key={r.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4"
-              >
-                <div>
-                  <p className="font-semibold">Return #{r.id}</p>
-                  <p className="text-sm text-[var(--color-muted)]">
-                    Order{" "}
-                    <Link
-                      href={`/account/orders/${r.order_id}`}
-                      className="text-[var(--color-primary)] hover:underline"
-                    >
-                      #{r.order_id}
-                    </Link>
-                    {r.created_at
-                      ? ` · ${new Date(r.created_at).toLocaleDateString("en-IN")}`
-                      : ""}
-                  </p>
-                </div>
-                <Badge tone="brand">{r.status.replace(/_/g, " ")}</Badge>
+              <li key={r.id}>
+                <Link
+                  href={`/account/returns/${r.id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 transition hover:border-[var(--color-primary)]"
+                >
+                  <div>
+                    <p className="font-semibold">Return #{r.id}</p>
+                    <p className="text-sm text-[var(--color-muted)]">
+                      Order #{r.order_id}
+                      {r.created_at
+                        ? ` · ${new Date(r.created_at).toLocaleDateString("en-IN")}`
+                        : ""}
+                    </p>
+                  </div>
+                  <Badge tone="brand">{r.status.replace(/_/g, " ")}</Badge>
+                </Link>
               </li>
             ))}
           </ul>

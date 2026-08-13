@@ -20,6 +20,7 @@ use App\Modules\Admin\Http\Controllers\AdminSubscriptionController;
 use App\Modules\Admin\Http\Controllers\AdminSettingsController;
 use App\Modules\Admin\Http\Controllers\AdminStockAlertController;
 use App\Modules\Admin\Http\Controllers\AdminSupplierController;
+use App\Modules\Admin\Http\Controllers\AdminRoleController;
 use App\Modules\Admin\Http\Controllers\AdminUserController;
 use App\Modules\Admin\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,8 @@ Route::prefix('admin')->middleware(['auth:api', 'active.user'])->group(function 
 
     Route::get('fulfillment', [AdminFulfillmentController::class, 'dashboard'])
         ->middleware('permission:fulfillment.view');
+    Route::get('fulfillment/drivers', [AdminFulfillmentController::class, 'drivers'])
+        ->middleware('permission:fulfillment.view');
     Route::get('fulfillment/exceptions', [AdminFulfillmentController::class, 'exceptions'])
         ->middleware('permission:fulfillment.view');
     Route::get('fulfillment/shipments', [AdminFulfillmentController::class, 'shipments'])
@@ -81,6 +84,9 @@ Route::prefix('admin')->middleware(['auth:api', 'active.user'])->group(function 
     Route::post('fulfillment/orders/{id}/pick', [AdminFulfillmentController::class, 'updatePick'])
         ->whereNumber('id')
         ->middleware('permission:fulfillment.pick');
+    Route::post('fulfillment/orders/{id}/pick/scan', [AdminFulfillmentController::class, 'pickScan'])
+        ->whereNumber('id')
+        ->middleware('permission:fulfillment.pick');
     Route::post('fulfillment/orders/{id}/pick/exception', [AdminFulfillmentController::class, 'pickException'])
         ->whereNumber('id')
         ->middleware('permission:fulfillment.pick');
@@ -91,6 +97,12 @@ Route::prefix('admin')->middleware(['auth:api', 'active.user'])->group(function 
         ->whereNumber('id')
         ->middleware('permission:fulfillment.pack');
     Route::post('fulfillment/orders/{id}/ship', [AdminFulfillmentController::class, 'createShipment'])
+        ->whereNumber('id')
+        ->middleware('permission:fulfillment.ship');
+    Route::post('fulfillment/orders/{id}/assign-driver', [AdminFulfillmentController::class, 'assignDriver'])
+        ->whereNumber('id')
+        ->middleware('permission:fulfillment.ship');
+    Route::post('fulfillment/orders/{id}/reschedule', [AdminFulfillmentController::class, 'reschedule'])
         ->whereNumber('id')
         ->middleware('permission:fulfillment.ship');
     Route::post('fulfillment/orders/{id}/out-for-delivery', [AdminFulfillmentController::class, 'outForDelivery'])
@@ -289,6 +301,10 @@ Route::prefix('admin')->middleware(['auth:api', 'active.user'])->group(function 
     Route::put('users/{id}', [AdminUserController::class, 'update'])
         ->middleware('permission:users.manage');
     Route::delete('users/{id}', [AdminUserController::class, 'destroy'])
+        ->middleware('permission:users.manage');
+
+    // Read-only role catalog (assignment via PUT /admin/users/{id}) — QA-08
+    Route::get('roles', [AdminRoleController::class, 'index'])
         ->middleware('permission:users.manage');
 
     Route::get('suppliers', [AdminSupplierController::class, 'index'])

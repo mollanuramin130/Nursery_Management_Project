@@ -6,6 +6,7 @@ import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 import 'package:nursery_admin_mobile/shared/widgets.dart';
 import 'package:nursery_admin_mobile/theme/app_theme.dart';
+import 'package:nursery_admin_mobile/services/notification_deep_link.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -17,9 +18,16 @@ class MoreScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('More')),
       body: ListView(
         children: [
-          if (auth.canAny(['purchase_orders.view', 'inventory.adjust']))
+          if (auth.can('fulfillment.view'))
             ListTile(
               leading: const Icon(Icons.local_shipping_outlined),
+              title: const Text('Fulfillment'),
+              subtitle: const Text('Pick · pack · ship · deliver'),
+              onTap: () => context.push('/fulfillment'),
+            ),
+          if (auth.canAny(['purchase_orders.view', 'inventory.adjust']))
+            ListTile(
+              leading: const Icon(Icons.shopping_bag_outlined),
               title: const Text('Purchase orders'),
               onTap: () => context.push('/purchasing'),
             ),
@@ -38,9 +46,11 @@ class MoreScreen extends StatelessWidget {
           if (auth.canAny(['inventory.transfer', 'inventory.adjust', 'inventory.view']))
             ListTile(
               leading: const Icon(Icons.swap_horiz),
-              title: const Text('Transfers'),
-              subtitle: const Text('Use Admin Web for complex transfers if needed'),
-              onTap: () => context.push('/inventory'),
+              title: const Text('Stock movements'),
+              subtitle: const Text(
+                'Inventory adjustments & history (complex transfers: Admin Web)',
+              ),
+              onTap: () => context.push('/inventory/movements'),
             ),
           if (auth.can('inventory.view'))
             ListTile(
@@ -184,6 +194,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               n['category']?.toString() ?? '',
                               style: const TextStyle(fontSize: 11),
                             ),
+                            onTap: () {
+                              final data = n['data'] is Map
+                                  ? Map<String, dynamic>.from(n['data'] as Map)
+                                  : null;
+                              final href = adminNotificationDeepLink(data);
+                              if (href != null) {
+                                context.push(href);
+                              }
+                            },
                           );
                         },
                       ),

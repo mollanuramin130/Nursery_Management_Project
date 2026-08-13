@@ -20,6 +20,7 @@ const titles: Record<string, string> = {
   "/banners": "Banners",
   "/customers": "Customers",
   "/customers/segments": "Segments",
+  "/users": "Users & Roles",
   "/refunds": "Refunds",
   "/suppliers": "Suppliers",
   "/settings": "Settings",
@@ -36,6 +37,8 @@ function resolveTitle(pathname: string) {
   if (pathname.includes("/edit")) return "Edit";
   if (pathname.startsWith("/customers/segments")) return "Segments";
   if (pathname.startsWith("/customers/")) return "Customer 360";
+  if (pathname.startsWith("/users/new")) return "Create user";
+  if (pathname.startsWith("/users/")) return "User detail";
   if (pathname.startsWith("/marketing/automations")) return "Automations";
   if (pathname.startsWith("/coupons/")) return "Coupon";
   if (pathname.startsWith("/campaigns/")) return "Campaign";

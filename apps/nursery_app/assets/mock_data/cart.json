@@ -1,0 +1,52 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "items": [
+      {
+        "id": 9001,
+        "product_id": 101,
+        "variant_id": null,
+        "name": "Money Plant",
+        "unit_price": 299.0,
+        "quantity": 1,
+        "line_total": 299.0,
+        "thumbnail_url": null,
+        "slug": "money-plant",
+        "stock_status": "in_stock",
+        "max_qty": 10
+      },
+      {
+        "id": 9002,
+        "product_id": 102,
+        "variant_id": null,
+        "name": "Snake Plant",
+        "unit_price": 399.0,
+        "quantity": 1,
+        "line_total": 399.0,
+        "thumbnail_url": null,
+        "slug": "snake-plant",
+        "stock_status": "in_stock",
+        "max_qty": 10
+      }
+    ],
+    "item_count": 2,
+    "subtotal": 698.0,
+    "discount_total": 0,
+    "tax_total": 0,
+    "shipping_total": 0,
+    "grand_total": 698.0,
+    "coupon_code": null,
+    "currency": "INR",
+    "free_delivery": {
+      "enabled": true,
+      "threshold": 999,
+      "remaining": 301,
+      "qualifies": false
+    },
+    "warnings": [],
+    "checkout_blocked": false
+  },
+  "errors": null,
+  "meta": { "source": "mock", "local_only": true }
+}

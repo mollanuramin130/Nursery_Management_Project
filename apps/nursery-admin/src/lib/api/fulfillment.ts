@@ -72,6 +72,12 @@ export type FulfillmentOrder = {
     tracking_number?: string | null;
     tracking_url?: string | null;
     eta_date?: string | null;
+    assigned_driver?: { id: number; name?: string | null; email?: string | null; phone?: string | null } | null;
+    meta?: {
+      failure_reason?: string | null;
+      pod?: Record<string, unknown> | null;
+      reschedule?: Record<string, unknown> | null;
+    };
     events?: Array<{
       id: number;
       status: string;
@@ -160,8 +166,44 @@ export async function markOutForDelivery(id: number) {
   return apiSend<FulfillmentOrder>("post", `/admin/fulfillment/orders/${id}/out-for-delivery`);
 }
 
-export async function markDelivered(id: number) {
-  return apiSend<FulfillmentOrder>("post", `/admin/fulfillment/orders/${id}/deliver`);
+export async function markDelivered(
+  id: number,
+  payload?: {
+    method?: string;
+    note?: string;
+    otp_last4?: string;
+    photo_url?: string;
+    signature_url?: string;
+  },
+) {
+  return apiSend<FulfillmentOrder>("post", `/admin/fulfillment/orders/${id}/deliver`, payload);
+}
+
+export async function pickScan(id: number, code: string, incrementBy = 1) {
+  return apiSend<FulfillmentOrder & { scan?: Record<string, unknown> }>(
+    "post",
+    `/admin/fulfillment/orders/${id}/pick/scan`,
+    { code, increment_by: incrementBy },
+  );
+}
+
+export async function fetchDrivers() {
+  return apiGet<Array<{ id: number; name: string; email?: string | null; phone?: string | null }>>(
+    "/admin/fulfillment/drivers",
+  );
+}
+
+export async function assignDriver(id: number, driverUserId: number) {
+  return apiSend<FulfillmentOrder>("post", `/admin/fulfillment/orders/${id}/assign-driver`, {
+    driver_user_id: driverUserId,
+  });
+}
+
+export async function rescheduleDelivery(id: number, etaDate: string, note?: string) {
+  return apiSend<FulfillmentOrder>("post", `/admin/fulfillment/orders/${id}/reschedule`, {
+    eta_date: etaDate,
+    note,
+  });
 }
 
 export async function failDelivery(id: number, reason: string, note?: string) {

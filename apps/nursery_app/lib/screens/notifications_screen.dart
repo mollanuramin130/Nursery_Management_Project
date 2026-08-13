@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
+import 'package:nursery_app/services/notification_deep_link.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
@@ -39,17 +40,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   String? _href(Map<String, dynamic> n) {
     final data = n['data'];
     if (data is! Map) return null;
-    final orderId = data['order_id'];
-    if (orderId != null) return '/orders/$orderId';
-    final campaign = data['campaign_slug'] ?? data['slug'];
-    if (campaign is String && campaign.isNotEmpty) {
-      return '/campaigns/$campaign';
-    }
-    final productSlug = data['product_slug'];
-    if (productSlug is String && productSlug.isNotEmpty) {
-      return '/product/$productSlug';
-    }
-    return null;
+    return notificationDeepLink(Map<String, dynamic>.from(data));
   }
 
   @override

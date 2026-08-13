@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
+import 'package:nursery_app/widgets/network_status_banner.dart';
 import 'package:provider/provider.dart';
 
 /// Application shell with botanical bottom navigation.
@@ -13,7 +14,12 @@ class ShellScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const NetworkStatusBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: Material(
         color: AppColors.surface,
         elevation: 0,

@@ -1,8 +1,6 @@
-import { apiGet } from "@/lib/api/client";
-import { api } from "@/lib/api/client";
+import { api, apiGet } from "@/lib/api/client";
 import type { AnalyticsRangeParams } from "@/lib/analytics/range";
 import { rangeToQuery } from "@/lib/analytics/range";
-import { storage } from "@/lib/storage";
 
 function qs(range: AnalyticsRangeParams, extra?: Record<string, string>) {
   const base = rangeToQuery(range);
@@ -88,9 +86,6 @@ export async function downloadAnalyticsExport(
   const res = await api.get("/admin/analytics/export", {
     params,
     responseType: "blob",
-    headers: {
-      Authorization: `Bearer ${storage.getAccess() ?? ""}`,
-    },
   });
   const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);

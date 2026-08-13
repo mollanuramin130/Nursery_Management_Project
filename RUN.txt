@@ -1,0 +1,184 @@
+GreenLeaf Nursery — how to run (simple)
+
+Order every time:
+1. MySQL
+2. API  (must stay running — use --host=0.0.0.0 for phones)
+3. Website / Admin / Apps
+
+QA testing: docs/QA_TESTING_POLICY.md (unit/API/client tests required; no COMPLETE without evidence).
+
+--------------------------------
+QA-01 connectivity checklist
+--------------------------------
+# API must be healthy:
+curl http://127.0.0.1:8000/api/v1/health/ready
+# expect: {"status":"ok","database":"healthy",...}
+
+# Or:
+cd apps/nursery-api && bash scripts/qa01_smoke.sh
+
+CORS in API .env must include:
+  http://localhost:3000, http://127.0.0.1:3000
+  http://localhost:3001, http://127.0.0.1:3001
+
+Physical Android: do NOT use 10.0.2.2 — use Mac LAN IP.
+
+
+--------------------------------
+1) MySQL
+--------------------------------
+- Start MySQL (XAMPP or your MySQL)
+- Database name: nursery_local
+- Load sample data once: database/nursery_sample_data.sql
+
+
+--------------------------------
+2) API (must stay running)
+--------------------------------
+cd apps/nursery-api
+composer install
+php artisan serve --host=0.0.0.0 --port=8000
+
+Open: http://127.0.0.1:8000/api/v1
+Health: http://127.0.0.1:8000/api/v1/health/ready
+
+
+--------------------------------
+3) Customer Website
+--------------------------------
+# From repo root, npm run dev FAILS (no root package.json). Always:
+cd apps/nursery-web
+cp .env.example .env.local
+# NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000/api/v1
+# If you open http://192.168.x.x:3000 (phone/LAN), also set:
+# NEXT_DEV_ALLOWED_ORIGINS=192.168.1.3
+npm install
+npm run dev
+
+# Prefer this URL (matches Next "Local") — Add to cart works here:
+Open: http://localhost:3000
+# LAN (http://192.168.x.x:3000) also works in dev: browser uses /backend-api
+# proxy to Laravel (see next.config rewrites). Set NEXT_DEV_ALLOWED_ORIGINS to your IP.
+Login page shows API readiness banner.
+
+
+--------------------------------
+4) Admin Website
+--------------------------------
+cd apps/nursery-admin
+cp .env.example .env.local
+npm install
+npm run dev
+
+# Prefer:
+Open: http://localhost:3001
+# Or http://127.0.0.1:3001 (allowedDevOrigins includes 127.0.0.1)
+
+
+--------------------------------
+5) Customer Android App
+--------------------------------
+cd apps/nursery_app
+flutter pub get
+
+# Emulator:
+flutter run
+
+# Physical phone (same Wi-Fi as Mac):
+ipconfig getifaddr en0
+flutter run -d <DEVICE_ID> --dart-define=API_BASE_URL=http://YOUR_LAN_IP:8000/api/v1
+
+# If phone cannot reach LAN IP (AP isolation / band mismatch), USB tunnel:
+adb reverse tcp:8000 tcp:8000
+flutter run -d <DEVICE_ID> --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
+# Debug/profile APKs allow cleartext; release still requires HTTPS.
+
+
+--------------------------------
+6) Admin Android App
+--------------------------------
+cd apps/nursery_admin_mobile
+flutter pub get
+
+# Emulator:
+flutter run
+
+# Physical phone:
+flutter run -d <DEVICE_ID> --dart-define=API_BASE_URL=http://YOUR_LAN_IP:8000/api/v1
+# Or: adb reverse tcp:8000 tcp:8000 + API_BASE_URL=http://127.0.0.1:8000/api/v1
+
+
+--------------------------------
+Sample logins (after sample SQL)
+--------------------------------
+Password for all: Secret@123
+
+Admin:    admin@nursery.test
+Customer: asha@example.com
+
+More detail: docs/QA-01-ENVIRONMENT-AND-API-HEALTH.md
+Setup: docs/ENVIRONMENT_SETUP.md
+QA report: docs/QA-01-REPORT.md
+Smoke: cd apps/nursery-api && bash scripts/qa01_smoke.sh
+Extended: bash scripts/qa01_connectivity_smoke.sh
+Full deploy: docs/RUN_DEPLOY_AND_CUSTOMIZE.md
+
+--------------------------------
+Razorpay TEST setup (UPI)
+--------------------------------
+API keys + webhook secret: SET in apps/nursery-api/.env (rzp_test_* only; never commit).
+Customer Web checkout: COD + UPI/Razorpay (Checkout / Dynamic QR / Intent).
+QA-26 COMPLETE (TEST): payment 5526 / order 9062 / pay_TPBCfrCIzFjCKz.
+QA-27 COMPLETE (readiness): LIVE charge BLOCKED; --strict fails on local; GREEN NO.
+QA-30 device Razorpay TEST: order 9066 / pay_TPDwnubVyTYAiG → CONFIRMED.
+QA-31: Dynamic QR generate PASS; QR/UPI settle UNVERIFIED/BLOCKED (no TEST UPI account).
+QA-32 PARTIAL (TEST hardening): CSP; status labels; COD lifecycle 9069 → REFUNDED.
+QA-33 COMPLETE: QA-SEC-001 CLOSED — Customer/Admin Web use same-origin BFF
+  (/api/bff/*) with HttpOnly cookies + CSRF. Mobile still uses Bearer tokens.
+  Smoke: bash apps/nursery-api/scripts/qa33_bff_smoke.sh
+QA-34 COMPLETE (TEST/staging readiness): env contract API_PROXY_TARGET + COOKIE_SECURE;
+  readiness: bash apps/nursery-api/scripts/qa34_bff_readiness.sh
+  Local HTTP Secure=false verified; live HTTPS staging cookie jar UNVERIFIED.
+QA-35 COMPLETE: comprehensive TEST bug/parity/UI audit; fixed QA-35-001…006
+  (Admin Mobile returns deep link, Order placed copy, admin labels, paid=1 banner,
+  payment status labels, returns error empty-state). Regression 243/1190; GREEN NO.
+QA-36 COMPLETE: final TEST stability + cross-platform feature parity audit;
+  fixed QA-36-001…008 (paid≠confirmed, pay=pending, invalid order id, wishlist error,
+  /returns remap, payment header, Mobile bottom-nav shell, wishlist remove flicker).
+  Feature matrix: docs/QA-36-FEATURE-PARITY-MATRIX.md
+  Regression PHPUnit 253/1209; Customer Flutter 38; GREEN NO.
+QA-38 COMPLETE: Offline sync hardening on QA-37 foundation;
+  cache-first + CacheEnvelope; mock cannot overwrite API; reconnect soft sync;
+  wishlist remove flicker fix; DEBUG reconnect sim.
+  Docs: QA-38-OFFLINE-SYNC-REPORT.md · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  Regression PHPUnit 253/1209; Customer Flutter 58; GREEN NO.
+QA-37 COMPLETE: parity + network + offline-first Mobile (QA-37-001…013).
+  Docs: QA-37-OFFLINE-ARCHITECTURE.md · MOCK-DATA-CONTRACT · NETWORK/PARITY
+  DEBUG: flutter run → QA Network Sim (mockOnly / offline / apiError / reconnect).
+  Server upstream (Next server env): API_PROXY_TARGET=http://127.0.0.1:8000/api/v1
+See docs/QA-38-CLOSEOUT-REPORT.md
+See docs/QA-37-CLOSEOUT-REPORT.md
+See docs/QA-36-CLOSEOUT-REPORT.md
+See docs/QA-35-CLOSEOUT-REPORT.md
+See docs/QA-34-CLOSEOUT-REPORT.md
+See docs/QA-33-CLOSEOUT-REPORT.md
+See docs/QA-32-CLOSEOUT-REPORT.md
+See docs/QA-27-CLOSEOUT-REPORT.md
+UI note: docs/QA-25-UI-CHECKOUT-REPORT.md
+E2E note: docs/QA-26-REPORT.md
+Server-only vars (never put in Flutter/Next public env):
+  RAZORPAY_KEY / RAZORPAY_SECRET / RAZORPAY_WEBHOOK_SECRET
+Webhook route:
+  POST /api/v1/payments/webhooks/razorpay
+Tunnel (update Dashboard if URL changes):
+  https://age-genres-quick-heading.trycloudflare.com/api/v1/payments/webhooks/razorpay
+Guide (no secrets): docs/RAZORPAY-TEST-SETUP.md
+
+--------------------------------
+Firebase FCM (push)
+--------------------------------
+Server: FIREBASE_CREDENTIALS (preferred) or FCM_SERVER_KEY — currently EMPTY
+Client: place real google-services.json (gitignored); see *.example
+Guide: docs/QA-23-FCM-SETUP.md
+Queue: php artisan queue:work
+REAL FCM blocked until credentials + device evidence exist.

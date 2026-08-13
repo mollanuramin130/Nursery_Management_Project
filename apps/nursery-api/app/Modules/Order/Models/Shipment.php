@@ -13,7 +13,7 @@ class Shipment extends Model
     protected $fillable = [
         'order_id', 'status', 'carrier', 'tracking_number', 'tracking_url',
         'shipped_at', 'delivered_at', 'shipping_method_id', 'warehouse_id',
-        'eta_date', 'weight_grams', 'meta',
+        'assigned_driver_user_id', 'eta_date', 'weight_grams', 'meta',
     ];
 
     protected function casts(): array
@@ -34,5 +34,10 @@ class Shipment extends Model
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function assignedDriver()
+    {
+        return $this->belongsTo(\App\Modules\Auth\Models\User::class, 'assigned_driver_user_id');
     }
 }

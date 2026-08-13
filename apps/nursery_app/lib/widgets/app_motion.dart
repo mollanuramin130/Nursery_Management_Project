@@ -111,7 +111,7 @@ class WishlistHeart extends StatelessWidget {
   });
 
   final bool saved;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final double size;
 
   @override

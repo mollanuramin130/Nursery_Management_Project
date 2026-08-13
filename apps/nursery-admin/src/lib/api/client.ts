@@ -1,13 +1,15 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { ensureCsrf, getCsrfToken } from "@/lib/csrf";
 import { storage } from "@/lib/storage";
 import type { ApiEnvelope } from "@/lib/types";
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
+const proxyBase = "/api/bff/proxy";
+const authBase = "/api/bff/auth";
 
 export const api = axios.create({
-  baseURL,
+  baseURL: proxyBase,
   timeout: 30000,
+  withCredentials: true,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -18,44 +20,48 @@ export const api = axios.create({
 
 type RetriableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 let onUnauthorized: (() => void) | null = null;
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler;
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refresh = storage.getRefresh();
-  if (!refresh) return null;
-
+async function refreshSession(): Promise<boolean> {
   try {
-    const { data } = await axios.post<
-      ApiEnvelope<{ access_token: string; refresh_token: string }>
-    >(
-      `${baseURL}/auth/refresh`,
-      { refresh_token: refresh },
+    await ensureCsrf();
+    const { data } = await axios.post<ApiEnvelope<{ expires_in?: number }>>(
+      `${authBase}/refresh`,
+      {},
       {
+        withCredentials: true,
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
+          "X-CSRF-Token": getCsrfToken() ?? "",
         },
       },
     );
-
-    if (!data.success) return null;
-    storage.setTokens(data.data.access_token, data.data.refresh_token);
-    return data.data.access_token;
-  } catch {
-    storage.clearTokens();
-    return null;
+    return !!data.success;
+  } catch (error) {
+    // QA-37: transport failures must not clear staff session.
+    const ax = error as { response?: { status?: number }; code?: string };
+    if (!ax.response) {
+      return false;
+    }
+    if (ax.response.status === 401 || ax.response.status === 403) {
+      storage.clearLegacyAuthTokens();
+      onUnauthorized?.();
+    }
+    return false;
   }
 }
 
-api.interceptors.request.use((config) => {
-  const access = storage.getAccess();
-  if (access) {
-    config.headers.Authorization = `Bearer ${access}`;
+api.interceptors.request.use(async (config) => {
+  const method = (config.method ?? "get").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") {
+    const csrf = getCsrfToken() ?? (await ensureCsrf());
+    config.headers["X-CSRF-Token"] = csrf;
   }
   if (!config.headers["X-Request-Id"]) {
     const id =
@@ -75,24 +81,24 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    const url = String(original.url ?? "");
     if (
-      original.url?.includes("/auth/login") ||
-      original.url?.includes("/auth/refresh") ||
-      original.url?.includes("/auth/logout")
+      url.includes("/auth/login") ||
+      url.includes("/auth/refresh") ||
+      url.includes("/auth/logout")
     ) {
       return Promise.reject(error);
     }
 
     original._retry = true;
-    refreshPromise ??= refreshAccessToken().finally(() => {
+    refreshPromise ??= refreshSession().finally(() => {
       refreshPromise = null;
     });
-    const token = await refreshPromise;
-    if (!token) {
+    const ok = await refreshPromise;
+    if (!ok) {
       onUnauthorized?.();
       return Promise.reject(error);
     }
-    original.headers.Authorization = `Bearer ${token}`;
     return api(original);
   },
 );
@@ -129,16 +135,32 @@ function unwrapError(error: unknown, fallback: string) {
         ? error.response.headers["x-request-id"]
         : undefined) ??
       (typeof body?.meta?.request_id === "string" ? body.meta.request_id : undefined);
+    if (error.response?.status === 429) {
+      const apiMsg = body?.message?.trim() ?? "";
+      const message =
+        apiMsg && !/^too many attempts\.?$/i.test(apiMsg)
+          ? apiMsg
+          : "You're doing that too quickly. Please wait about a minute, then try again.";
+      return new ApiError(message, {
+        status: 429,
+        errors: body?.errors ?? null,
+        requestId,
+      });
+    }
     if (body?.message) {
       return new ApiError(body.message, {
         status: error.response?.status,
+        code:
+          typeof body.meta?.error_code === "string"
+            ? body.meta.error_code
+            : undefined,
         errors: body.errors ?? null,
         requestId,
       });
     }
     if (!error.response) {
       return new ApiError(
-        `Cannot reach API at ${baseURL}. Check the API is running and CORS allows this Admin origin (port 3001).`,
+        "Cannot reach Admin BFF / API. Confirm nursery-admin is running and API_PROXY_TARGET points at Laravel.",
       );
     }
     return new ApiError(fallback, {
@@ -171,6 +193,31 @@ export async function apiSend<T>(
       method,
       url,
       data: body,
+    });
+    if (!data.success) throw new ApiError(data.message || "Request failed");
+    return data;
+  } catch (error) {
+    throw unwrapError(error, "Request failed");
+  }
+}
+
+export async function authSend<T>(
+  path: "login" | "logout" | "refresh",
+  body?: unknown,
+) {
+  await ensureCsrf();
+  try {
+    const { data } = await axios.request<ApiEnvelope<T>>({
+      method: "post",
+      url: `${authBase}/${path}`,
+      data: body ?? {},
+      withCredentials: true,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRF-Token": getCsrfToken() ?? "",
+        "X-Platform": "web",
+      },
     });
     if (!data.success) throw new ApiError(data.message || "Request failed");
     return data;

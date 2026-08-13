@@ -44,6 +44,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            // Pass through safe auth-flow messages; never leak internals.
+            $message = trim($e->getMessage());
+            $safeCodes = [
+                'Invalid email or password' => 'AUTH_INVALID_CREDENTIALS',
+                'Account is blocked' => 'AUTH_ACCOUNT_BLOCKED',
+                'Invalid or expired refresh token' => 'AUTH_REFRESH_INVALID',
+            ];
+
+            if (isset($safeCodes[$message])) {
+                return ApiResponse::error($message, 401, $safeCodes[$message]);
+            }
+
             return ApiResponse::error('Unauthenticated', 401, 'UNAUTHENTICATED');
         });
 

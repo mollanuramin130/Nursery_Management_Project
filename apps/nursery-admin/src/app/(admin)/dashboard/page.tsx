@@ -9,7 +9,7 @@ import { fetchDashboard } from "@/lib/api/dashboard";
 import { fetchOrders } from "@/lib/api/orders";
 import { fetchInventory } from "@/lib/api/inventory";
 import { hasPermission } from "@/lib/auth/permissions";
-import { statusTone } from "@/lib/auth/order-transitions";
+import { orderStatusLabel, statusTone } from "@/lib/auth/order-transitions";
 import { formatMoney, formatDateTime } from "@/lib/format";
 import type { AdminOrderListItem, DashboardSummary, InventoryRow } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
@@ -212,7 +212,9 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-2 py-2">{formatMoney(order.grand_total)}</td>
                           <td className="px-2 py-2">
-                            <Badge tone={statusTone(order.status)}>{order.status}</Badge>
+                            <Badge tone={statusTone(order.status)}>
+                              {orderStatusLabel(order.status)}
+                            </Badge>
                           </td>
                         </tr>
                       ))}

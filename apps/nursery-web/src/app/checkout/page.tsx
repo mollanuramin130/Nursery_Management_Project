@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { CheckoutStepper } from "@/components/checkout/CheckoutStepper";
 import { Button } from "@/components/ui/Button";
 import { CheckoutSkeleton } from "@/components/ui/Skeleton";
@@ -10,7 +10,24 @@ import { Field, Input, Select, Textarea } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { apiGet, apiSend } from "@/lib/api";
 import { loginHref } from "@/lib/auth-redirect";
-import { localStubPayment, openRazorpayCheckout } from "@/lib/razorpay";
+import {
+  nextPreviewGeneration,
+  shouldApplyPreviewResult,
+} from "@/lib/checkout-preview";
+import { localStubPayment, openRazorpayCheckout, checkoutPayableTotal, canPlaceOrder } from "@/lib/razorpay";
+import {
+  mapPaymentApiStatus,
+  normalizeUpiInitiateMode,
+  qrImageSrc,
+  shouldContinueUpiPoll,
+  shouldOpenRazorpayCheckout,
+  shouldShowUpiIntent,
+  shouldShowUpiQr,
+  type UpiClientPayload,
+  type UpiInitiateMode,
+  type UpiPaymentUiStatus,
+  upiStatusLabel,
+} from "@/lib/upi-payment";
 import { checkoutService, customerService } from "@/lib/services";
 import { money } from "@/lib/format";
 import type { Address, ShippingMethod } from "@/lib/types";
@@ -32,7 +49,21 @@ export default function CheckoutPage() {
   const [methods, setMethods] = useState<ShippingMethod[]>([]);
   const [addressId, setAddressId] = useState<number | null>(null);
   const [shippingMethodId, setShippingMethodId] = useState<number | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "razorpay">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "upi">("cod");
+  /** Preferred initiate mode — backend remains authoritative on the response. */
+  const [upiMode, setUpiMode] = useState<UpiInitiateMode>("checkout");
+  const [upiUi, setUpiUi] = useState<{
+    orderId: number;
+    orderNumber: string;
+    paymentId: number;
+    amount: number;
+    payload: UpiClientPayload;
+    status: UpiPaymentUiStatus;
+  } | null>(null);
+  const upiStatusRef = useRef<UpiPaymentUiStatus>("pending");
+  useEffect(() => {
+    upiStatusRef.current = upiUi?.status ?? "pending";
+  }, [upiUi?.status]);
   const [notes, setNotes] = useState("");
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [preview, setPreview] = useState<{
@@ -42,6 +73,10 @@ export default function CheckoutPage() {
     tax_total?: number;
     grand_total?: number;
   } | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  /** Monotonic generation so slower preview responses cannot overwrite newer ones (QA-PERF-011). */
+  const previewGenRef = useRef(0);
   const [busy, setBusy] = useState(false);
   const [addrForm, setAddrForm] = useState({
     name: "",
@@ -83,17 +118,49 @@ export default function CheckoutPage() {
     };
   }, [bootstrapped, user, fetchCart, toast]);
 
-  useEffect(() => {
-    if (!user || !addressId || !shippingMethodId) return;
-    void checkoutService
-      .preview({
+  async function refreshPreview(): Promise<boolean> {
+    if (!user || !addressId || !shippingMethodId) return false;
+    const gen = nextPreviewGeneration(previewGenRef.current);
+    previewGenRef.current = gen;
+    setPreviewLoading(true);
+    setPreviewError(null);
+    try {
+      const res = await checkoutService.preview({
         address_id: addressId,
         shipping_method_id: shippingMethodId,
         coupon_code: cart?.coupon_code ?? undefined,
-      })
-      .then((res) => setPreview(res.data))
-      .catch(() => setPreview(null));
-  }, [user, addressId, shippingMethodId, cart?.coupon_code]);
+      });
+      if (!shouldApplyPreviewResult(gen, previewGenRef.current)) {
+        return false;
+      }
+      setPreview(res.data);
+      setPreviewError(null);
+      return res.data?.grand_total != null;
+    } catch (err) {
+      if (!shouldApplyPreviewResult(gen, previewGenRef.current)) {
+        return false;
+      }
+      setPreview(null);
+      setPreviewError(
+        err instanceof Error ? err.message : "Unable to calculate checkout totals",
+      );
+      return false;
+    } finally {
+      if (shouldApplyPreviewResult(gen, previewGenRef.current)) {
+        setPreviewLoading(false);
+      }
+    }
+  }
+
+  const cartLinesKey =
+    cart?.items?.map((i) => `${i.id}:${i.quantity}`).join("|") ?? "";
+
+  useEffect(() => {
+    // Any cart/checkout input change invalidates prior preview (stale protection).
+    setPreview(null);
+    void refreshPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh when checkout + cart lines change
+  }, [user, addressId, shippingMethodId, cart?.coupon_code, cart?.item_count, cartLinesKey]);
 
   async function saveAddress(e: FormEvent) {
     e.preventDefault();
@@ -129,7 +196,7 @@ export default function CheckoutPage() {
 
   async function onPlace(e?: FormEvent) {
     e?.preventDefault();
-    if (busy) return;
+    if (busy || previewLoading) return;
     if (!addressId || !shippingMethodId) {
       toast("Select address and delivery method", "error");
       setStep(1);
@@ -139,12 +206,25 @@ export default function CheckoutPage() {
       toast("Your cart is empty", "error");
       return;
     }
+
+    // Sync lock before network work (parity with Flutter _submissionLocked).
     setBusy(true);
     const requestId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? `web_${crypto.randomUUID()}`
         : `web_${Date.now()}`;
     try {
+      // Force fresh authoritative preview — never place on stale/missing totals.
+      const previewOk = await refreshPreview();
+      if (!previewOk) {
+        toast(
+          previewError ??
+            "Checkout totals are unavailable. Retry preview before placing the order.",
+          "error",
+        );
+        return;
+      }
+
       const orderRes = await checkoutService.placeOrder(
         {
           address_id: addressId,
@@ -156,64 +236,97 @@ export default function CheckoutPage() {
         requestId,
       );
 
-      if (paymentMethod === "razorpay") {
+      if (paymentMethod === "upi") {
+        const initiateMode = normalizeUpiInitiateMode(upiMode);
         const pay = await apiSend<{
           payment_id: number;
           provider_order_id: string;
           amount: number;
           currency: string;
-          client_payload: {
-            key: string;
-            order_id: string;
-            amount: number;
-            currency: string;
-            name?: string;
-            mode?: string;
-            prefill?: { name?: string; email?: string; contact?: string };
-          };
-        }>("post", "/payments/initiate", { order_id: orderRes.data.id, method: "razorpay" });
-
-        const payload = pay.data.client_payload;
-        const providerOrderId = pay.data.provider_order_id || payload.order_id;
-
-        let gatewayResult;
-        if (payload.mode === "local_stub") {
-          // Dev only — server accepts local_* when Razorpay secret is empty.
-          gatewayResult = localStubPayment(providerOrderId, pay.data.payment_id);
-        } else {
-          gatewayResult = await openRazorpayCheckout({
-            key: payload.key,
-            amount: payload.amount,
-            currency: payload.currency || pay.data.currency || "INR",
-            name: payload.name || "GreenLeaf Nursery",
-            description: `Order ${orderRes.data.order_number}`,
-            order_id: providerOrderId,
-            prefill: payload.prefill,
-          });
-        }
-
-        const verified = await apiSend<{
-          payment_status: string;
-          order_status: string;
-          order?: { id: number; order_number: string; status: string };
-        }>("post", "/payments/verify", {
-          payment_id: pay.data.payment_id,
-          provider_order_id: gatewayResult.razorpay_order_id,
-          provider_payment_id: gatewayResult.razorpay_payment_id,
-          provider_signature: gatewayResult.razorpay_signature,
+          method?: string;
+          upi_mode?: string;
+          expires_at?: string;
+          client_payload: UpiClientPayload;
+        }>("post", "/payments/initiate", {
+          order_id: orderRes.data.id,
+          method: "upi",
+          mode: initiateMode,
         });
 
-        if (verified.data.payment_status !== "success" || verified.data.order_status !== "CONFIRMED") {
-          toast("Payment could not be confirmed. Check your order status.", "error");
-          router.push(`/account/orders/${orderRes.data.id}?pay=pending`);
-          return;
+        const payload = {
+          ...pay.data.client_payload,
+          upi_mode:
+            pay.data.client_payload.upi_mode ??
+            pay.data.upi_mode ??
+            initiateMode,
+        };
+        const providerOrderId = pay.data.provider_order_id || payload.order_id;
+
+        // Never mark PAID from client alone — wait UI / verify / poll use the server.
+        setUpiUi({
+          orderId: orderRes.data.id,
+          orderNumber: orderRes.data.order_number,
+          paymentId: pay.data.payment_id,
+          amount: pay.data.amount,
+          payload,
+          status: "pending",
+        });
+
+        if (shouldOpenRazorpayCheckout(payload)) {
+          try {
+            const gatewayResult = await openRazorpayCheckout({
+              key: payload.key || "",
+              amount: payload.amount,
+              currency: payload.currency || pay.data.currency || "INR",
+              name: payload.name || "GreenLeaf Nursery",
+              description: `Order ${orderRes.data.order_number}`,
+              order_id: providerOrderId,
+              prefill: payload.prefill,
+              method: payload.method,
+            });
+            const verified = await apiSend<{
+              payment_status: string;
+              order_status: string;
+            }>("post", "/payments/verify", {
+              payment_id: pay.data.payment_id,
+              provider_order_id: gatewayResult.razorpay_order_id,
+              provider_payment_id: gatewayResult.razorpay_payment_id,
+              provider_signature: gatewayResult.razorpay_signature,
+            });
+            if (
+              verified.data.payment_status !== "success" ||
+              verified.data.order_status !== "CONFIRMED"
+            ) {
+              toast("Payment could not be confirmed. Check your order status.", "error");
+              router.push(`/account/orders/${orderRes.data.id}?pay=pending`);
+              return;
+            }
+            await fetchCart();
+            toast("Payment successful — order confirmed");
+            router.push(
+              `/account/orders/${orderRes.data.id}?placed=${encodeURIComponent(orderRes.data.order_number)}&paid=1`,
+            );
+            return;
+          } catch (checkoutErr) {
+            const msg =
+              checkoutErr instanceof Error ? checkoutErr.message : "Payment cancelled";
+            toast(
+              msg.includes("cancel")
+                ? "Payment cancelled. You can retry from this screen or your order."
+                : msg,
+              "error",
+            );
+            // Fall through to wait UI so customer can retry / poll / use QR/intent if present.
+          }
         }
 
-        await fetchCart();
-        toast("Payment successful — order confirmed");
-        router.push(
-          `/account/orders/${orderRes.data.id}?placed=${encodeURIComponent(orderRes.data.order_number)}&paid=1`,
-        );
+        if (shouldShowUpiQr(payload) || shouldShowUpiIntent(payload)) {
+          toast("Complete UPI payment. Status updates from the server.");
+        } else if ((payload.mode ?? "") === "local_stub") {
+          toast("Local test payment mode — confirm only after server verification.");
+        } else {
+          toast("Complete payment in Razorpay. Status updates from the server.");
+        }
         return;
       }
 
@@ -229,6 +342,198 @@ export default function CheckoutPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function refreshUpiStatus(): Promise<UpiPaymentUiStatus | null> {
+    if (!upiUi) return null;
+    try {
+      const res = await apiGet<{
+        payment_status?: string;
+        order_status?: string;
+      }>(`/payments/${upiUi.paymentId}`);
+      const mapped = mapPaymentApiStatus(res.data.payment_status);
+      setUpiUi((prev) => (prev ? { ...prev, status: mapped === "pending" ? "polling" : mapped } : prev));
+      // QA-36: navigate as confirmed only when server order_status is CONFIRMED.
+      if (mapped === "paid" && res.data.order_status === "CONFIRMED") {
+        await fetchCart();
+        toast("Payment successful — order confirmed");
+        router.push(
+          `/account/orders/${upiUi.orderId}?placed=${encodeURIComponent(upiUi.orderNumber)}&paid=1`,
+        );
+      }
+      return mapped;
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not refresh payment status", "error");
+      return null;
+    }
+  }
+
+  async function confirmUpiStubPayment() {
+    if (!upiUi) return;
+    if (!upiUi.payload.stub_confirm_allowed || upiUi.payload.mode !== "local_stub") {
+      toast("Waiting for server payment confirmation…", "error");
+      return;
+    }
+    setBusy(true);
+    try {
+      const gatewayResult = localStubPayment(upiUi.payload.order_id, upiUi.paymentId);
+      const verified = await apiSend<{
+        payment_status: string;
+        order_status: string;
+      }>("post", "/payments/verify", {
+        payment_id: upiUi.paymentId,
+        provider_order_id: gatewayResult.razorpay_order_id,
+        provider_payment_id: gatewayResult.razorpay_payment_id,
+        provider_signature: gatewayResult.razorpay_signature,
+      });
+      if (verified.data.payment_status !== "success" || verified.data.order_status !== "CONFIRMED") {
+        setUpiUi((p) => (p ? { ...p, status: "failed" } : p));
+        toast("Payment could not be confirmed.", "error");
+        return;
+      }
+      await fetchCart();
+      toast("Payment successful — order confirmed");
+      router.push(
+        `/account/orders/${upiUi.orderId}?placed=${encodeURIComponent(upiUi.orderNumber)}&paid=1`,
+      );
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Payment confirmation failed", "error");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!upiUi?.paymentId) return;
+    if (upiUi.status === "paid") return;
+    const started = Date.now();
+    upiStatusRef.current = "polling";
+    setUpiUi((p) => (p ? { ...p, status: "polling" } : p));
+    const id = window.setInterval(() => {
+      if (
+        !shouldContinueUpiPoll({
+          status: upiStatusRef.current,
+          startedAtMs: started,
+          nowMs: Date.now(),
+        })
+      ) {
+        window.clearInterval(id);
+        setUpiUi((p) =>
+          p && (p.status === "polling" || p.status === "pending")
+            ? { ...p, status: "expired" }
+            : p,
+        );
+        return;
+      }
+      void refreshUpiStatus();
+    }, 3000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- poll against paymentId only; status via ref
+  }, [upiUi?.paymentId]);
+
+  if (upiUi) {
+    const img = shouldShowUpiQr(upiUi.payload) ? qrImageSrc(upiUi.payload) : null;
+    const intentUrl = shouldShowUpiIntent(upiUi.payload)
+      ? (upiUi.payload.upi_intent_url || "").trim()
+      : "";
+    const canRetryCheckout = shouldOpenRazorpayCheckout(upiUi.payload);
+    return (
+      <section className="section">
+        <div className="mx-auto max-w-lg space-y-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6">
+          <h1 className="display text-3xl text-[var(--color-primary-deep)]">UPI / Razorpay</h1>
+          <p className="text-sm text-[var(--color-muted)]">
+            Order {upiUi.orderNumber} · Amount {money(upiUi.amount)}
+          </p>
+          <p className="text-sm font-semibold">Status: {upiStatusLabel(upiUi.status)}</p>
+          {img ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={img} alt="UPI QR code" width={220} height={220} className="mx-auto rounded-md border" />
+          ) : null}
+          <p className="text-center text-sm text-[var(--color-muted)]">
+            {img
+              ? "Scan using any supported UPI app. Confirmation comes from the server — not from this screen alone."
+              : "Complete payment securely. Confirmation comes from the server — not from this screen alone."}
+          </p>
+          <div className="flex flex-col gap-2">
+            {canRetryCheckout ? (
+              <Button
+                type="button"
+                fullWidth
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    setBusy(true);
+                    try {
+                      const gatewayResult = await openRazorpayCheckout({
+                        key: upiUi.payload.key || "",
+                        amount: upiUi.payload.amount,
+                        currency: upiUi.payload.currency || "INR",
+                        name: upiUi.payload.name || "GreenLeaf Nursery",
+                        description: `Order ${upiUi.orderNumber}`,
+                        order_id: upiUi.payload.order_id,
+                        prefill: upiUi.payload.prefill,
+                        method: upiUi.payload.method,
+                      });
+                      const verified = await apiSend<{
+                        payment_status: string;
+                        order_status: string;
+                      }>("post", "/payments/verify", {
+                        payment_id: upiUi.paymentId,
+                        provider_order_id: gatewayResult.razorpay_order_id,
+                        provider_payment_id: gatewayResult.razorpay_payment_id,
+                        provider_signature: gatewayResult.razorpay_signature,
+                      });
+                      if (
+                        verified.data.payment_status !== "success" ||
+                        verified.data.order_status !== "CONFIRMED"
+                      ) {
+                        toast("Payment could not be confirmed. Check your order status.", "error");
+                        return;
+                      }
+                      await fetchCart();
+                      toast("Payment successful — order confirmed");
+                      router.push(
+                        `/account/orders/${upiUi.orderId}?placed=${encodeURIComponent(upiUi.orderNumber)}&paid=1`,
+                      );
+                    } catch (e) {
+                      toast(e instanceof Error ? e.message : "Payment cancelled", "error");
+                    } finally {
+                      setBusy(false);
+                    }
+                  })();
+                }}
+              >
+                {busy ? "Opening Razorpay…" : "Pay with Razorpay"}
+              </Button>
+            ) : null}
+            {intentUrl ? (
+              <a
+                href={intentUrl}
+                className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-primary)]"
+              >
+                Open UPI app
+              </a>
+            ) : null}
+            <Button type="button" fullWidth disabled={busy} onClick={() => void refreshUpiStatus()}>
+              Check payment status
+            </Button>
+            {upiUi.payload.stub_confirm_allowed && upiUi.payload.mode === "local_stub" ? (
+              <Button type="button" variant="outline" fullWidth disabled={busy} onClick={() => void confirmUpiStubPayment()}>
+                Dev: confirm stub payment
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              fullWidth
+              onClick={() => router.push(`/account/orders/${upiUi.orderId}?pay=pending`)}
+            >
+              View order
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   if (!bootstrapped) {
@@ -261,7 +566,9 @@ export default function CheckoutPage() {
     );
   }
 
-  const total = preview?.grand_total ?? cart?.grand_total ?? 0;
+  const previewReady = preview?.grand_total != null;
+  const total = checkoutPayableTotal(preview);
+  const canPlace = canPlaceOrder({ previewReady, busy, previewLoading });
 
   return (
     <section className="section pb-28 md:pb-16">
@@ -293,7 +600,12 @@ export default function CheckoutPage() {
               shippingMethodId={shippingMethodId}
               setShippingMethodId={setShippingMethodId}
             />
-            <PaymentBlock paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
+            <PaymentBlock
+              paymentMethod={paymentMethod}
+              setPaymentMethod={setPaymentMethod}
+              upiMode={upiMode}
+              setUpiMode={setUpiMode}
+            />
             <Field label="Order notes (optional)">
               <Textarea
                 value={notes}
@@ -301,12 +613,24 @@ export default function CheckoutPage() {
                 placeholder="Gate code, preferred delivery slot…"
               />
             </Field>
-            <Button type="submit" fullWidth size="lg" disabled={busy}>
+            {previewError ? (
+              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+                {previewError}{" "}
+                <button type="button" className="font-semibold underline" onClick={() => void refreshPreview()}>
+                  Retry
+                </button>
+              </p>
+            ) : null}
+            <Button type="submit" fullWidth size="lg" disabled={!canPlace}>
               {busy
                 ? "Processing…"
-                : paymentMethod === "razorpay"
-                  ? `Pay ${money(total)} securely`
-                  : `Place order — ${money(total)}`}
+                : previewLoading
+                  ? "Calculating totals…"
+                  : !previewReady
+                    ? "Totals unavailable — retry"
+                    : paymentMethod === "upi"
+                      ? `Pay ${money(total!)} via UPI / Razorpay`
+                      : `Place order — ${money(total!)}`}
             </Button>
           </form>
 
@@ -348,7 +672,12 @@ export default function CheckoutPage() {
             ) : null}
             {step === 3 ? (
               <div className="space-y-4">
-                <PaymentBlock paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
+                <PaymentBlock
+                  paymentMethod={paymentMethod}
+                  setPaymentMethod={setPaymentMethod}
+                  upiMode={upiMode}
+                  setUpiMode={setUpiMode}
+                />
                 <Field label="Order notes (optional)">
                   <Textarea
                     value={notes}
@@ -372,17 +701,34 @@ export default function CheckoutPage() {
                 <p className="text-sm text-[var(--color-muted)]">
                   Address, delivery, and payment look ready. Confirm to place your order.
                 </p>
-                <SummaryBody cart={cart} preview={preview} total={total} />
+                <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-soft,#f7faf8)] px-3 py-2 text-sm">
+                  <span className="text-[var(--color-muted)]">Payment method · </span>
+                  <strong>
+                    {paymentMethod === "upi"
+                      ? `UPI / Razorpay (${upiMode === "dynamic_qr" ? "Dynamic QR" : upiMode === "upi_intent" ? "UPI Intent" : "Checkout"})`
+                      : "Cash on Delivery"}
+                  </strong>
+                  <button
+                    type="button"
+                    className="ml-2 font-semibold text-[var(--color-primary)] underline"
+                    onClick={() => setStep(3)}
+                  >
+                    Change
+                  </button>
+                </div>
+                <SummaryBody cart={cart} preview={preview} total={total} previewReady={previewReady} />
                 <div className="flex gap-2">
                   <Button variant="outline" fullWidth onClick={() => setStep(3)}>
                     Back
                   </Button>
-                  <Button fullWidth disabled={busy} onClick={() => void onPlace()}>
+                  <Button fullWidth disabled={!canPlace} onClick={() => void onPlace()}>
                     {busy
                       ? "Processing…"
-                      : paymentMethod === "razorpay"
-                        ? `Pay ${money(total)} securely`
-                        : `Place COD order — ${money(total)}`}
+                      : !previewReady
+                        ? "Totals unavailable — retry"
+                        : paymentMethod === "upi"
+                          ? `Pay ${money(total!)} via UPI / Razorpay`
+                          : `Place COD order — ${money(total!)}`}
                   </Button>
                 </div>
               </div>
@@ -392,7 +738,7 @@ export default function CheckoutPage() {
 
         <aside className="hidden h-fit rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)] lg:block">
           <h2 className="display text-3xl text-[var(--color-primary-deep)]">Order summary</h2>
-          <SummaryBody cart={cart} preview={preview} total={total} />
+          <SummaryBody cart={cart} preview={preview} total={total} previewReady={previewReady} />
           <Link href="/cart" className="mt-4 inline-block text-sm font-semibold text-[var(--color-primary)]">
             ← Edit cart
           </Link>
@@ -404,14 +750,18 @@ export default function CheckoutPage() {
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <p className="text-xs text-[var(--color-muted)]">Total</p>
-                <p className="font-bold text-[var(--color-primary-deep)]">{money(total)}</p>
+                <p className="font-bold text-[var(--color-primary-deep)]">
+                  {previewReady ? money(total!) : "—"}
+                </p>
               </div>
-              <Button disabled={busy} onClick={() => void onPlace()}>
+              <Button disabled={!canPlace} onClick={() => void onPlace()}>
                 {busy
                   ? "Processing…"
-                  : paymentMethod === "razorpay"
-                    ? `Pay ${money(total)} securely`
-                    : `Place COD order — ${money(total)}`}
+                  : !previewReady
+                    ? "Retry totals"
+                    : paymentMethod === "upi"
+                      ? `Pay ${money(total!)} via UPI / Razorpay`
+                      : `Place COD order — ${money(total!)}`}
               </Button>
             </div>
           </div>
@@ -425,6 +775,7 @@ function SummaryBody({
   cart,
   preview,
   total,
+  previewReady,
 }: {
   cart: NonNullable<ReturnType<typeof useCartStore.getState>["cart"]>;
   preview: {
@@ -434,7 +785,8 @@ function SummaryBody({
     tax_total?: number;
     grand_total?: number;
   } | null;
-  total: number;
+  total: number | null;
+  previewReady: boolean;
 }) {
   return (
     <>
@@ -449,19 +801,24 @@ function SummaryBody({
         ))}
       </ul>
       <div className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-4 text-sm">
+        {!previewReady ? (
+          <p className="text-sm text-red-700">
+            Order total will appear after checkout preview succeeds. Place order stays disabled until then.
+          </p>
+        ) : null}
         <div className="flex justify-between text-[var(--color-muted)]">
           <span>Subtotal</span>
-          <span>{money(preview?.subtotal ?? cart?.subtotal ?? 0)}</span>
+          <span>{previewReady ? money(preview?.subtotal ?? 0) : "—"}</span>
         </div>
         <div className="flex justify-between text-[var(--color-muted)]">
           <span>Shipping</span>
-          <span>{money(preview?.shipping_total ?? 0)}</span>
+          <span>{previewReady ? money(preview?.shipping_total ?? 0) : "—"}</span>
         </div>
         <div className="flex justify-between text-[var(--color-muted)]">
           <span>Discount</span>
-          <span>-{money(preview?.discount_total ?? cart?.discount_total ?? 0)}</span>
+          <span>{previewReady ? `-${money(preview?.discount_total ?? 0)}` : "—"}</span>
         </div>
-        {preview?.tax_total != null ? (
+        {previewReady && preview?.tax_total != null ? (
           <div className="flex justify-between text-[var(--color-muted)]">
             <span>Tax</span>
             <span>{money(preview.tax_total)}</span>
@@ -469,7 +826,9 @@ function SummaryBody({
         ) : null}
         <div className="flex justify-between text-lg font-bold">
           <span>Total</span>
-          <span className="text-[var(--color-primary-deep)]">{money(total)}</span>
+          <span className="text-[var(--color-primary-deep)]">
+            {previewReady && total != null ? money(total) : "—"}
+          </span>
         </div>
       </div>
     </>
@@ -654,17 +1013,29 @@ function DeliveryBlock({
 function PaymentBlock({
   paymentMethod,
   setPaymentMethod,
+  upiMode,
+  setUpiMode,
 }: {
-  paymentMethod: "cod" | "razorpay";
-  setPaymentMethod: (v: "cod" | "razorpay") => void;
+  paymentMethod: "cod" | "upi";
+  setPaymentMethod: (v: "cod" | "upi") => void;
+  upiMode: UpiInitiateMode;
+  setUpiMode: (v: UpiInitiateMode) => void;
 }) {
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5">
-      <h2 className="mb-4 font-semibold text-lg">Payment</h2>
+      <h2 className="mb-4 font-semibold text-lg">Payment Method</h2>
       <div className="space-y-2">
         {[
-          { id: "cod" as const, label: "Cash on delivery", hint: "Pay when your plants arrive" },
-          { id: "razorpay" as const, label: "Online payment", hint: "UPI / cards / net banking" },
+          {
+            id: "cod" as const,
+            label: "Cash on Delivery",
+            hint: "Pay when your plants arrive",
+          },
+          {
+            id: "upi" as const,
+            label: "UPI / Razorpay",
+            hint: "Pay securely using UPI",
+          },
         ].map((opt) => (
           <label
             key={opt.id}
@@ -689,8 +1060,57 @@ function PaymentBlock({
           </label>
         ))}
       </div>
+      {paymentMethod === "upi" ? (
+        <div className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-4">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">UPI option</p>
+          <p className="text-xs text-[var(--color-muted)]">
+            Uses the existing payment API. The server response decides what you can complete.
+          </p>
+          {(
+            [
+              {
+                id: "checkout" as const,
+                label: "Razorpay Checkout",
+                hint: "Open Razorpay TEST / UPI checkout",
+              },
+              {
+                id: "dynamic_qr" as const,
+                label: "Dynamic QR",
+                hint: "Scan a QR with any UPI app",
+              },
+              {
+                id: "upi_intent" as const,
+                label: "UPI Intent",
+                hint: "Open your UPI app directly when supported",
+              },
+            ] as const
+          ).map((opt) => (
+            <label
+              key={opt.id}
+              className={cn(
+                "flex cursor-pointer gap-3 rounded-[var(--radius-md)] border p-3 text-sm",
+                upiMode === opt.id
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)]"
+                  : "border-[var(--color-border)]",
+              )}
+            >
+              <input
+                type="radio"
+                name="upi-mode"
+                checked={upiMode === opt.id}
+                onChange={() => setUpiMode(opt.id)}
+              />
+              <span>
+                <strong>{opt.label}</strong>
+                <br />
+                <span className="text-[var(--color-muted)]">{opt.hint}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      ) : null}
       <p className="mt-3 text-xs text-[var(--color-muted)]">
-        Payments are processed securely. Provider details stay on the server.
+        Payment confirmation is always verified by the server — the browser never marks an order paid on its own.
       </p>
     </section>
   );

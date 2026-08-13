@@ -439,7 +439,17 @@ banners (deep link → campaign|product|category|offers|finder)
 
 ### Phase 6 — Optional Admin Mobile (LOW) → delivered as Phase 19
 
-- `apps/nursery_admin_mobile` (GreenLeaf Ops) consumes Admin APIs; see `docs/PHASE_19_FINAL_REPORT.md`  
+- `apps/nursery_admin_mobile` (GreenLeaf Ops) consumes Admin APIs; see `docs/PHASE_19_FINAL_REPORT.md`
+
+### Phase 20 — Advanced Delivery + Fulfillment (additive on Phase 7)
+
+- Pick scan verify, driver assign, ETA reschedule, POD meta; Admin Mobile fulfillment hub  
+- See `docs/PHASE_20_FINAL_REPORT.md`
+
+### Phase 21 — Enterprise hardening + production readiness
+
+- Webhook payment binding fix, CI, cleartext/headers/CORS hardening  
+- See `docs/PHASE_21_FINAL_REPORT.md` and `docs/PRODUCTION_READINESS_CHECKLIST.md`
 
 ---
 

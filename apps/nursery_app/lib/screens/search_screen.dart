@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
-import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_search_field.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
@@ -106,24 +106,24 @@ class _SearchScreenState extends State<SearchScreen> {
       _error = null;
     });
     try {
-      final rows = await context.read<ApiClient>().getData(
-        '/search/suggestions',
-        query: {'q': q},
-        map: (data) => (data as List)
-            .whereType<Map>()
-            .map((e) => _Suggestion.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-      );
+      final resolved =
+          await context.read<CatalogRepository>().searchSuggestions(q);
+      final rows = resolved.data
+          .map(
+            (term) => _Suggestion(label: term, type: 'query', slug: ''),
+          )
+          .toList();
       if (!mounted || req != _suggestionReq) return;
       setState(() {
         _suggestions = rows;
         _loadingSuggestions = false;
+        _error = null;
       });
     } catch (e) {
       if (!mounted || req != _suggestionReq) return;
       setState(() {
         _loadingSuggestions = false;
-        _error = e.toString();
+        _error = null;
         _suggestions = [];
       });
     }

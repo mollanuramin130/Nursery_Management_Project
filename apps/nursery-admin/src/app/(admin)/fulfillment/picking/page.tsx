@@ -12,12 +12,14 @@ import { fetchFulfillmentQueue, type FulfillmentQueueRow } from "@/lib/api/fulfi
 import { statusTone } from "@/lib/auth/order-transitions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { formatDateTime } from "@/lib/format";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useAuthStore } from "@/store/auth";
 
 export default function PickingQueuePage() {
   const user = useAuthStore((s) => s.user);
   const canView = hasPermission(user, "fulfillment.view");
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
   const [rows, setRows] = useState<FulfillmentQueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,14 +33,17 @@ export default function PickingQueuePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchFulfillmentQueue("picking", { q: q || undefined, per_page: 50 });
+      const res = await fetchFulfillmentQueue("picking", {
+        q: debouncedQ || undefined,
+        per_page: 50,
+      });
       setRows(res.data);
     } catch (err) {
       setError(err instanceof ApiError || err instanceof Error ? err.message : "Failed to load");
     } finally {
       setLoading(false);
     }
-  }, [canView, q]);
+  }, [canView, debouncedQ]);
 
   useEffect(() => {
     void load();

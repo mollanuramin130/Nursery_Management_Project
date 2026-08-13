@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ToastViewport } from "@/components/feedback/ToastViewport";
-import { ApiError } from "@/lib/api/client";
+import { authUserMessage } from "@/lib/auth-messages";
+import { sanitizeAdminNext } from "@/lib/auth-redirect";
+import { probeApiHealth, type ApiHealthState } from "@/lib/api-health";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
@@ -21,24 +23,34 @@ export default function LoginClient() {
     process.env.NODE_ENV === "development" ? "Secret@123" : "",
   );
   const [error, setError] = useState<string | null>(null);
+  const [apiHealth, setApiHealth] = useState<ApiHealthState>({ status: "checking" });
+  const safeNext = sanitizeAdminNext(params.get("next"));
 
   useEffect(() => {
     if (bootstrapped && user) {
-      router.replace(params.get("next") || "/dashboard");
+      router.replace(safeNext);
     }
-  }, [bootstrapped, user, router, params]);
+  }, [bootstrapped, user, router, safeNext]);
+
+  useEffect(() => {
+    const base =
+      "/api/bff/proxy";
+    void probeApiHealth(base).then(setApiHealth);
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (apiHealth.status === "down") {
+      setError(apiHealth.detail);
+      return;
+    }
     try {
       await login(email.trim(), password);
       push("Signed in", "success");
-      router.replace(params.get("next") || "/dashboard");
+      router.replace(safeNext);
     } catch (err) {
-      const message =
-        err instanceof ApiError || err instanceof Error ? err.message : "Login failed";
-      setError(message);
+      setError(authUserMessage(err, "Login failed"));
     }
   }
 
@@ -56,6 +68,17 @@ export default function LoginClient() {
           <p className="mt-1 text-sm text-[var(--admin-muted)]">
             Sign in with a staff account to manage operations.
           </p>
+          {apiHealth.status === "checking" ? (
+            <p className="mt-3 text-xs text-[var(--admin-muted)]">Checking API connection…</p>
+          ) : null}
+          {apiHealth.status === "down" ? (
+            <p className="mt-3 rounded-[var(--admin-radius)] bg-[var(--admin-danger-soft)] px-3 py-2 text-sm text-[var(--admin-danger)]" role="alert">
+              {apiHealth.detail}
+            </p>
+          ) : null}
+          {apiHealth.status === "ok" ? (
+            <p className="mt-3 text-xs text-[var(--admin-success,#027a48)]">API ready</p>
+          ) : null}
         </div>
 
         <div className="space-y-3">

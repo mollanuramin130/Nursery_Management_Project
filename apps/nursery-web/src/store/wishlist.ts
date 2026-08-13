@@ -14,6 +14,7 @@ type WishlistState = {
   items: WishRow[];
   loaded: boolean;
   loading: boolean;
+  error: string | null;
   fetchWishlist: () => Promise<void>;
   add: (productId: number) => Promise<void>;
   remove: (productId: number) => Promise<void>;
@@ -26,14 +27,19 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
   items: [],
   loaded: false,
   loading: false,
+  error: null,
 
   fetchWishlist: async () => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const res = await apiGet<WishRow[]>("/wishlist");
-      set({ items: res.data ?? [], loaded: true });
-    } catch {
-      set({ items: [], loaded: true });
+      set({ items: res.data ?? [], loaded: true, error: null });
+    } catch (e) {
+      // QA-36-004: do not present fetch failures as an empty wishlist.
+      set({
+        loaded: true,
+        error: e instanceof Error ? e.message : "Failed to load wishlist",
+      });
     } finally {
       set({ loading: false });
     }
@@ -45,8 +51,15 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
   },
 
   remove: async (productId) => {
-    await apiSend("delete", `/wishlist/${productId}`);
-    set({ items: get().items.filter((i) => i.product.id !== productId) });
+    // Optimistic remove — avoid stale row flash while DELETE is in flight (QA-36-008).
+    const previous = get().items;
+    set({ items: previous.filter((i) => i.product.id !== productId) });
+    try {
+      await apiSend("delete", `/wishlist/${productId}`);
+    } catch (e) {
+      set({ items: previous });
+      throw e;
+    }
   },
 
   moveToCart: async (productId) => {
@@ -61,5 +74,5 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
 
   has: (productId) => get().items.some((i) => i.product.id === productId),
 
-  clearLocal: () => set({ items: [], loaded: false }),
+  clearLocal: () => set({ items: [], loaded: false, error: null }),
 }));

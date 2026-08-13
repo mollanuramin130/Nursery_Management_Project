@@ -33,6 +33,7 @@ class CartController extends Controller
         $validated = $request->validate([
             'product_id' => ['required', 'integer'],
             'variant_id' => ['nullable', 'integer'],
+            // Legacy alias — prefer variant_id (matches cart present() / inventory APIs).
             'product_variant_id' => ['nullable', 'integer'],
             'quantity' => ['required', 'integer', 'min:1'],
         ]);

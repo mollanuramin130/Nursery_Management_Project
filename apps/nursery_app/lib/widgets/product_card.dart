@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
@@ -11,6 +10,7 @@ import 'package:nursery_app/widgets/app_button.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
 import 'package:nursery_app/widgets/app_motion.dart';
 import 'package:nursery_app/widgets/mini_cart_sheet.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
 
@@ -25,6 +25,7 @@ class ProductCard extends StatefulWidget {
 
 class _ProductCardState extends State<ProductCard> {
   bool _busy = false;
+  bool _wishBusy = false;
 
   ProductSummary get product => widget.product;
 
@@ -80,6 +81,9 @@ class _ProductCardState extends State<ProductCard> {
       AuthNavigation.pushLogin(context, redirect: '/product/${product.slug}');
       return;
     }
+    // QA-36-004: ignore rapid double-taps while in flight.
+    if (_wishBusy) return;
+    setState(() => _wishBusy = true);
     final wishlist = context.read<WishlistProvider>();
     try {
       final saved = await wishlist.toggle(product.id);
@@ -94,6 +98,8 @@ class _ProductCardState extends State<ProductCard> {
         context,
         'Unable to update wishlist. Please try again.',
       );
+    } finally {
+      if (mounted) setState(() => _wishBusy = false);
     }
   }
 
@@ -127,28 +133,10 @@ class _ProductCardState extends State<ProductCard> {
                             border: Border.all(color: AppColors.border),
                             borderRadius: BorderRadius.circular(AppRadii.lg),
                           ),
-                          child: product.thumbnailUrl == null
-                              ? const Center(
-                                  child: Icon(
-                                    Icons.local_florist_outlined,
-                                    color: AppColors.muted,
-                                  ),
-                                )
-                              : CachedNetworkImage(
-                                  imageUrl: product.thumbnailUrl!,
-                                  fit: BoxFit.cover,
-                                  memCacheWidth: 600,
-                                  fadeInDuration: AppDuration.fast,
-                                  placeholder: (context, url) =>
-                                      Container(color: AppColors.surfaceMuted),
-                                  errorWidget: (context, url, error) =>
-                                      const Center(
-                                        child: Icon(
-                                          Icons.local_florist_outlined,
-                                          color: AppColors.muted,
-                                        ),
-                                      ),
-                                ),
+                          child: ResilientNetworkImage(
+                            url: product.thumbnailUrl,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
@@ -160,7 +148,7 @@ class _ProductCardState extends State<ProductCard> {
                         shape: const CircleBorder(),
                         child: WishlistHeart(
                           saved: wishSaved,
-                          onPressed: _toggleWish,
+                          onPressed: _wishBusy ? null : _toggleWish,
                         ),
                       ),
                     ),

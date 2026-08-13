@@ -130,21 +130,34 @@ class AuthProvider extends ChangeNotifier {
         map: (_) => null,
       );
     } catch (_) {}
+    await clearLocalSession(sessionExpired: false);
+    error = null;
+    notifyListeners();
+  }
+
+  /// Clears in-memory auth after refresh failure (tokens already wiped).
+  /// Shows a session-expired message on the login screen.
+  Future<void> clearLocalSession({bool sessionExpired = true}) async {
     await _storage.clearTokens();
     user = null;
+    if (sessionExpired) {
+      error = 'Session expired. Please sign in again.';
+    }
     notifyListeners();
   }
 
   Future<void> _registerDeviceQuietly() async {
     try {
       final deviceId = await _storage.ensureDeviceId();
+      const pushToken = String.fromEnvironment('FCM_PUSH_TOKEN', defaultValue: '');
       await _api.sendData(
         'POST',
         '/devices/register',
         body: {
           'device_id': deviceId,
           'platform': AppConfig.platform,
-          'app': 'admin_mobile',
+          'app_version': AppConfig.appVersion,
+          if (pushToken.isNotEmpty) 'push_token': pushToken,
         },
         map: (_) => null,
       );

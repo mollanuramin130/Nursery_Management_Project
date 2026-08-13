@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
@@ -14,6 +14,7 @@ import 'package:nursery_app/widgets/app_motion.dart';
 import 'package:nursery_app/widgets/mini_cart_sheet.dart';
 import 'package:nursery_app/widgets/product_card.dart';
 import 'package:nursery_app/widgets/product_reviews_section.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:nursery_app/widgets/sticky_commerce_bar.dart';
 import 'package:nursery_app/widgets/subscribe_section.dart';
@@ -43,6 +44,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int qty = 1;
   int _imageIndex = 0;
   bool _busy = false;
+  bool _wishBusy = false;
 
   @override
   void initState() {
@@ -52,11 +54,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<ProductDetail> _loadProduct() async {
     final api = context.read<ApiClient>();
-    final product = await api.getData(
-      '/products/${widget.slug}',
-      map: (data) =>
-          ProductDetail.fromJson(Map<String, dynamic>.from(data as Map)),
-    );
+    final repo = context.read<CatalogRepository>();
+    final resolved = await repo.getProduct(widget.slug);
+    final product = resolved.data;
     try {
       _care = await api.getData(
         '/plants/${widget.slug}/care',
@@ -66,16 +66,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         },
       );
     } catch (_) {
+      // Offline: use plant profile from product detail as care substitute.
       _care = null;
     }
     try {
-      _related = await api.getData(
-        '/products/${product.summary.id}/related',
-        map: (data) => (data as List)
-            .whereType<Map>()
-            .map((e) => ProductSummary.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-      );
+      final related = await repo.related(product.summary.id);
+      _related = related.data;
     } catch (_) {
       _related = const [];
     }
@@ -89,7 +85,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             .toList(),
       );
     } catch (_) {
-      _recommended = const [];
+      _recommended = _related;
     }
     await RecentlyViewedStore.track(
       RecentProduct(
@@ -101,7 +97,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
     );
     // Best-effort server view event (auth or guest).
-    final api = context.read<ApiClient>();
     try {
       await api.sendData(
         'POST',
@@ -168,6 +163,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       AuthNavigation.pushLogin(context, redirect: '/product/${widget.slug}');
       return;
     }
+    // QA-37-003: ignore rapid double-taps on PDP heart.
+    if (_wishBusy) return;
+    setState(() => _wishBusy = true);
     try {
       final saved = await context.read<WishlistProvider>().toggle(productId);
       if (!mounted) return;
@@ -181,6 +179,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         context,
         'Unable to update wishlist. Please try again.',
       );
+    } finally {
+      if (mounted) setState(() => _wishBusy = false);
     }
   }
 
@@ -223,7 +223,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             actions: [
               WishlistHeart(
                 saved: wishSaved,
-                onPressed: () => _toggleWish(product.summary.id),
+                onPressed: _wishBusy
+                    ? null
+                    : () => _toggleWish(product.summary.id),
               ),
             ],
           ),
@@ -254,21 +256,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         );
                       }
-                      return CachedNetworkImage(
-                        imageUrl: images[i],
+                      return ResilientNetworkImage(
+                        url: images[i],
                         fit: BoxFit.cover,
-                        memCacheWidth: 1000,
-                        placeholder: (context, url) =>
-                            Container(color: AppColors.surfaceMuted),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.surfaceMuted,
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.local_florist_outlined,
-                            size: 48,
-                            color: AppColors.muted,
-                          ),
-                        ),
                       );
                     },
                   ),

@@ -5,6 +5,7 @@ namespace App\Modules\Admin\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
+use App\Shared\Exceptions\ApiException;
 use App\Shared\Support\ApiResponse;
 use App\Shared\Support\AuditLogger;
 use Illuminate\Http\JsonResponse;
@@ -48,7 +49,7 @@ class AdminUserController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $user = User::query()->with('roles')->find($id);
+        $user = User::query()->with('roles.permissions')->find($id);
         if (! $user) {
             throw new NotFoundHttpException('User not found');
         }
@@ -74,8 +75,16 @@ class AdminUserController extends Controller
             ->values()
             ->all();
 
+        $rolePermissions = $user->roles->map(fn (Role $role) => [
+            'slug' => $role->slug,
+            'name' => $role->name,
+            'permissions' => $role->permissions->pluck('slug')->values()->all(),
+        ])->values()->all();
+
         return ApiResponse::success(array_merge($this->summary($user), [
             'created_at' => optional($user->created_at)?->toIso8601String(),
+            'permissions' => $user->permissionSlugs(),
+            'role_permissions' => $rolePermissions,
             'total_orders' => (int) ($orderStats->total_orders ?? 0),
             'total_spent' => (float) ($orderStats->total_spent ?? 0),
             'recent_orders' => $recentOrders,
@@ -103,11 +112,13 @@ class AdminUserController extends Controller
         $user->status = $validated['status'] ?? 'active';
         $user->save();
 
+        /** @var User $actor */
+        $actor = $request->user();
+        $this->assertActorMayAssignRoles($actor, $validated['role_slugs']);
+
         $roleIds = Role::query()->whereIn('slug', $validated['role_slugs'])->pluck('id')->all();
         $user->roles()->sync($roleIds);
 
-        /** @var User $actor */
-        $actor = $request->user();
         AuditLogger::log('user.create', 'user', $user->id, null, [
             'email' => $user->email,
             'roles' => $validated['role_slugs'],
@@ -153,13 +164,15 @@ class AdminUserController extends Controller
         }
         $user->save();
 
+        /** @var User $actor */
+        $actor = $request->user();
+
         if (array_key_exists('role_slugs', $validated)) {
+            $this->assertActorMayAssignRoles($actor, $validated['role_slugs']);
             $roleIds = Role::query()->whereIn('slug', $validated['role_slugs'])->pluck('id')->all();
             $user->roles()->sync($roleIds);
         }
 
-        /** @var User $actor */
-        $actor = $request->user();
         AuditLogger::log('user.update', 'user', $user->id, $before, [
             'name' => $user->name,
             'email' => $user->email,
@@ -207,5 +220,27 @@ class AdminUserController extends Controller
             'last_login_at' => optional($u->last_login_at)?->toIso8601String(),
             'created_at' => optional($u->created_at)?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Only super_admin may grant or retain the super_admin role.
+     * Prevents privilege escalation by any users.manage operator.
+     *
+     * @param  list<string>  $roleSlugs
+     */
+    private function assertActorMayAssignRoles(User $actor, array $roleSlugs): void
+    {
+        $wantsSuper = in_array('super_admin', $roleSlugs, true);
+        if (! $wantsSuper) {
+            return;
+        }
+
+        if (! in_array('super_admin', $actor->roleSlugs(), true)) {
+            throw new ApiException(
+                'Only a super admin can assign the super_admin role',
+                403,
+                'FORBIDDEN',
+            );
+        }
     }
 }

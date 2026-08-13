@@ -48,14 +48,12 @@ class DashboardService
             $failedJobs = (int) DB::table('failed_jobs')->count();
         }
 
-        $lowStock = InventoryItem::query()
-            ->select('id', 'product_id', 'qty_on_hand', 'qty_reserved', 'qty_damaged', 'low_stock_threshold')
-            ->get()
-            ->filter(function (InventoryItem $item) {
-                $sellable = max(0, $item->qty_on_hand - $item->qty_reserved - $item->qty_damaged);
+        $sellableExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? 'CASE WHEN (qty_on_hand - qty_reserved - qty_damaged) > 0 THEN (qty_on_hand - qty_reserved - qty_damaged) ELSE 0 END'
+            : 'GREATEST(0, qty_on_hand - qty_reserved - qty_damaged)';
 
-                return $sellable <= $item->low_stock_threshold;
-            })
+        $lowStock = (int) InventoryItem::query()
+            ->whereRaw("{$sellableExpr} <= low_stock_threshold")
             ->count();
 
         $customers = User::query()

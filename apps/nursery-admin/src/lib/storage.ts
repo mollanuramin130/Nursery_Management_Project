@@ -1,21 +1,26 @@
-const ACCESS_KEY = "gl_admin_access";
-const REFRESH_KEY = "gl_admin_refresh";
+const LEGACY_ACCESS = "gl_admin_access";
+const LEGACY_REFRESH = "gl_admin_refresh";
 
 export const storage = {
+  /** @deprecated QA-33 — JWTs are HttpOnly cookies. */
   getAccess(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(ACCESS_KEY);
+    return null;
   },
+  /** @deprecated QA-33 — JWTs are HttpOnly cookies. */
   getRefresh(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(REFRESH_KEY);
+    return null;
   },
-  setTokens(access: string, refresh: string) {
-    localStorage.setItem(ACCESS_KEY, access);
-    localStorage.setItem(REFRESH_KEY, refresh);
+  setTokens(_access: string, _refresh: string) {
+    /* intentionally empty */
   },
   clearTokens() {
-    localStorage.removeItem(ACCESS_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(LEGACY_ACCESS);
+    localStorage.removeItem(LEGACY_REFRESH);
+  },
+  clearLegacyAuthTokens() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(LEGACY_ACCESS);
+    localStorage.removeItem(LEGACY_REFRESH);
   },
 };

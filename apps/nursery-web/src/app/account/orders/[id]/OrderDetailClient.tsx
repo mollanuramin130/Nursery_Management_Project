@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
+import { ORDER_STATUS_LABELS, orderStatusLabel, orderStatusTone } from "@/lib/order-status";
+import { paymentStatusLabel } from "@/lib/payment-status";
 
 const CANCEL_REASONS = [
   { code: "changed_mind", label: "Changed my mind" },
@@ -36,32 +38,16 @@ const FLOW = [
   "DELIVERED",
 ] as const;
 
-const LABELS: Record<string, string> = {
-  PENDING_PAYMENT: "Order placed",
-  PAYMENT_FAILED: "Payment failed",
-  CONFIRMED: "Confirmed",
-  PROCESSING: "Processing",
-  PACKED: "Packed",
-  SHIPPED: "Shipped",
-  OUT_FOR_DELIVERY: "Out for delivery",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
-};
-
-function toneFor(status: string): "brand" | "success" | "warning" | "error" | "neutral" {
-  if (status === "DELIVERED") return "success";
-  if (status === "CANCELLED" || status === "PAYMENT_FAILED") return "error";
-  if (status === "PENDING_PAYMENT") return "warning";
-  return "brand";
-}
+const LABELS = ORDER_STATUS_LABELS;
 
 export function OrderDetailClient() {
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
+  // QA-36-003: NaN / non-positive ids must not hang on infinite skeleton.
+  const orderIdValid = Number.isInteger(id) && id > 0;
   const search = useSearchParams();
   const placed = search.get("placed");
   const paid = search.get("paid");
-  const payPending = search.get("pay");
   const user = useAuthStore((s) => s.user);
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const toast = useToastStore((s) => s.push);
@@ -144,11 +130,11 @@ export function OrderDetailClient() {
   }
 
   useEffect(() => {
-    if (!bootstrapped || !user || !id) return;
+    if (!bootstrapped || !user || !orderIdValid) return;
     void apiGet<OrderDetail>(`/orders/${id}`)
       .then((res) => setOrder(res.data))
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load order"));
-  }, [bootstrapped, user, id]);
+  }, [bootstrapped, user, id, orderIdValid]);
 
   const activeIndex = useMemo(() => {
     if (!order) return -1;
@@ -183,6 +169,17 @@ export function OrderDetailClient() {
         description="Order tracking is available on your account."
         actionHref={loginHref(orderPath)}
         actionLabel="Sign in"
+      />
+    );
+  }
+
+  if (!orderIdValid) {
+    return (
+      <EmptyState
+        title="Order not found"
+        description="This order link is invalid."
+        actionHref="/account/orders"
+        actionLabel="Back to orders"
       />
     );
   }
@@ -251,12 +248,17 @@ export function OrderDetailClient() {
             <h1 className="display text-4xl text-[var(--color-primary-deep)]">Order tracking</h1>
             <p className="mt-1 text-[var(--color-muted)]">{order.order_number}</p>
           </div>
-          <Badge tone={toneFor(order.status)}>{LABELS[order.status] ?? order.status}</Badge>
+          <Badge tone={orderStatusTone(order.status)}>{orderStatusLabel(order.status)}</Badge>
         </div>
 
-        {paid === "1" || (placed && order.status === "CONFIRMED") ? (
+        {/* QA-35-004: success only from server CONFIRMED — never trust paid=1 alone */}
+        {order.status === "CONFIRMED" ? (
           <div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-success)] bg-[var(--color-success-soft)] p-4">
-            <p className="font-semibold text-[var(--color-success)]">✓ Payment successful — order confirmed</p>
+            <p className="font-semibold text-[var(--color-success)]">
+              {paid === "1" || placed
+                ? "✓ Payment successful — order confirmed"
+                : "✓ Order confirmed"}
+            </p>
             <p className="mt-1 text-sm">
               Order {order.order_number} · {money(order.grand_total, order.currency)}. We’ll update this page as your
               plants move through packing and delivery.
@@ -272,9 +274,10 @@ export function OrderDetailClient() {
           </div>
         ) : null}
 
-        {order.status === "PENDING_PAYMENT" || payPending === "pending" ? (
+        {/* QA-36-002: unpaid banner only from authoritative PENDING_PAYMENT status */}
+        {order.status === "PENDING_PAYMENT" ? (
           <div className="mt-6 rounded-[var(--radius-lg)] border border-[var(--color-warning)] bg-[var(--color-warning-soft)] p-4">
-            <p className="font-semibold">Payment pending</p>
+            <p className="font-semibold">Order placed</p>
             <p className="mt-1 text-sm">Complete payment to confirm this order. Your cart is still available if you cancel.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button size="sm" disabled={busy} onClick={() => void retryPayment()}>
@@ -325,11 +328,9 @@ export function OrderDetailClient() {
             ) : null}
             <p className="mt-2">
               Payment:{" "}
-              {order.payment?.status === "refund_pending"
-                ? "Refund pending"
-                : order.payment?.status === "cod" || order.payment_method === "cod"
-                  ? "Not required"
-                  : (order.payment?.status ?? "—")}
+              {order.payment_method === "cod" || order.payment?.status === "cod"
+                ? "Not required (COD)"
+                : paymentStatusLabel(order.payment?.status)}
             </p>
           </div>
         ) : (

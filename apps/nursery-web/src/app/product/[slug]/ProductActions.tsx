@@ -35,29 +35,27 @@ export function ProductActions({
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [wishBusy, setWishBusy] = useState(false);
 
-  async function addToCart(openDrawer = true) {
-    if (outOfStock || busy) return;
+  async function addToCart(openDrawer = true): Promise<boolean> {
+    if (outOfStock || busy) return false;
     setBusy(true);
     try {
       await addItem(productId, qty);
       if (openDrawer) openMiniCart(productName);
       toast("Added to cart");
+      return true;
     } catch (e) {
       toast(e instanceof Error ? e.message : "Failed", "error");
-      throw e;
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
   async function buyNow() {
-    try {
-      await addToCart(false);
-      router.push("/checkout");
-    } catch {
-      /* toast already shown */
-    }
+    const ok = await addToCart(false);
+    if (ok) router.push("/checkout");
   }
 
   async function toggleWish() {
@@ -65,6 +63,9 @@ export function ProductActions({
       router.push(loginHref(`/product/${productSlug}`));
       return;
     }
+    // QA-37-003: single-flight PDP wishlist toggle.
+    if (wishBusy) return;
+    setWishBusy(true);
     try {
       if (wishHas) {
         await wishRemove(productId);
@@ -75,6 +76,8 @@ export function ProductActions({
       }
     } catch (e) {
       toast(e instanceof Error ? e.message : "Failed", "error");
+    } finally {
+      setWishBusy(false);
     }
   }
 
@@ -101,13 +104,13 @@ export function ProductActions({
           <Button variant="secondary" onClick={() => void buyNow()} disabled={busy || outOfStock}>
             Buy now
           </Button>
-          <Button variant="outline" onClick={toggleWish}>
-            {wishHas ? "Saved" : "Wishlist"}
+          <Button variant="outline" onClick={toggleWish} disabled={wishBusy}>
+            {wishBusy ? "…" : wishHas ? "Saved" : "Wishlist"}
           </Button>
         </div>
         <div className="flex flex-wrap gap-3 md:hidden">
-          <Button variant="outline" onClick={toggleWish}>
-            {wishHas ? "Saved" : "Wishlist"}
+          <Button variant="outline" onClick={toggleWish} disabled={wishBusy}>
+            {wishBusy ? "…" : wishHas ? "Saved" : "Wishlist"}
           </Button>
         </div>
       </div>

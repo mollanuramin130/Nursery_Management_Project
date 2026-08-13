@@ -17,6 +17,7 @@ import {
 } from "@/lib/api/notifications";
 import { hasPermission } from "@/lib/auth/permissions";
 import { formatDateTime } from "@/lib/format";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
@@ -29,6 +30,7 @@ export default function AdminNotificationsPage() {
   const [dash, setDash] = useState<NotificationDashboard | null>(null);
   const [category, setCategory] = useState("");
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sendUserId, setSendUserId] = useState("");
@@ -45,7 +47,11 @@ export default function AdminNotificationsPage() {
     setError(null);
     try {
       const [list, d] = await Promise.all([
-        fetchAdminNotifications({ category: category || undefined, q: q || undefined, per_page: 30 }),
+        fetchAdminNotifications({
+          category: category || undefined,
+          q: debouncedQ || undefined,
+          per_page: 30,
+        }),
         fetchNotificationDashboard(),
       ]);
       setRows(list.data);
@@ -55,7 +61,7 @@ export default function AdminNotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [canView, category, q]);
+  }, [canView, category, debouncedQ]);
 
   useEffect(() => {
     void load();

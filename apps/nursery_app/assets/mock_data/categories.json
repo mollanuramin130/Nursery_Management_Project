@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    { "id": 1, "name": "Indoor Plants", "slug": "indoor-plants", "image_url": null, "parent_id": null },
+    { "id": 2, "name": "Outdoor Plants", "slug": "outdoor-plants", "image_url": null, "parent_id": null },
+    { "id": 3, "name": "Succulents", "slug": "succulents", "image_url": null, "parent_id": null },
+    { "id": 4, "name": "Herbs", "slug": "herbs", "image_url": null, "parent_id": null },
+    { "id": 5, "name": "Flowering", "slug": "flowering", "image_url": null, "parent_id": null },
+    { "id": 6, "name": "Pots & Planters", "slug": "pots-planters", "image_url": null, "parent_id": null },
+    { "id": 7, "name": "Soil & Fertilizer", "slug": "soil-fertilizer", "image_url": null, "parent_id": null },
+    { "id": 8, "name": "Plant Care", "slug": "plant-care", "image_url": null, "parent_id": null }
+  ],
+  "errors": null,
+  "meta": { "source": "mock" }
+}

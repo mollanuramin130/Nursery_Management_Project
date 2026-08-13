@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "message": "OK",
+  "data": {
+    "id": 90001,
+    "name": "Asha Rahman",
+    "email": "asha.mock@greenleaf.local",
+    "phone": "9876543210"
+  },
+  "errors": null,
+  "meta": { "source": "mock", "debug_only": true }
+}

@@ -3,7 +3,12 @@ import 'package:go_router/go_router.dart';
 
 /// Safe return-intent helpers for login / register flows.
 abstract final class AuthNavigation {
-  static const _authPaths = {'/login', '/register', '/forgot-password'};
+  static const _authPaths = {
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+  };
 
   /// Only allow in-app relative paths; block auth loops and open redirects.
   static String? sanitizeRedirect(String? raw) {

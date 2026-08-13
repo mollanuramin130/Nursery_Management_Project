@@ -89,6 +89,11 @@ export type AdminOrderDetail = {
     method: string;
     amount: number;
     paid_at?: string | null;
+    provider?: string | null;
+    provider_payment_id?: string | null;
+    provider_order_id?: string | null;
+    upi_mode?: string | null;
+    channel?: string | null;
   } | null;
   shipment?: {
     status?: string | null;

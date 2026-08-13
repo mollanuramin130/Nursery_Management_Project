@@ -1,0 +1,24 @@
+{
+  "_comment": "EXAMPLE ONLY — replace with Firebase Console download. Do not use as a real project.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "YOUR_FIREBASE_PROJECT_ID",
+    "storage_bucket": "YOUR_FIREBASE_PROJECT_ID.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "android_client_info": {
+          "package_name": "com.greenleaf.nursery_app"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "REPLACE_WITH_FIREBASE_ANDROID_API_KEY"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}

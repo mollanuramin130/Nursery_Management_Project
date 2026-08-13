@@ -18,6 +18,8 @@ import { useRouter } from "next/navigation";
 export default function CartPage() {
   const cart = useCartStore((s) => s.cart);
   const loading = useCartStore((s) => s.loading);
+  const mutating = useCartStore((s) => s.mutating);
+  const error = useCartStore((s) => s.error);
   const fetchCart = useCartStore((s) => s.fetchCart);
   const updateItem = useCartStore((s) => s.updateItem);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -50,6 +52,23 @@ export default function CartPage() {
     return (
       <section className="section">
         <CartSkeleton />
+      </section>
+    );
+  }
+
+  // QA-37-004: fetch error ≠ empty cart.
+  if (!loading && error && !cart) {
+    return (
+      <section className="section">
+        <div className="container mx-auto max-w-md px-4 py-16 text-center">
+          <h2 className="display text-3xl text-[var(--color-primary-deep)]">
+            Couldn’t load cart
+          </h2>
+          <p className="mt-3 text-[var(--color-muted)] leading-relaxed">{error}</p>
+          <div className="mt-6">
+            <Button onClick={() => void fetchCart()}>Try again</Button>
+          </div>
+        </div>
       </section>
     );
   }
@@ -133,10 +152,10 @@ export default function CartPage() {
                     <div className="inline-flex items-center rounded-full border border-[var(--color-border)]">
                       <button
                         type="button"
-                        className="h-9 w-9"
+                        className="h-9 w-9 disabled:opacity-50"
                         aria-label="Decrease quantity"
+                        disabled={mutating || item.quantity <= 1}
                         onClick={() => {
-                          if (item.quantity <= 1) return;
                           void updateItem(item.id, item.quantity - 1).catch((e) =>
                             toast(e instanceof Error ? e.message : "Update failed", "error"),
                           );
@@ -147,8 +166,9 @@ export default function CartPage() {
                       <span className="min-w-8 text-center text-sm font-semibold">{item.quantity}</span>
                       <button
                         type="button"
-                        className="h-9 w-9"
+                        className="h-9 w-9 disabled:opacity-50"
                         aria-label="Increase quantity"
+                        disabled={mutating}
                         onClick={() =>
                           void updateItem(item.id, item.quantity + 1).catch((e) =>
                             toast(e instanceof Error ? e.message : "Update failed", "error"),
@@ -160,7 +180,8 @@ export default function CartPage() {
                     </div>
                     <button
                       type="button"
-                      className="text-sm font-medium text-[var(--color-error)]"
+                      className="text-sm font-medium text-[var(--color-error)] disabled:opacity-50"
+                      disabled={mutating}
                       onClick={() =>
                         void removeItem(item.id).catch((e) =>
                           toast(e instanceof Error ? e.message : "Remove failed", "error"),
@@ -171,7 +192,8 @@ export default function CartPage() {
                     </button>
                     <button
                       type="button"
-                      className="text-sm font-medium text-[var(--color-primary)]"
+                      className="text-sm font-medium text-[var(--color-primary)] disabled:opacity-50"
+                      disabled={mutating}
                       onClick={() => {
                         if (!user) {
                           router.push(loginHref("/cart"));

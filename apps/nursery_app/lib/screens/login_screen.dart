@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/api_health.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/providers/wishlist_provider.dart';
@@ -22,6 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final password = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscure = true;
+  String? _healthError;
+  bool _healthOk = false;
 
   static final _emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
@@ -33,6 +36,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (auth.user != null && mounted) {
         AuthNavigation.goAfterAuth(context, redirect: widget.redirectTo);
       }
+      _checkHealth();
+    });
+  }
+
+  Future<void> _checkHealth() async {
+    final r = await probeApiHealth();
+    if (!mounted) return;
+    setState(() {
+      _healthOk = r.ok;
+      _healthError = r.ok ? null : r.message;
     });
   }
 
@@ -46,6 +59,16 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
+    if (!_healthOk) {
+      await _checkHealth();
+      if (!mounted) return;
+      if (!_healthOk) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_healthError ?? 'API unavailable')),
+        );
+        return;
+      }
+    }
     final auth = context.read<AuthProvider>();
     final cart = context.read<CartProvider>();
     final wishlist = context.read<WishlistProvider>();
@@ -93,6 +116,23 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (_healthError != null) ...[
+                    Material(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(
+                          _healthError!,
+                          style: const TextStyle(
+                            color: Color(0xFFB71C1C),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.md),
+                  ],
                   const SizedBox(height: AppSpace.md),
                   Center(
                     child: Container(

@@ -34,6 +34,22 @@ export function hasPermission(
   return needed.some((p) => owned.has(p));
 }
 
+/** Require every listed permission (UX gate only — API still enforces). */
+export function hasAllPermissions(
+  user: Pick<AdminUser, "roles" | "permissions"> | null | undefined,
+  permissions: string[],
+) {
+  if (!user) return false;
+  if (isSuperAdmin(user)) return true;
+  const owned = new Set(user.permissions ?? []);
+  return permissions.every((p) => owned.has(p));
+}
+
+export function permissionDeniedMessage(permission: string | string[]) {
+  const needed = Array.isArray(permission) ? permission.join(" or ") : permission;
+  return `You do not have permission for this action (${needed}). Contact a Super Admin if you need access.`;
+}
+
 export function primaryRoleLabel(user: Pick<AdminUser, "roles"> | null | undefined) {
   if (!user?.roles?.length) return "Staff";
   const preferred = [

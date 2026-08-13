@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { notificationHref } from "@/lib/notification-deep-link";
 import { cn } from "@/lib/cn";
 
 type Notification = {
@@ -21,16 +22,7 @@ type Notification = {
 };
 
 function hrefFor(n: Notification): string | null {
-  const data = n.data ?? {};
-  const orderId = data.order_id;
-  if (typeof orderId === "number" || typeof orderId === "string") {
-    return `/account/orders/${orderId}`;
-  }
-  const campaign = data.campaign_slug ?? data.slug;
-  if (typeof campaign === "string") return `/campaigns/${campaign}`;
-  const productSlug = data.product_slug;
-  if (typeof productSlug === "string") return `/product/${productSlug}`;
-  return null;
+  return notificationHref(n.data, "customer");
 }
 
 export default function NotificationsPage() {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:nursery_admin_mobile/core/api_health.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 import 'package:nursery_admin_mobile/theme/app_theme.dart';
@@ -15,6 +16,19 @@ class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  String? _healthError;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkHealth());
+  }
+
+  Future<void> _checkHealth() async {
+    final r = await probeApiHealth();
+    if (!mounted) return;
+    setState(() => _healthError = r.ok ? null : r.message);
+  }
 
   @override
   void dispose() {
@@ -52,14 +66,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Staff sign-in · operations only',
                           style: TextStyle(color: OpsColors.muted),
                         ),
+                        if (_healthError != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _healthError!,
+                            style: const TextStyle(
+                              color: OpsColors.danger,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         TextFormField(
                           controller: _email,
                           keyboardType: TextInputType.emailAddress,
                           autocorrect: false,
                           decoration: const InputDecoration(labelText: 'Email'),
-                          validator: (v) =>
-                              (v == null || !v.contains('@')) ? 'Enter email' : null,
+                          validator: (v) => (v == null || !v.contains('@'))
+                              ? 'Enter email'
+                              : null,
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
@@ -67,8 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: true,
                           decoration:
                               const InputDecoration(labelText: 'Password'),
-                          validator: (v) =>
-                              (v == null || v.length < 6) ? 'Enter password' : null,
+                          validator: (v) => (v == null || v.length < 6)
+                              ? 'Enter password'
+                              : null,
                         ),
                         if (auth.error != null) ...[
                           const SizedBox(height: 12),
@@ -82,22 +108,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: auth.loading
                               ? null
                               : () async {
-                                  if (!_formKey.currentState!.validate()) return;
-                                  final ok = await auth.login(
-                                    _email.text,
+                                  if (_healthError != null) {
+                                    await _checkHealth();
+                                    if (_healthError != null) return;
+                                  }
+                                  if (!_formKey.currentState!.validate()) {
+                                    return;
+                                  }
+                                  await auth.login(
+                                    _email.text.trim(),
                                     _password.text,
                                   );
-                                  if (ok && context.mounted) {
-                                    // Router redirect handles shell.
-                                  }
                                 },
-                          child: auth.loading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text('Sign in'),
+                          child: Text(
+                            auth.loading ? 'Signing in…' : 'Sign in',
+                          ),
                         ),
                       ],
                     ),

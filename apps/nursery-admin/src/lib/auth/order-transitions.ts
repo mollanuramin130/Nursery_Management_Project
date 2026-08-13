@@ -21,6 +21,28 @@ export function allowedOrderTransitions(status: string): string[] {
 
 export const ORDER_STATUSES = Object.keys(ORDER_TRANSITIONS);
 
+/** Canonical admin-facing order status labels (QA-32 UI uniformity). */
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+  PENDING_PAYMENT: "Pending payment",
+  PAYMENT_FAILED: "Payment failed",
+  CONFIRMED: "Confirmed",
+  PROCESSING: "Processing",
+  PACKED: "Packed",
+  SHIPPED: "Shipped",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  RETURN_REQUESTED: "Return requested",
+  RETURNED: "Returned",
+  REFUNDED: "Refunded",
+  DELIVERY_FAILED: "Delivery failed",
+};
+
+export function orderStatusLabel(status: string | null | undefined): string {
+  if (!status) return "Unknown";
+  return ORDER_STATUS_LABELS[status] ?? status.replaceAll("_", " ");
+}
+
 export function statusTone(status: string): "neutral" | "success" | "warning" | "danger" | "info" {
   const s = status.toUpperCase();
   if (["DELIVERED", "REFUNDED", "CONFIRMED"].includes(s)) return "success";

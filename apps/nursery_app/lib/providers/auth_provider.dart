@@ -4,6 +4,7 @@ import 'package:nursery_app/core/auth_messages.dart';
 import 'package:nursery_app/core/config.dart';
 import 'package:nursery_app/core/session_storage.dart';
 import 'package:nursery_app/models/models.dart';
+import 'package:nursery_app/services/push_registration.dart';
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider(this._api, this._storage);
@@ -131,6 +132,39 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    if (loading) return false;
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _api.sendData(
+        'POST',
+        '/auth/reset-password',
+        body: {
+          'email': email,
+          'token': token,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+        map: (_) => null,
+      );
+      loading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      error = AuthMessages.fromException(e);
+      loading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> updateProfile({String? name, String? phone}) async {
     if (loading) return false;
     loading = true;
@@ -194,6 +228,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Local sign-out after refresh failure (tokens already cleared by ApiClient).
+  void clearLocalSession() {
+    if (user == null && error == null) return;
+    user = null;
+    error = null;
+    notifyListeners();
+  }
+
   /// Persist session after login/register. Guest cart was already merged by
   /// the backend using the request's X-Cart-Token; drop the guest token so
   /// subsequent cart calls use the authenticated user cart.
@@ -217,6 +259,8 @@ class AuthProvider extends ChangeNotifier {
           'platform': AppConfig.platform,
           'device_id': deviceId,
           'app_version': AppConfig.appVersion,
+          if (resolvePushTokenFromEnvironment() != null)
+            'push_token': resolvePushTokenFromEnvironment(),
         },
         map: (_) => null,
       );

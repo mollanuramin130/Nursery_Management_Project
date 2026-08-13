@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:nursery_admin_mobile/core/order_transitions.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 import 'package:nursery_admin_mobile/providers/ops_providers.dart';
 import 'package:nursery_admin_mobile/shared/widgets.dart';
@@ -64,13 +65,18 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: const [
                     DropdownMenuItem(value: '', child: Text('All')),
-                    DropdownMenuItem(value: 'PENDING_PAYMENT', child: Text('Pending pay')),
+                    DropdownMenuItem(value: 'PENDING_PAYMENT', child: Text('Pending payment')),
+                    DropdownMenuItem(value: 'PAYMENT_FAILED', child: Text('Payment failed')),
                     DropdownMenuItem(value: 'CONFIRMED', child: Text('Confirmed')),
                     DropdownMenuItem(value: 'PROCESSING', child: Text('Processing')),
                     DropdownMenuItem(value: 'PACKED', child: Text('Packed')),
                     DropdownMenuItem(value: 'SHIPPED', child: Text('Shipped')),
                     DropdownMenuItem(value: 'OUT_FOR_DELIVERY', child: Text('Out for delivery')),
+                    DropdownMenuItem(value: 'DELIVERY_FAILED', child: Text('Delivery failed')),
                     DropdownMenuItem(value: 'DELIVERED', child: Text('Delivered')),
+                    DropdownMenuItem(value: 'RETURN_REQUESTED', child: Text('Return requested')),
+                    DropdownMenuItem(value: 'RETURNED', child: Text('Returned')),
+                    DropdownMenuItem(value: 'REFUNDED', child: Text('Refunded')),
                     DropdownMenuItem(value: 'CANCELLED', child: Text('Cancelled')),
                   ],
                   onChanged: (v) {
@@ -108,7 +114,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                                   child: ListTile(
                                     title: Text(o.orderNumber),
                                     subtitle: Text(
-                                      '${o.customerName ?? '—'}\n${money(o.grandTotal)} · ${o.paymentStatus ?? '—'}',
+                                      '${o.customerName ?? '—'}\n${money(o.grandTotal)} · ${opsPaymentStatusLabel(o.paymentStatus ?? '')}',
                                     ),
                                     isThreeLine: true,
                                     trailing: OpsStatusChip(o.status),
@@ -163,16 +169,6 @@ class OrderDetailScreen extends StatefulWidget {
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  static const _commonNext = [
-    'CONFIRMED',
-    'PROCESSING',
-    'PACKED',
-    'SHIPPED',
-    'OUT_FOR_DELIVERY',
-    'DELIVERED',
-    'CANCELLED',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -181,20 +177,26 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     });
   }
 
+  bool _statusBusy = false;
+
   Future<void> _updateStatus(String next) async {
+    if (_statusBusy) return;
     final ok = await confirmAction(
       context,
       title: 'Update order status?',
-      body: 'Set status to $next. Backend validates the transition.',
+      body:
+          'Set status to ${opsStatusLabel(next)}. Backend validates the transition.',
       confirmLabel: 'Update',
       danger: next == 'CANCELLED',
     );
     if (!ok || !mounted) return;
+    setState(() => _statusBusy = true);
     final err = await context.read<OrdersProvider>().updateStatus(
           widget.orderId,
           next,
         );
     if (!mounted) return;
+    setState(() => _statusBusy = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(err ?? 'Status updated')),
     );
@@ -242,8 +244,39 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         if (detail['customer'] is Map &&
                             detail['customer']['email'] != null)
                           Text('Email: ${detail['customer']['email']}'),
-                        Text(
-                          'Payment: ${detail['payment_status'] ?? detail['payment_method'] ?? '—'}',
+                        Builder(
+                          builder: (_) {
+                            final pay = detail['payment'] is Map
+                                ? Map<String, dynamic>.from(
+                                    detail['payment'] as Map,
+                                  )
+                                : null;
+                            final method = (pay?['method'] ??
+                                    detail['payment_method'] ??
+                                    '—')
+                                .toString()
+                                .toUpperCase();
+                            final status = (pay?['status'] ??
+                                    detail['payment_status'] ??
+                                    '—')
+                                .toString();
+                            final mode = pay?['upi_mode']?.toString();
+                            final txn =
+                                pay?['provider_payment_id']?.toString();
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Payment: $method · ${opsPaymentStatusLabel(status)}${mode != null && mode.isNotEmpty ? ' · $mode' : ''}',
+                                ),
+                                if (txn != null && txn.isNotEmpty)
+                                  Text(
+                                    'Txn: $txn',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                              ],
+                            );
+                          },
                         ),
                         const Divider(height: 28),
                         const Text(
@@ -271,19 +304,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: _commonNext
-                                .where((s) => s != detail['status'])
+                            children: allowedOrderTransitions(
+                              detail['status']?.toString() ?? '',
+                            )
                                 .map(
                                   (s) => OutlinedButton(
-                                    onPressed: () => _updateStatus(s),
-                                    child: Text(s.replaceAll('_', ' ')),
+                                    onPressed: _statusBusy
+                                        ? null
+                                        : () => _updateStatus(s),
+                                    child: Text(opsStatusLabel(s)),
                                   ),
                                 )
                                 .toList(),
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Only valid transitions succeed — invalid ones return an API error.',
+                            'Only allowed next statuses are shown. Backend still validates.',
                             style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ],

@@ -10,7 +10,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsurePermission
 {
-    public function handle(Request $request, Closure $next, string $permission): Response
+    /**
+     * Accepts one or more permission slugs (OR). Laravel splits middleware
+     * parameters on commas, so `permission:a,b,c` arrives as multiple args.
+     */
+    public function handle(Request $request, Closure $next, string ...$permissionArgs): Response
     {
         /** @var User|null $user */
         $user = $request->user();
@@ -26,7 +30,16 @@ class EnsurePermission
             return $next($request);
         }
 
-        $needed = array_values(array_filter(array_map('trim', explode(',', $permission))));
+        $needed = [];
+        foreach ($permissionArgs as $arg) {
+            foreach (explode(',', $arg) as $slug) {
+                $slug = trim($slug);
+                if ($slug !== '') {
+                    $needed[] = $slug;
+                }
+            }
+        }
+
         foreach ($needed as $slug) {
             if (in_array($slug, $permissions, true)) {
                 return $next($request);

@@ -1,9 +1,10 @@
 "use client";
 
 import { create } from "zustand";
-import { apiGet, apiSend } from "@/lib/api";
+import { apiGet, apiSend, authSend, ensureCsrf, setUnauthorizedHandler } from "@/lib/api";
 import { storage } from "@/lib/storage";
 import type { User } from "@/lib/types";
+import { ensureWebDeviceId, registerPushDevice, deactivatePushDevice } from "@/lib/push-register";
 
 type AuthState = {
   user: User | null;
@@ -19,28 +20,44 @@ type AuthState = {
     password_confirmation: string;
   }) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (payload: {
+    email: string;
+    token: string;
+    password: string;
+    password_confirmation: string;
+  }) => Promise<void>;
   updateProfile: (payload: { name?: string; phone?: string | null }) => Promise<void>;
   logout: () => Promise<void>;
+  clearSession: () => void;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   bootstrapped: false,
   loading: false,
 
+  clearSession: () => {
+    storage.clearLegacyAuthTokens();
+    set({ user: null });
+  },
+
   bootstrap: async () => {
-    const access = storage.getAccess();
-    const refresh = storage.getRefresh();
-    if (!access && !refresh) {
-      set({ user: null, bootstrapped: true });
-      return;
+    setUnauthorizedHandler(() => get().clearSession());
+    storage.clearLegacyAuthTokens();
+    try {
+      await ensureCsrf();
+    } catch {
+      /* CSRF bootstrap failure — mutations will retry */
     }
 
     try {
       const res = await apiGet<User>("/auth/me");
       set({ user: res.data, bootstrapped: true });
+      void registerPushDevice({
+        platform: "web",
+        deviceId: ensureWebDeviceId(),
+      });
     } catch {
-      storage.clearTokens();
       set({ user: null, bootstrapped: true });
     }
   },
@@ -48,20 +65,19 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ loading: true });
     try {
-      const res = await apiSend<{
-        access_token: string;
-        refresh_token: string;
-        user: User;
-      }>("post", "/auth/login", {
+      const res = await authSend<{ user: User }>("login", {
         email,
         password,
         device: { platform: "web" },
       });
-
-      storage.setTokens(res.data.access_token, res.data.refresh_token);
-      // Guest cart merge uses X-Cart-Token on this request; clear local guest token after.
+      // Guest cart merge uses X-Cart-Token on this request; clear local guest cart token after.
       storage.setCartToken(null);
+      storage.clearLegacyAuthTokens();
       set({ user: res.data.user });
+      void registerPushDevice({
+        platform: "web",
+        deviceId: ensureWebDeviceId(),
+      });
     } finally {
       set({ loading: false });
     }
@@ -70,17 +86,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (payload) => {
     set({ loading: true });
     try {
-      const res = await apiSend<{
-        access_token: string;
-        refresh_token: string;
-        user: User;
-      }>("post", "/auth/register", {
+      const res = await authSend<{ user: User }>("register", {
         ...payload,
         device: { platform: "web" },
       });
-
-      storage.setTokens(res.data.access_token, res.data.refresh_token);
       storage.setCartToken(null);
+      storage.clearLegacyAuthTokens();
       set({ user: res.data.user });
     } finally {
       set({ loading: false });
@@ -91,6 +102,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true });
     try {
       await apiSend("post", "/auth/forgot-password", { email });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  resetPassword: async (payload) => {
+    set({ loading: true });
+    try {
+      await apiSend("post", "/auth/reset-password", payload);
     } finally {
       set({ loading: false });
     }
@@ -107,15 +127,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    const refresh = storage.getRefresh();
     try {
-      if (refresh) {
-        await apiSend("post", "/auth/logout", { refresh_token: refresh });
-      }
+      await authSend("logout", {});
     } catch {
       /* ignore network errors — always clear local session */
     }
-    storage.clearTokens();
-    set({ user: null });
+    await deactivatePushDevice(ensureWebDeviceId());
+    get().clearSession();
   },
 }));

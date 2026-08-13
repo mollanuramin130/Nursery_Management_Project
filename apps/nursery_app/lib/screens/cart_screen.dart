@@ -252,7 +252,9 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
             const SizedBox(height: AppSpace.lg),
-            ...cart.items.map((item) => _CartLine(item: item)),
+            ...cart.items.map(
+              (item) => _CartLine(item: item, mutating: provider.mutating),
+            ),
             const SizedBox(height: AppSpace.sm),
             Text('Coupon', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: AppSpace.sm),
@@ -346,11 +348,13 @@ class _CartScreenState extends State<CartScreen> {
 }
 
 class _CartLine extends StatelessWidget {
-  const _CartLine({required this.item});
+  const _CartLine({required this.item, required this.mutating});
 
   final CartItem item;
+  final bool mutating;
 
   Future<void> _updateQty(BuildContext context, int v) async {
+    if (mutating) return;
     try {
       await context.read<CartProvider>().updateItem(item.id, v);
     } on ApiException catch (e) {
@@ -363,6 +367,7 @@ class _CartLine extends StatelessWidget {
   }
 
   Future<void> _remove(BuildContext context) async {
+    if (mutating) return;
     try {
       await context.read<CartProvider>().removeItem(item.id);
     } on ApiException catch (e) {
@@ -375,6 +380,7 @@ class _CartLine extends StatelessWidget {
   }
 
   Future<void> _moveToWishlist(BuildContext context) async {
+    if (mutating) return;
     final user = context.read<AuthProvider>().user;
     if (user == null) {
       AuthNavigation.pushLogin(context, redirect: '/cart');
@@ -462,6 +468,7 @@ class _CartLine extends StatelessWidget {
                   children: [
                     QtySelector(
                       value: item.quantity,
+                      enabled: !mutating,
                       onChanged: (v) => _updateQty(context, v),
                     ),
                     const Spacer(),
@@ -478,7 +485,8 @@ class _CartLine extends StatelessWidget {
                   spacing: AppSpace.sm,
                   children: [
                     TextButton.icon(
-                      onPressed: () => _moveToWishlist(context),
+                      onPressed:
+                          mutating ? null : () => _moveToWishlist(context),
                       icon: const Icon(Icons.favorite_border, size: 16),
                       label: const Text('Move to wishlist'),
                       style: TextButton.styleFrom(
@@ -488,7 +496,7 @@ class _CartLine extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => _remove(context),
+                      onPressed: mutating ? null : () => _remove(context),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.error,
                         padding: EdgeInsets.zero,

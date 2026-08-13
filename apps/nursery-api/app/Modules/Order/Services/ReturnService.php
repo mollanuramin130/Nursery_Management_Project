@@ -11,6 +11,7 @@ use App\Modules\Delivery\Providers\InternalDeliveryProvider;
 use App\Modules\Inventory\Models\Warehouse;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Notification\Services\NotificationService;
+use App\Modules\Notification\Services\OrderNotificationDispatcher;
 use App\Modules\Order\Models\Order;
 use App\Modules\Order\Models\OrderItem;
 use App\Modules\Order\Models\ReturnItem;
@@ -73,6 +74,7 @@ class ReturnService
         private readonly InventoryService $inventory,
         private readonly NotificationService $notifications,
         private readonly AdminRefundService $refunds,
+        private readonly OrderNotificationDispatcher $orderNotifications,
         ?ShippingProvider $shippingProvider = null,
     ) {
         $this->shippingProvider = $shippingProvider ?? new InternalDeliveryProvider;
@@ -263,10 +265,31 @@ class ReturnService
 
             $this->notify(
                 $user,
-                'RETURN_UPDATED',
-                'Return request submitted',
-                'We received your return request for order '.$order->order_number.'.',
-                ['order_id' => $order->id, 'return_id' => $return->id, 'status' => 'RETURN_REQUESTED'],
+                'return_requested',
+                'Return Request Received',
+                'Your return request for order '.$order->order_number.' has been received.',
+                [
+                    'order_id' => $order->id,
+                    'return_id' => $return->id,
+                    'status' => 'RETURN_REQUESTED',
+                    'route' => '/account/returns/'.$return->id,
+                    'type' => 'return_requested',
+                ],
+            );
+
+            $this->orderNotifications->notifyStaff(
+                ['orders.view', 'returns.view', 'notifications.view'],
+                'return_requested_admin',
+                'Return Request Received',
+                "Return requested for order {$order->order_number}.",
+                [
+                    'order_id' => $order->id,
+                    'return_id' => $return->id,
+                    'route' => '/returns/'.$return->id,
+                    'type' => 'return_requested',
+                    'audience' => 'admin',
+                ],
+                'return:'.$return->id,
             );
 
             return [
@@ -366,7 +389,7 @@ class ReturnService
                 $actorUserId,
             );
 
-            $this->notifyReturn($return, 'Return approved', 'Your return request was approved. Pickup will be scheduled shortly.');
+            $this->notifyReturn($return, 'Return Approved', 'Your return request for order '.($return->order?->order_number ?? '').' has been approved.', 'return_approved');
 
             return $this->serialize($return->fresh(['items.orderItem', 'order.user', 'user']), true);
         });
@@ -402,7 +425,7 @@ class ReturnService
                 $actorUserId,
             );
 
-            $this->notifyReturn($return, 'Return rejected', $reason ?: 'Your return request was rejected.');
+            $this->notifyReturn($return, 'Return Update', $reason ?: 'Your return request for order '.($return->order?->order_number ?? '').' has been rejected.', 'return_rejected');
 
             return $this->serialize($return->fresh(['items.orderItem', 'order.user', 'user']), true);
         });
@@ -744,16 +767,30 @@ class ReturnService
             );
 
             if ($return->user_id) {
+                $refundType = strtoupper((string) $status) === 'COMPLETED' || strtoupper((string) $status) === 'SUCCESS'
+                    ? 'refund_completed'
+                    : 'refund_initiated';
+                $title = $refundType === 'refund_completed' ? 'Refund Completed' : 'Refund Initiated';
+                $body = $refundType === 'refund_completed'
+                    ? 'Your refund for order '.($return->order_id).' has been completed.'
+                    : 'Your refund for order '.($return->order_id).' has been initiated.';
+                if ($return->relationLoaded('order') && $return->order) {
+                    $body = $refundType === 'refund_completed'
+                        ? "Your refund for order {$return->order->order_number} has been completed."
+                        : "Your refund for order {$return->order->order_number} has been initiated.";
+                }
                 $this->notify(
                     $return->user_id,
-                    'REFUND_UPDATED',
-                    'Refund processed',
-                    'A refund related to your return has been recorded.',
+                    $refundType,
+                    $title,
+                    $body,
                     [
                         'order_id' => $return->order_id,
                         'return_id' => $return->id,
                         'refund_id' => $refundResult['id'] ?? null,
                         'status' => $status,
+                        'route' => '/account/returns/'.$return->id,
+                        'type' => $refundType,
                     ],
                 );
             }
@@ -1082,21 +1119,30 @@ class ReturnService
         ];
     }
 
-    private function notifyReturn(ReturnRequest $return, string $title, string $body): void
+    private function notifyReturn(ReturnRequest $return, string $title, string $body, ?string $type = null): void
     {
         if (! $return->user_id) {
             return;
         }
 
+        $resolvedType = $type ?: match (strtoupper((string) $return->status)) {
+            'APPROVED' => 'return_approved',
+            'REJECTED' => 'return_rejected',
+            'RETURN_REQUESTED' => 'return_requested',
+            default => 'return_updated',
+        };
+
         $this->notify(
             $return->user_id,
-            'RETURN_UPDATED',
+            $resolvedType,
             $title,
             $body,
             [
                 'order_id' => $return->order_id,
                 'return_id' => $return->id,
                 'status' => $return->status,
+                'route' => '/account/returns/'.$return->id,
+                'type' => $resolvedType,
             ],
         );
     }

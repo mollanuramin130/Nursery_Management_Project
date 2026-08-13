@@ -7,6 +7,7 @@ use App\Modules\Delivery\Providers\InternalDeliveryProvider;
 use App\Modules\Inventory\Models\Warehouse;
 use App\Modules\Loyalty\Services\LoyaltyService;
 use App\Modules\Notification\Services\NotificationService;
+use App\Modules\Notification\Services\OrderNotificationDispatcher;
 use App\Modules\Order\Models\Order;
 use App\Modules\Order\Models\OrderItem;
 use App\Modules\Order\Models\Shipment;
@@ -33,6 +34,7 @@ class FulfillmentService
         private readonly OrderStateMachine $stateMachine,
         private readonly NotificationService $notifications,
         private readonly LoyaltyService $loyalty,
+        private readonly OrderNotificationDispatcher $orderNotifications,
         ?ShippingProvider $shippingProvider = null,
     ) {
         $this->shippingProvider = $shippingProvider ?? new InternalDeliveryProvider;
@@ -117,7 +119,7 @@ class FulfillmentService
 
     public function showOrder(int $orderId): array
     {
-        $order = Order::query()->with(['user', 'items', 'shipment.events', 'statusHistories'])->find($orderId);
+        $order = Order::query()->with(['user', 'items', 'shipment.events', 'shipment.assignedDriver', 'statusHistories'])->find($orderId);
         if (! $order) {
             throw new NotFoundHttpException('Order not found');
         }
@@ -163,6 +165,7 @@ class FulfillmentService
             $this->writeFulfillmentMeta($order, $fulfillment);
             $this->stateMachine->transition($order, 'PROCESSING', $actorUserId, 'Picking started');
             AuditLogger::log('fulfillment.pick_start', 'order', $order->id, ['status' => 'CONFIRMED'], ['status' => 'PROCESSING'], $actorUserId);
+            $this->orderNotifications->notifyCustomerStatus($order->fresh('user'), 'PROCESSING');
 
             return $this->serializeFulfillmentDetail($order->fresh(['user', 'items', 'shipment.events']));
         });
@@ -471,9 +474,238 @@ class FulfillmentService
         return $this->advanceOrder($orderId, 'OUT_FOR_DELIVERY', 'Out for delivery', $actorUserId, 'out_for_delivery');
     }
 
-    public function markDelivered(int $orderId, ?int $actorUserId = null): array
+    public function markDelivered(int $orderId, ?int $actorUserId = null, array $pod = []): array
     {
-        return $this->advanceOrder($orderId, 'DELIVERED', 'Delivered', $actorUserId, 'delivered');
+        return DB::transaction(function () use ($orderId, $actorUserId, $pod) {
+            $order = Order::query()->with(['shipment', 'user'])->whereKey($orderId)->lockForUpdate()->first();
+            if (! $order) {
+                throw new NotFoundHttpException('Order not found');
+            }
+            if ($order->status === 'DELIVERED') {
+                return $this->serializeFulfillmentDetail($order->fresh(['user', 'items', 'shipment.events', 'shipment.assignedDriver']));
+            }
+            if (! in_array($order->status, ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERY_FAILED'], true)) {
+                throw new ApiException('Cannot mark delivered from current status', 409, 'CONFLICT');
+            }
+
+            $this->stateMachine->transition($order, 'DELIVERED', $actorUserId, $pod['note'] ?? 'Delivered');
+            $shipment = $order->shipment;
+            if ($shipment) {
+                $meta = $shipment->meta ?? [];
+                if ($pod !== []) {
+                    $meta['pod'] = [
+                        'method' => $pod['method'] ?? 'note',
+                        'note' => $pod['note'] ?? null,
+                        'otp_last4' => $pod['otp_last4'] ?? null,
+                        'photo_url' => $pod['photo_url'] ?? null,
+                        'signature_url' => $pod['signature_url'] ?? null,
+                        'captured_at' => now()->toIso8601String(),
+                        'captured_by' => $actorUserId,
+                    ];
+                }
+                $shipment->meta = $meta;
+                $shipment->status = 'delivered';
+                $shipment->delivered_at = now();
+                $shipment->save();
+                $this->addEvent($shipment, 'DELIVERED', $pod['note'] ?? 'Delivered', null, $actorUserId, [
+                    'source' => 'admin',
+                    'pod' => $meta['pod'] ?? null,
+                ]);
+            }
+            $this->loyalty->earnForDeliveredOrder($order->fresh(), $actorUserId);
+            $this->notifyForStatus($order->fresh('user'), 'DELIVERED');
+            AuditLogger::log('fulfillment.delivered', 'order', $order->id, null, [
+                'pod' => (bool) ($pod !== []),
+            ], $actorUserId);
+
+            return $this->serializeFulfillmentDetail($order->fresh(['user', 'items', 'shipment.events', 'shipment.assignedDriver']));
+        });
+    }
+
+    /**
+     * Verify scanned SKU/barcode against pick lines and optionally increment picked qty.
+     * Backend matches SKU — client barcode string is never trusted as authority alone.
+     */
+    public function verifyPickScan(int $orderId, string $code, int $incrementBy = 1, ?int $actorUserId = null): array
+    {
+        $code = trim($code);
+        if ($code === '') {
+            throw new ApiException('Scan code required', 422, 'VALIDATION_ERROR');
+        }
+        if ($incrementBy < 0 || $incrementBy > 999) {
+            throw new ApiException('Invalid increment', 422, 'VALIDATION_ERROR');
+        }
+
+        return DB::transaction(function () use ($orderId, $code, $incrementBy, $actorUserId) {
+            $order = Order::query()->with('items')->whereKey($orderId)->lockForUpdate()->first();
+            if (! $order) {
+                throw new NotFoundHttpException('Order not found');
+            }
+            if ($order->status !== 'PROCESSING') {
+                throw new ApiException('Scan only during picking', 409, 'CONFLICT');
+            }
+
+            $fulfillment = $this->fulfillmentMeta($order);
+            if (empty($fulfillment['items']) || ! empty($fulfillment['picking_completed_at'])) {
+                throw new ApiException('Picking not active', 409, 'CONFLICT');
+            }
+
+            $normalized = strtoupper($code);
+            $matchedKey = null;
+            foreach ($fulfillment['items'] as $key => $row) {
+                $sku = strtoupper((string) ($row['sku'] ?? ''));
+                if ($sku !== '' && ($sku === $normalized || str_ends_with($sku, $normalized) || str_contains($sku, $normalized))) {
+                    $matchedKey = (string) $key;
+                    break;
+                }
+            }
+
+            if ($matchedKey === null) {
+                throw new ApiException(
+                    'Scanned code does not match any line on this pick list',
+                    422,
+                    'VALIDATION_ERROR',
+                    ['code' => $code],
+                );
+            }
+
+            $row = $fulfillment['items'][$matchedKey];
+            $required = (int) $row['required'];
+            $picked = (int) $row['picked'];
+            $next = $picked + $incrementBy;
+            if ($next > $required) {
+                throw new ApiException("Cannot pick more than allocated ({$required})", 422, 'VALIDATION_ERROR');
+            }
+
+            $fulfillment['items'][$matchedKey]['picked'] = $next;
+            $this->writeFulfillmentMeta($order, $fulfillment);
+            AuditLogger::log('fulfillment.pick_scan', 'order', $order->id, null, [
+                'order_item_id' => (int) $matchedKey,
+                'sku' => $row['sku'] ?? null,
+                'picked' => $next,
+            ], $actorUserId);
+
+            $detail = $this->serializeFulfillmentDetail($order->fresh(['user', 'items', 'shipment.events']));
+            $detail['scan'] = [
+                'matched' => true,
+                'order_item_id' => (int) $matchedKey,
+                'sku' => $row['sku'] ?? null,
+                'name' => $row['name'] ?? null,
+                'picked' => $next,
+                'required' => $required,
+            ];
+
+            return $detail;
+        });
+    }
+
+    public function listAssignableDrivers(): array
+    {
+        $users = \App\Modules\Auth\Models\User::query()
+            ->where('status', 'active')
+            ->whereHas('roles', function ($q) {
+                $q->whereIn('slug', ['delivery_manager', 'order_manager', 'admin', 'super_admin', 'nursery_manager']);
+            })
+            ->orderBy('name')
+            ->limit(100)
+            ->get(['id', 'name', 'email', 'phone']);
+
+        return $users->map(fn ($u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'email' => $u->email,
+            'phone' => $u->phone,
+        ])->values()->all();
+    }
+
+    public function assignDriver(int $orderId, int $driverUserId, ?int $actorUserId = null): array
+    {
+        return DB::transaction(function () use ($orderId, $driverUserId, $actorUserId) {
+            $order = Order::query()->with(['shipment', 'user'])->whereKey($orderId)->lockForUpdate()->first();
+            if (! $order) {
+                throw new NotFoundHttpException('Order not found');
+            }
+            if (! in_array($order->status, ['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERY_FAILED'], true)) {
+                throw new ApiException('Assign driver after pack / during delivery', 409, 'CONFLICT');
+            }
+
+            $driver = \App\Modules\Auth\Models\User::query()->whereKey($driverUserId)->where('status', 'active')->first();
+            if (! $driver) {
+                throw new ApiException('Driver user not found or inactive', 422, 'VALIDATION_ERROR');
+            }
+
+            $shipment = $order->shipment;
+            if (! $shipment) {
+                if ($order->status !== 'PACKED') {
+                    throw new ApiException('Shipment required before assignment', 409, 'CONFLICT');
+                }
+                throw new ApiException('Create shipment before assigning driver', 409, 'CONFLICT');
+            }
+
+            $shipment = Shipment::query()->whereKey($shipment->id)->lockForUpdate()->first();
+            $previous = $shipment->assigned_driver_user_id;
+            if ($previous === $driverUserId) {
+                return $this->serializeFulfillmentDetail($order->fresh(['user', 'items', 'shipment.events', 'shipment.assignedDriver']));
+            }
+
+            $shipment->assigned_driver_user_id = $driverUserId;
+            $shipment->save();
+            $this->addEvent($shipment, 'ASSIGNED', "Assigned to {$driver->name}", null, $actorUserId, [
+                'source' => 'admin',
+                'driver_user_id' => $driverUserId,
+            ]);
+            AuditLogger::log('fulfillment.assign_driver', 'shipment', $shipment->id, [
+                'assigned_driver_user_id' => $previous,
+            ], [
+                'assigned_driver_user_id' => $driverUserId,
+            ], $actorUserId);
+
+            return $this->serializeFulfillmentDetail($order->fresh(['user', 'items', 'shipment.events', 'shipment.assignedDriver']));
+        });
+    }
+
+    public function rescheduleDelivery(int $orderId, string $etaDate, ?string $note = null, ?int $actorUserId = null): array
+    {
+        return DB::transaction(function () use ($orderId, $etaDate, $note, $actorUserId) {
+            $order = Order::query()->with(['shipment', 'user'])->whereKey($orderId)->lockForUpdate()->first();
+            if (! $order) {
+                throw new NotFoundHttpException('Order not found');
+            }
+            if (! in_array($order->status, ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERY_FAILED'], true)) {
+                throw new ApiException('Reschedule only for in-transit / failed deliveries', 409, 'CONFLICT');
+            }
+            $shipment = $order->shipment;
+            if (! $shipment) {
+                throw new ApiException('Shipment required', 409, 'CONFLICT');
+            }
+
+            $shipment = Shipment::query()->whereKey($shipment->id)->lockForUpdate()->first();
+            $before = optional($shipment->eta_date)?->format('Y-m-d');
+            $shipment->eta_date = $etaDate;
+            $meta = $shipment->meta ?? [];
+            $meta['reschedule'] = [
+                'previous_eta' => $before,
+                'new_eta' => $etaDate,
+                'note' => $note,
+                'at' => now()->toIso8601String(),
+                'by' => $actorUserId,
+            ];
+            $shipment->meta = $meta;
+            $shipment->save();
+            $this->addEvent($shipment, 'RESCHEDULED', $note ?? "ETA updated to {$etaDate}", null, $actorUserId, [
+                'source' => 'admin',
+                'eta_date' => $etaDate,
+            ]);
+            AuditLogger::log('fulfillment.reschedule', 'shipment', $shipment->id, ['eta_date' => $before], ['eta_date' => $etaDate], $actorUserId);
+            $this->notifyCustomer(
+                $order,
+                'delivery_rescheduled',
+                'Delivery rescheduled',
+                "Delivery for {$order->order_number} is now planned for {$etaDate}.",
+            );
+
+            return $this->serializeFulfillmentDetail($order->fresh(['user', 'items', 'shipment.events', 'shipment.assignedDriver']));
+        });
     }
 
     public function markDeliveryFailed(int $orderId, string $reason, ?string $note = null, ?int $actorUserId = null): array
@@ -734,19 +966,15 @@ class FulfillmentService
         $this->notifications->notify($order->user_id, $type, $title, $body, [
             'order_id' => $order->id,
             'order_number' => $order->order_number,
+            'type' => $type,
+            'route' => '/account/orders/'.$order->id,
+            'audience' => 'customer',
         ]);
     }
 
     private function notifyForStatus(Order $order, string $status): void
     {
-        match ($status) {
-            'PACKED' => $this->notifyCustomer($order, 'order_packed', 'Order packed', "Order {$order->order_number} is packed."),
-            'SHIPPED' => $this->notifyCustomer($order, 'order_shipped', 'Order shipped', "Order {$order->order_number} has shipped."),
-            'OUT_FOR_DELIVERY' => $this->notifyCustomer($order, 'order_out_for_delivery', 'Out for delivery', "Order {$order->order_number} is out for delivery."),
-            'DELIVERED' => $this->notifyCustomer($order, 'order_delivered', 'Order delivered', "Order {$order->order_number} was delivered."),
-            'DELIVERY_FAILED' => $this->notifyCustomer($order, 'delivery_failed', 'Delivery failed', "Delivery for {$order->order_number} failed."),
-            default => null,
-        };
+        $this->orderNotifications->notifyCustomerStatus($order, $status);
     }
 
     private function serializeQueueRow(Order $o): array
@@ -810,17 +1038,22 @@ class FulfillmentService
                 'exceptions' => $f['exceptions'] ?? [],
             ],
             'items' => $items,
-            'shipment' => $order->shipment ? $this->serializeShipment($order->shipment, $order) : null,
+            'shipment' => $order->shipment ? $this->serializeShipment($order->shipment->loadMissing('assignedDriver'), $order) : null,
             'actions' => [
                 'can_start_picking' => $order->status === 'CONFIRMED',
                 'can_update_pick' => $order->status === 'PROCESSING' && empty($f['picking_completed_at']),
                 'can_complete_pick' => $order->status === 'PROCESSING' && empty($f['picking_completed_at']),
+                'can_scan_pick' => $order->status === 'PROCESSING' && empty($f['picking_completed_at']),
                 'can_pack' => $order->status === 'PROCESSING' && ! empty($f['picking_completed_at']),
                 'can_ship' => $order->status === 'PACKED',
+                'can_assign_driver' => in_array($order->status, ['PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERY_FAILED'], true)
+                    && $order->shipment !== null,
                 'can_out_for_delivery' => $order->status === 'SHIPPED',
                 'can_deliver' => in_array($order->status, ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERY_FAILED'], true),
                 'can_fail_delivery' => $order->status === 'OUT_FOR_DELIVERY',
                 'can_retry_delivery' => $order->status === 'DELIVERY_FAILED',
+                'can_reschedule' => in_array($order->status, ['SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERY_FAILED'], true)
+                    && $order->shipment !== null,
             ],
         ];
     }
@@ -830,6 +1063,10 @@ class FulfillmentService
         $events = $shipment->relationLoaded('events')
             ? $shipment->events
             : $shipment->events()->get();
+
+        $driver = $shipment->relationLoaded('assignedDriver')
+            ? $shipment->assignedDriver
+            : $shipment->assignedDriver()->first();
 
         return [
             'id' => $shipment->id,
@@ -842,6 +1079,12 @@ class FulfillmentService
             'tracking_url' => $shipment->tracking_url,
             'shipping_method_id' => $shipment->shipping_method_id,
             'warehouse_id' => $shipment->warehouse_id,
+            'assigned_driver' => $driver ? [
+                'id' => $driver->id,
+                'name' => $driver->name,
+                'email' => $driver->email,
+                'phone' => $driver->phone,
+            ] : null,
             'eta_date' => optional($shipment->eta_date)?->format('Y-m-d'),
             'weight_grams' => $shipment->weight_grams,
             'shipped_at' => optional($shipment->shipped_at)?->toIso8601String(),
@@ -850,6 +1093,8 @@ class FulfillmentService
                 'package_count' => $shipment->meta['package_count'] ?? null,
                 'provider' => $shipment->meta['provider'] ?? null,
                 'failure_reason' => $shipment->meta['failure_reason'] ?? null,
+                'pod' => $shipment->meta['pod'] ?? null,
+                'reschedule' => $shipment->meta['reschedule'] ?? null,
             ],
             'events' => $events->map(fn (ShipmentEvent $e) => [
                 'id' => $e->id,

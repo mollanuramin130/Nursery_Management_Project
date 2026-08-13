@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/subscriptions";
 import { hasPermission } from "@/lib/auth/permissions";
 import { formatDateTime, formatMoney } from "@/lib/format";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { useAuthStore } from "@/store/auth";
 
 function tone(status: string) {
@@ -30,6 +31,7 @@ export default function SubscriptionsPage() {
   const canView = hasPermission(user, "subscriptions.view");
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 350);
   const [rows, setRows] = useState<AdminSubscription[]>([]);
   const [dash, setDash] = useState<SubscriptionDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,12 @@ export default function SubscriptionsPage() {
     setError(null);
     try {
       const [list, d] = await Promise.all([
-        fetchSubscriptions({ status: status || undefined, q: q || undefined, page, per_page: 30 }),
+        fetchSubscriptions({
+          status: status || undefined,
+          q: debouncedQ || undefined,
+          page,
+          per_page: 30,
+        }),
         fetchSubscriptionDashboard(),
       ]);
       setRows(list.data);
@@ -58,7 +65,7 @@ export default function SubscriptionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [canView, status, q, page]);
+  }, [canView, status, debouncedQ, page]);
 
   useEffect(() => {
     void load();

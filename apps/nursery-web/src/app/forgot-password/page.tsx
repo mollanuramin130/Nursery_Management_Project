@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
+import { authUserMessage } from "@/lib/auth-messages";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
@@ -21,7 +22,7 @@ export default function ForgotPasswordPage() {
       setSent(true);
       toast("If that email exists, a reset link was sent.");
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Request failed", "error");
+      toast(authUserMessage(err, "Request failed"), "error");
     }
   }
 
@@ -37,6 +38,11 @@ export default function ForgotPasswordPage() {
             <p className="font-semibold text-[var(--color-primary-deep)]">Check your inbox</p>
             <p className="mt-2 text-sm text-[var(--color-muted)]">
               If an account exists for that email, you’ll receive a password reset link shortly.
+              Open the link (or use{" "}
+              <Link href="/reset-password" className="font-semibold text-[var(--color-primary)]">
+                reset password
+              </Link>
+              ) to set a new password.
             </p>
             <Link
               href="/login"
