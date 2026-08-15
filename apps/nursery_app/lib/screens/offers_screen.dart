@@ -1,10 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/core/soft_future_refresh.dart';
+import 'package:nursery_app/widgets/app_feedback.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/product_card.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
@@ -70,7 +72,15 @@ class _OffersScreenState extends State<OffersScreen> {
             return ErrorStateView(
               title: 'Unable to load offers',
               message: ErrorStateView.sanitize(snap.error?.toString()),
-              onRetry: () => setState(() => _future = _load()),
+              onRetry: () {
+                softReplaceFuture(
+                  load: _load,
+                  onData: (data) {
+                    if (!mounted) return;
+                    setState(() => _future = completedFuture(data));
+                  },
+                );
+              },
             );
           }
           final feed = snap.data!;
@@ -78,8 +88,17 @@ class _OffersScreenState extends State<OffersScreen> {
 
           return RefreshIndicator(
             onRefresh: () async {
-              setState(() => _future = _load());
-              await _future;
+              await softReplaceFuture(
+                load: _load,
+                onData: (data) {
+                  if (!mounted) return;
+                  setState(() => _future = completedFuture(data));
+                },
+                onError: (e) {
+                  if (!mounted) return;
+                  AppFeedback.error(context, e.toString());
+                },
+              );
             },
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -235,10 +254,10 @@ class _CampaignHero extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (image != null && image.isNotEmpty)
-                CachedNetworkImage(imageUrl: image, fit: BoxFit.cover)
-              else
-                Container(color: AppColors.primaryDeep),
+              ResilientNetworkImage(
+                url: image,
+                fit: BoxFit.cover,
+              ),
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -306,7 +325,7 @@ class _CampaignCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (image != null && image.isNotEmpty)
-              CachedNetworkImage(imageUrl: image, fit: BoxFit.cover)
+              ResilientNetworkImage(url: image, fit: BoxFit.cover)
             else
               Container(color: AppColors.primaryDeep),
             Container(color: Colors.black45),

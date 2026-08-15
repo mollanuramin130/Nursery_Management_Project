@@ -31,7 +31,7 @@ class WishlistProvider extends ChangeNotifier {
   Set<int> get ids => _ids;
   bool contains(int productId) => _ids.contains(productId);
 
-  Future<void> bootstrap({required bool signedIn}) async {
+  Future<void> bootstrap({required bool signedIn, bool silent = false}) async {
     if (!signedIn) {
       // Guest: restore device snapshot only (null = never written).
       final snap = await _local.readWishlistIdsSnapshot();
@@ -45,8 +45,10 @@ class WishlistProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    loading = true;
-    notifyListeners();
+    if (!silent || !_bootstrapped) {
+      loading = true;
+      notifyListeners();
+    }
 
     final forceLocal = _offline?.mode == MockDataMode.mockOnly ||
         _offline?.mode == MockDataMode.offlineSimulation ||

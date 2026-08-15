@@ -90,7 +90,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           Expanded(
             child: orders.loading && orders.orders.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : orders.error != null
+                : orders.error != null && orders.orders.isEmpty
                     ? OpsError(
                         message: orders.error!,
                         onRetry: () => orders.load(reset: true),
@@ -100,29 +100,41 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
                             title: 'No orders',
                             subtitle: 'No orders match your filters.',
                           )
-                        : RefreshIndicator(
-                            onRefresh: () => orders.load(reset: true),
-                            child: ListView.builder(
-                              itemCount: orders.orders.length,
-                              itemBuilder: (context, i) {
-                                final o = orders.orders[i];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                        : Column(
+                            children: [
+                              if (orders.error != null)
+                                OpsStaleBanner(
+                                  message: orders.error!,
+                                  onRetry: () => orders.load(reset: true),
+                                ),
+                              Expanded(
+                                child: RefreshIndicator(
+                                  onRefresh: () => orders.load(reset: true),
+                                  child: ListView.builder(
+                                    itemCount: orders.orders.length,
+                                    itemBuilder: (context, i) {
+                                      final o = orders.orders[i];
+                                      return Card(
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        child: ListTile(
+                                          title: Text(o.orderNumber),
+                                          subtitle: Text(
+                                            '${o.customerName ?? '—'}\n${money(o.grandTotal)} · ${opsPaymentStatusLabel(o.paymentStatus ?? '')}',
+                                          ),
+                                          isThreeLine: true,
+                                          trailing: OpsStatusChip(o.status),
+                                          onTap: () =>
+                                              context.push('/orders/${o.id}'),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  child: ListTile(
-                                    title: Text(o.orderNumber),
-                                    subtitle: Text(
-                                      '${o.customerName ?? '—'}\n${money(o.grandTotal)} · ${opsPaymentStatusLabel(o.paymentStatus ?? '')}',
-                                    ),
-                                    isThreeLine: true,
-                                    trailing: OpsStatusChip(o.status),
-                                    onTap: () => context.push('/orders/${o.id}'),
-                                  ),
-                                );
-                              },
-                            ),
+                                ),
+                              ),
+                            ],
                           ),
           ),
           if (orders.lastPage > 1)
@@ -214,7 +226,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       ),
       body: orders.loading && detail == null
           ? const Center(child: CircularProgressIndicator())
-          : orders.error != null
+          : orders.error != null && detail == null
               ? OpsError(
                   message: orders.error!,
                   onRetry: () => orders.loadDetail(widget.orderId),
@@ -224,6 +236,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
+                        if (orders.error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: OpsStaleBanner(
+                              message: orders.error!,
+                              onRetry: () =>
+                                  orders.loadDetail(widget.orderId),
+                            ),
+                          ),
                         Row(
                           children: [
                             OpsStatusChip(detail['status']?.toString() ?? ''),

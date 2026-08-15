@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nursery_admin_mobile/core/back_navigation.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/features/auth/login_screen.dart';
 import 'package:nursery_admin_mobile/features/dashboard/dashboard_screen.dart';
@@ -10,6 +11,7 @@ import 'package:nursery_admin_mobile/features/orders/orders_screens.dart';
 import 'package:nursery_admin_mobile/features/purchasing/purchasing_screens.dart';
 import 'package:nursery_admin_mobile/features/shell/admin_shell.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
+import 'package:nursery_admin_mobile/screens/splash_screen.dart';
 import 'package:nursery_admin_mobile/theme/app_theme.dart';
 
 GoRouter createOpsRouter(AuthProvider auth) {
@@ -107,7 +109,9 @@ GoRouter createOpsRouter(AuthProvider auth) {
       ),
       GoRoute(
         path: '/fulfillment',
-        builder: (context, state) => const FulfillmentHubScreen(),
+        builder: (context, state) => const OpsFullscreenBackScope(
+          child: FulfillmentHubScreen(),
+        ),
         routes: [
           GoRoute(
             path: 'queue/:queue',
@@ -125,7 +129,9 @@ GoRouter createOpsRouter(AuthProvider auth) {
       ),
       GoRoute(
         path: '/purchasing',
-        builder: (context, state) => const PurchaseOrdersScreen(),
+        builder: (context, state) => const OpsFullscreenBackScope(
+          child: PurchaseOrdersScreen(),
+        ),
         routes: [
           GoRoute(
             path: ':id',
@@ -145,28 +151,43 @@ GoRouter createOpsRouter(AuthProvider auth) {
       ),
       GoRoute(
         path: '/suppliers',
-        builder: (context, state) => const SuppliersScreen(),
+        builder: (context, state) => const OpsFullscreenBackScope(
+          child: SuppliersScreen(),
+        ),
       ),
       GoRoute(
         path: '/warehouses',
-        builder: (context, state) => const WarehousesScreen(),
+        builder: (context, state) => const OpsFullscreenBackScope(
+          child: WarehousesScreen(),
+        ),
       ),
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => const NotificationsScreen(),
+        builder: (context, state) => const OpsFullscreenBackScope(
+          child: NotificationsScreen(),
+        ),
       ),
       GoRoute(
         path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
+        builder: (context, state) => const OpsFullscreenBackScope(
+          child: ProfileScreen(),
+        ),
       ),
     ],
   );
 }
 
 class OpsApp extends StatelessWidget {
-  const OpsApp({super.key, required this.router});
+  const OpsApp({
+    super.key,
+    required this.router,
+    this.showSplash = false,
+    this.onSplashFinished,
+  });
 
   final GoRouter router;
+  final bool showSplash;
+  final VoidCallback? onSplashFinished;
 
   @override
   Widget build(BuildContext context) {
@@ -175,6 +196,19 @@ class OpsApp extends StatelessWidget {
       theme: buildOpsTheme(),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        Widget content = child ?? const SizedBox.shrink();
+        if (showSplash && onSplashFinished != null) {
+          content = Stack(
+            fit: StackFit.expand,
+            children: [
+              content,
+              GreenLeafOpsSplashScreen(onFinished: onSplashFinished!),
+            ],
+          );
+        }
+        return content;
+      },
     );
   }
 }

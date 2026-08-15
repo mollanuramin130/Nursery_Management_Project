@@ -4,6 +4,7 @@ import 'package:nursery_app/core/auth_messages.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/theme/app_theme.dart';
+import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_button.dart';
 import 'package:nursery_app/widgets/app_search_field.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
@@ -75,6 +76,30 @@ void main() {
     expect(find.text('Adding…'), findsOneWidget);
     await tester.tap(find.byType(FilledButton));
     expect(pressed, isFalse);
+  });
+
+  testWidgets('QA-40 AppButton loading keeps white-on-primary contrast', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: AppButton(
+            label: 'Checkout',
+            loading: true,
+            loadingLabel: 'Working…',
+            onPressed: () {},
+          ),
+        ),
+      ),
+    );
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+    final style = button.style;
+    expect(style?.backgroundColor?.resolve({WidgetState.disabled}),
+        AppColors.primaryDeep);
+    expect(style?.foregroundColor?.resolve({WidgetState.disabled}),
+        Colors.white);
   });
 
   testWidgets('AppSearchField shows hint', (tester) async {

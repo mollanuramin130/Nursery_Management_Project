@@ -147,10 +147,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final soft = _rows.isNotEmpty;
+    if (mounted) {
+      setState(() {
+        if (!soft) _loading = true;
+        _error = null;
+      });
+    }
     try {
       final api = context.read<ApiClient>();
       final data = await api.getData(
@@ -172,9 +175,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications')),
-      body: _loading
+      body: _loading && _rows.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
+          : _error != null && _rows.isEmpty
               ? OpsError(message: _error!, onRetry: _load)
               : _rows.isEmpty
                   ? const OpsEmpty(

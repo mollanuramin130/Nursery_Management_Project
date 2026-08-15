@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/cart_icon_button.dart';
 
@@ -65,8 +66,6 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canPop = Navigator.of(context).canPop();
-
     return Material(
       color: AppColors.surface,
       child: SafeArea(
@@ -89,11 +88,8 @@ class AppHeader extends StatelessWidget {
                       leading ??
                           IconButton(
                             tooltip: 'Go back',
-                            onPressed:
-                                onBack ??
-                                (canPop
-                                    ? () => Navigator.of(context).maybePop()
-                                    : null),
+                            onPressed: onBack ??
+                                () => BackNavigation.toolbarBack(context),
                             icon: const Icon(Icons.arrow_back_rounded),
                           )
                     else

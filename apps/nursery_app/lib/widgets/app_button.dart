@@ -28,6 +28,28 @@ class AppButton extends StatelessWidget {
 
   bool get _enabled => onPressed != null && !loading;
 
+  /// While loading we keep the button visually primary (white on green) but
+  /// non-interactive — Material disabled styles wash text into low contrast.
+  ButtonStyle? _primaryLoadingOverride() {
+    if (!loading) return null;
+    return FilledButton.styleFrom(
+      backgroundColor: AppColors.primaryDeep,
+      foregroundColor: Colors.white,
+      disabledBackgroundColor: AppColors.primaryDeep,
+      disabledForegroundColor: Colors.white,
+    );
+  }
+
+  ButtonStyle? _dangerLoadingOverride() {
+    if (!loading) return null;
+    return FilledButton.styleFrom(
+      backgroundColor: AppColors.error,
+      foregroundColor: Colors.white,
+      disabledBackgroundColor: AppColors.error,
+      disabledForegroundColor: Colors.white,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final child = _buildChild();
@@ -39,19 +61,32 @@ class AppButton extends StatelessWidget {
       case AppButtonVariant.primary:
         button = FilledButton(
           onPressed: _enabled ? onPressed : null,
-          style: FilledButton.styleFrom(minimumSize: size),
+          style: FilledButton.styleFrom(minimumSize: size)
+              .merge(_primaryLoadingOverride()),
           child: child,
         );
       case AppButtonVariant.secondary:
         button = OutlinedButton(
           onPressed: _enabled ? onPressed : null,
-          style: OutlinedButton.styleFrom(minimumSize: size),
+          style: OutlinedButton.styleFrom(
+            minimumSize: size,
+            foregroundColor: AppColors.primaryDeep,
+            disabledForegroundColor: loading
+                ? AppColors.primaryDeep
+                : AppColors.muted,
+          ),
           child: child,
         );
       case AppButtonVariant.tertiary:
         button = TextButton(
           onPressed: _enabled ? onPressed : null,
-          style: TextButton.styleFrom(minimumSize: size),
+          style: TextButton.styleFrom(
+            minimumSize: size,
+            foregroundColor: AppColors.primaryDeep,
+            disabledForegroundColor: loading
+                ? AppColors.primaryDeep
+                : AppColors.muted,
+          ),
           child: child,
         );
       case AppButtonVariant.danger:
@@ -61,9 +96,13 @@ class AppButton extends StatelessWidget {
             minimumSize: size,
             backgroundColor: AppColors.error,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.errorSoft,
-            disabledForegroundColor: AppColors.error.withValues(alpha: 0.5),
-          ),
+            disabledBackgroundColor: loading
+                ? AppColors.error
+                : AppColors.errorSoft,
+            disabledForegroundColor: loading
+                ? Colors.white
+                : AppColors.error.withValues(alpha: 0.5),
+          ).merge(_dangerLoadingOverride()),
           child: child,
         );
     }
@@ -75,6 +114,11 @@ class AppButton extends StatelessWidget {
   }
 
   Widget _buildChild() {
+    final Color? forcedFg = switch (variant) {
+      AppButtonVariant.primary || AppButtonVariant.danger => Colors.white,
+      _ => null,
+    };
+
     if (loading) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -93,7 +137,10 @@ class AppButton extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpace.sm),
-          Text(loadingLabel ?? label),
+          Text(
+            loadingLabel ?? label,
+            style: forcedFg == null ? null : TextStyle(color: forcedFg),
+          ),
         ],
       );
     }
@@ -103,13 +150,19 @@ class AppButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 18),
+          Icon(icon, size: 18, color: forcedFg),
           const SizedBox(width: AppSpace.sm),
-          Text(label),
+          Text(
+            label,
+            style: forcedFg == null ? null : TextStyle(color: forcedFg),
+          ),
         ],
       );
     }
 
-    return Text(label);
+    return Text(
+      label,
+      style: forcedFg == null ? null : TextStyle(color: forcedFg),
+    );
   }
 }

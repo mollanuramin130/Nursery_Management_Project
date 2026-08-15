@@ -60,9 +60,9 @@ export function NetworkStatusBanner() {
     <div
       role="status"
       aria-live="polite"
-      className={`sticky top-0 z-[60] border-b px-4 py-2 text-sm ${
+      className={`relative z-[var(--z-banner)] border-b px-4 py-2 text-sm ${
         offline
-          ? "border-[var(--color-warning)] bg-[var(--color-warning-soft)] text-[var(--color-warning)]"
+          ? "border-[var(--color-warning)] bg-[var(--color-warning-soft)] text-[var(--color-ink)]"
           : "border-[var(--color-border)] bg-[var(--color-primary-soft)] text-[var(--color-primary-deep)]"
       }`}
     >

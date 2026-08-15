@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/core/soft_future_refresh.dart';
+import 'package:nursery_app/widgets/app_feedback.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
@@ -63,8 +65,17 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
           }
           return RefreshIndicator(
             onRefresh: () async {
-              setState(() => _future = _load());
-              await _future;
+              await softReplaceFuture(
+                load: _load,
+                onData: (data) {
+                  if (!mounted) return;
+                  setState(() => _future = completedFuture(data));
+                },
+                onError: (e) {
+                  if (!mounted) return;
+                  AppFeedback.error(context, e.toString());
+                },
+              );
             },
             child: ListView.separated(
               padding: const EdgeInsets.all(AppSpace.screen),
@@ -136,7 +147,13 @@ class _SubscriptionDetailScreenState extends State<SubscriptionDetailScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Updated')));
-      setState(() => _future = _load());
+      await softReplaceFuture(
+        load: _load,
+        onData: (data) {
+          if (!mounted) return;
+          setState(() => _future = completedFuture(data));
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(

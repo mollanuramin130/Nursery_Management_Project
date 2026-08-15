@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
@@ -9,6 +8,7 @@ import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/providers/wishlist_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:nursery_app/widgets/sticky_commerce_bar.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
@@ -164,7 +164,7 @@ class _CartScreenState extends State<CartScreen> {
       );
     } else {
       body = RefreshIndicator(
-        onRefresh: () => context.read<CartProvider>().fetch(),
+        onRefresh: () => context.read<CartProvider>().fetch(soft: true),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
             AppSpace.screen,
@@ -389,7 +389,10 @@ class _CartLine extends StatelessWidget {
     try {
       await context.read<CartProvider>().moveToWishlist(item.id);
       if (!context.mounted) return;
-      await context.read<WishlistProvider>().bootstrap(signedIn: true);
+      await context.read<WishlistProvider>().bootstrap(
+            signedIn: true,
+            silent: true,
+          );
       if (!context.mounted) return;
       AppFeedback.success(context, 'Moved to wishlist');
     } on ApiException catch (e) {
@@ -411,34 +414,12 @@ class _CartLine extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadii.md),
-            child: item.thumbnailUrl == null
-                ? Container(
-                    width: 72,
-                    height: 72,
-                    color: AppColors.surfaceMuted,
-                    alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.local_florist_outlined,
-                      color: AppColors.muted,
-                    ),
-                  )
-                : CachedNetworkImage(
-                    imageUrl: item.thumbnailUrl!,
-                    width: 72,
-                    height: 72,
-                    fit: BoxFit.cover,
-                    memCacheWidth: 216,
-                    errorWidget: (context, url, error) => Container(
-                      width: 72,
-                      height: 72,
-                      color: AppColors.surfaceMuted,
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.local_florist_outlined,
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ),
+            child: ResilientNetworkImage(
+              url: item.thumbnailUrl,
+              width: 72,
+              height: 72,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(width: AppSpace.md),
           Expanded(

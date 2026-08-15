@@ -1,13 +1,15 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { money } from "@/lib/format";
 import { useCartStore } from "@/store/cart";
 import { useUiStore } from "@/store/ui";
+import { Button } from "@/components/ui/Button";
+import { SafeImage } from "@/components/ui/SafeImage";
 
 export function MiniCartDrawer() {
+  const router = useRouter();
   const open = useUiStore((s) => s.miniCartOpen);
   const close = useUiStore((s) => s.closeMiniCart);
   const lastAdded = useUiStore((s) => s.lastAddedName);
@@ -28,8 +30,13 @@ export function MiniCartDrawer() {
   const remaining = free?.remaining ?? 0;
   const qualifies = free?.qualifies ?? remaining <= 0;
 
+  const go = (href: string) => {
+    close();
+    router.push(href);
+  };
+
   return (
-    <div className="fixed inset-0 z-[70]">
+    <div className="fixed inset-0 z-[var(--z-drawer)]">
       <button
         type="button"
         className="absolute inset-0 bg-black/40 animate-fade"
@@ -57,12 +64,16 @@ export function MiniCartDrawer() {
             {(cart?.items ?? []).slice(0, 4).map((item) => (
               <li key={item.id} className="flex gap-3">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
-                  {item.thumbnail_url ? (
-                    <Image src={item.thumbnail_url} alt="" fill className="object-cover" sizes="64px" />
-                  ) : null}
+                  <SafeImage
+                    src={item.thumbnail_url}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item.name}</p>
+                  <p className="truncate font-medium text-[var(--color-ink)]">{item.name}</p>
                   <p className="text-sm text-[var(--color-muted)]">
                     Qty {item.quantity} · {money(item.line_total)}
                   </p>
@@ -72,7 +83,7 @@ export function MiniCartDrawer() {
           </ul>
 
           {free?.enabled !== false ? (
-            <div className="mt-5 rounded-[var(--radius-md)] bg-[var(--color-primary-soft)] px-4 py-3 text-sm">
+            <div className="mt-5 rounded-[var(--radius-md)] bg-[var(--color-primary-soft)] px-4 py-3 text-sm text-[var(--color-ink)]">
               {!qualifies ? (
                 <p>
                   Add {money(remaining)} more to unlock <strong>FREE delivery</strong>.
@@ -89,22 +100,14 @@ export function MiniCartDrawer() {
         <div className="space-y-3 border-t border-[var(--color-border)] px-5 py-4">
           <div className="flex justify-between text-sm">
             <span className="text-[var(--color-muted)]">Subtotal</span>
-            <span className="font-bold">{money(cart?.subtotal ?? 0)}</span>
+            <span className="font-bold text-[var(--color-ink)]">{money(cart?.subtotal ?? 0)}</span>
           </div>
-          <Link
-            href="/cart"
-            onClick={close}
-            className="inline-flex w-full min-h-11 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-sm font-semibold"
-          >
+          <Button variant="outline" fullWidth onClick={() => go("/cart")}>
             View cart
-          </Link>
-          <Link
-            href="/checkout"
-            onClick={close}
-            className="inline-flex w-full min-h-11 items-center justify-center rounded-full bg-[var(--color-primary-deep)] text-sm font-semibold text-white"
-          >
+          </Button>
+          <Button variant="primary" fullWidth onClick={() => go("/checkout")}>
             Checkout
-          </Link>
+          </Button>
         </div>
       </aside>
     </div>

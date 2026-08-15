@@ -1,9 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { SafeImage } from "@/components/ui/SafeImage";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { loginHref } from "@/lib/auth-redirect";
 import { money } from "@/lib/format";
@@ -64,6 +65,23 @@ export default function WishlistPage() {
     );
   }
 
+  if (loading && !items.length) {
+    return (
+      <section className="section">
+        <div className="container">
+          <div className="section-head">
+            <h1 className="display text-4xl text-[var(--color-primary-deep)]">Wishlist</h1>
+            <p>Saved for later — move them into your cart when ready.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (!loading && !error && !items.length) {
     return (
       <EmptyState
@@ -91,9 +109,7 @@ export default function WishlistPage() {
                 className="flex gap-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4"
               >
                 <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
-                  {p.thumbnail_url ? (
-                    <Image src={p.thumbnail_url} alt="" fill className="object-cover" sizes="96px" />
-                  ) : null}
+                  <SafeImage src={p.thumbnail_url} alt="" fill className="object-cover" sizes="96px" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <Link href={`/product/${p.slug}`} className="font-semibold hover:text-[var(--color-primary)]">

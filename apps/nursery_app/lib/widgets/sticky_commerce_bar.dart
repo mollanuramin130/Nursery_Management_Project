@@ -32,6 +32,9 @@ class StickyCommerceBar extends StatelessWidget {
   final bool enabled;
   final bool safeBottom;
 
+  /// Approx height used by snackbar clearance on fullscreen commerce screens.
+  static const double clearance = 72;
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -47,11 +50,11 @@ class StickyCommerceBar extends StatelessWidget {
           top: false,
           bottom: safeBottom,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               AppSpace.lg,
-              AppSpace.md,
+              safeBottom ? AppSpace.md : AppSpace.sm,
               AppSpace.lg,
-              AppSpace.md,
+              safeBottom ? AppSpace.md : AppSpace.sm,
             ),
             child: Row(
               children: [

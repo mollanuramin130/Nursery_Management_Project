@@ -3,7 +3,13 @@
  * Run: npx --yes tsx src/lib/qa-unit-checks.ts
  */
 import { sanitizeNext } from "./auth-redirect";
-import { authUserMessage } from "./auth-messages";
+import {
+  AuthApiError,
+  authRateLimitMessage,
+  authUserMessage,
+  formatAuthCountdown,
+  parseRetryAfterSeconds,
+} from "./auth-messages";
 import {
   isPasswordValid,
   passwordRequirementErrors,
@@ -53,6 +59,15 @@ assert(
   authUserMessage(new Error("Too Many Attempts.")).toLowerCase().includes("minute"),
   "429 mapping",
 );
+assert(formatAuthCountdown(65) === "1:05", "countdown mm:ss");
+assert(parseRetryAfterSeconds("45") === 45, "retry-after seconds");
+assert(
+  authUserMessage(new AuthApiError("x", { statusCode: 429, retryAfterSeconds: 45 })).includes(
+    "0:45",
+  ),
+  "429 countdown message",
+);
+assert(authRateLimitMessage(90).includes("1:30"), "rate limit copy");
 
 assert(!isPasswordValid("short"), "reject short");
 assert(!isPasswordValid("alllowercase1"), "reject no upper");

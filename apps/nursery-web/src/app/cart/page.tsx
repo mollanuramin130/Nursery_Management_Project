@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CartSkeleton } from "@/components/ui/Skeleton";
 import { Input } from "@/components/ui/Input";
@@ -139,9 +139,7 @@ export default function CartPage() {
                 className="flex gap-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
               >
                 <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
-                  {item.thumbnail_url ? (
-                    <Image src={item.thumbnail_url} alt="" fill className="object-cover" sizes="96px" />
-                  ) : null}
+                  <SafeImage src={item.thumbnail_url} alt="" fill className="object-cover" sizes="96px" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{item.name}</p>

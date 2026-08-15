@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/back_navigation.dart';
+import 'package:nursery_app/core/soft_future_refresh.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
@@ -11,7 +13,6 @@ import 'package:nursery_app/services/recently_viewed_store.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
 import 'package:nursery_app/widgets/app_motion.dart';
-import 'package:nursery_app/widgets/mini_cart_sheet.dart';
 import 'package:nursery_app/widgets/product_card.dart';
 import 'package:nursery_app/widgets/product_reviews_section.dart';
 import 'package:nursery_app/widgets/resilient_image.dart';
@@ -145,8 +146,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         AppFeedback.success(
           context,
           'Added to cart',
-          actionLabel: 'View',
-          onAction: () => showMiniCart(context),
+          actionLabel: 'Open',
+          onAction: () {
+            if (context.mounted) context.go('/cart');
+          },
         );
       }
     } catch (_) {
@@ -194,11 +197,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         }
         if (snap.hasError || !snap.hasData) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: AppBar(
+              leading: const GreenLeafBackButton(),
+            ),
             body: ErrorStateView(
               title: 'Unable to load plant',
               message: ErrorStateView.sanitize(snap.error?.toString()),
-              onRetry: () => setState(() => _future = _loadProduct()),
+              onRetry: () {
+                softReplaceFuture(
+                  load: _loadProduct,
+                  onData: (data) {
+                    if (!mounted) return;
+                    setState(() => _future = completedFuture(data));
+                  },
+                );
+              },
             ),
           );
         }
@@ -220,16 +233,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         return Scaffold(
           appBar: AppBar(
             title: Text(product.summary.name),
+            leading: const GreenLeafBackButton(),
             actions: [
               WishlistHeart(
                 saved: wishSaved,
-                onPressed: _wishBusy
-                    ? null
-                    : () => _toggleWish(product.summary.id),
+                busy: _wishBusy,
+                productName: product.summary.name,
+                onPressed: () => _toggleWish(product.summary.id),
               ),
             ],
           ),
-          body: ListView(
+          body: RefreshIndicator(
+            onRefresh: () async {
+              await softReplaceFuture(
+                load: _loadProduct,
+                onData: (data) {
+                  if (!mounted) return;
+                  setState(() => _future = completedFuture(data));
+                },
+                onError: (e) {
+                  if (!mounted) return;
+                  AppFeedback.error(context, e.toString());
+                },
+              );
+            },
+            child: ListView(
             padding: EdgeInsets.fromLTRB(
               AppSpace.screen,
               AppSpace.sm,
@@ -348,7 +376,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       .map(
                         (b) => AppBadge(
                           label: b.replaceAll('-', ' '),
-                          tone: b == 'sale' || b == 'low-stock'
+                          tone: b == 'sale'
+                              ? AppBadgeTone.sale
+                              : b == 'low-stock'
                               ? AppBadgeTone.warning
                               : AppBadgeTone.brand,
                         ),
@@ -586,6 +616,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
               ],
             ],
+          ),
           ),
           bottomNavigationBar: StickyCommerceBar(
             priceLabel: 'Total',

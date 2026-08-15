@@ -59,7 +59,10 @@ class CatalogRepository {
     final peeked = await peekHome();
     if (peeked != null) {
       onImmediate?.call(peeked.copyWith(updating: !_shouldSkipRemote));
-      if (_shouldSkipRemote) return peeked;
+      if (_shouldSkipRemote) {
+        _offline.markDegraded(peeked.source);
+        return peeked;
+      }
     }
 
     if (_shouldSkipRemote) {
@@ -71,10 +74,17 @@ class CatalogRepository {
       return await _homeInFlight!;
     } catch (e) {
       if (_offline.mode == MockDataMode.onlineOnly || !_isFallbackEligible(e)) {
-        if (peeked != null) return peeked;
+        if (peeked != null) {
+          _offline.markDegraded(peeked.source);
+          return peeked;
+        }
         rethrow;
       }
-      return peeked ?? await _homeFromMock();
+      if (peeked != null) {
+        _offline.markDegraded(peeked.source);
+        return peeked;
+      }
+      return await _homeFromMock();
     }
   }
 
@@ -112,7 +122,7 @@ class CatalogRepository {
         cachedAt: DateTime.now(),
       ),
     );
-    _offline.markSource(DataSourceKind.mock);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
     return ResolvedResult(
       data: feed,
       source: DataSourceKind.mock,
@@ -146,7 +156,7 @@ class CatalogRepository {
   Future<ResolvedResult<List<CategoryChip>>> _categoriesFromMock() async {
     final data = await _assets.dataOf('categories.json');
     final cats = _mapCategories(data);
-    _offline.markSource(DataSourceKind.mock);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
     return ResolvedResult(data: cats, source: DataSourceKind.mock, stale: true);
   }
 
@@ -158,7 +168,8 @@ class CatalogRepository {
           return CategoryChip(
             name: m['name'] as String,
             slug: m['slug'] as String,
-            imageUrl: m['image_url'] as String?,
+            imageUrl: (m['image_url'] ?? m['image'] ?? m['thumbnail_url'])
+                as String?,
             parentId: m['parent_id'] as int?,
           );
         })
@@ -202,7 +213,10 @@ class CatalogRepository {
     final peeked = page == 1 ? await peekCatalog(filters: filters) : null;
     if (peeked != null) {
       onImmediate?.call(peeked.copyWith(updating: !_shouldSkipRemote));
-      if (_shouldSkipRemote) return peeked;
+      if (_shouldSkipRemote) {
+        _offline.markDegraded(peeked.source);
+        return peeked;
+      }
     }
 
     try {
@@ -228,12 +242,18 @@ class CatalogRepository {
       }
     } catch (e) {
       if (_offline.mode == MockDataMode.onlineOnly || !_isFallbackEligible(e)) {
-        if (peeked != null) return peeked;
+        if (peeked != null) {
+          _offline.markDegraded(peeked.source);
+          return peeked;
+        }
         rethrow;
       }
     }
 
-    if (peeked != null) return peeked;
+    if (peeked != null) {
+      _offline.markDegraded(peeked.source);
+      return peeked;
+    }
     return _productsFromMock(filters: filters, page: page);
   }
 
@@ -260,7 +280,7 @@ class CatalogRepository {
         cachedAt: DateTime.now(),
       ),
     );
-    _offline.markSource(DataSourceKind.mock);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
     return ResolvedResult(data: list, source: DataSourceKind.mock, stale: true);
   }
 
@@ -330,7 +350,7 @@ class CatalogRepository {
       );
     }
     final detail = ProductDetail.fromJson(Map<String, dynamic>.from(row));
-    _offline.markSource(DataSourceKind.mock);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
     return ResolvedResult(
       data: detail,
       source: DataSourceKind.mock,
@@ -416,7 +436,7 @@ class CatalogRepository {
     );
     final names = products.data.map((p) => p.name).toList();
     final merged = <String>{...suggestions, ...names}.toList();
-    _offline.markSource(DataSourceKind.mock);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
     return ResolvedResult(
       data: merged.take(8).toList(),
       source: DataSourceKind.mock,
@@ -463,11 +483,13 @@ class CatalogRepository {
         })
         .whereType<ProductSummary>()
         .toList();
-    _offline.markSource(DataSourceKind.mock);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
     return ResolvedResult(data: rows, source: DataSourceKind.mock, stale: true);
   }
 
-  Future<ResolvedResult<List<OrderSummary>>> getOrders() async {
+  Future<ResolvedResult<List<OrderSummary>>> getOrders({
+    void Function(ResolvedResult<List<OrderSummary>> immediate)? onImmediate,
+  }) async {
     final peekedEnv = await _local.readOrdersEnvelope();
     ResolvedResult<List<OrderSummary>>? peeked;
     if (peekedEnv != null && peekedEnv.data is List) {
@@ -481,6 +503,15 @@ class CatalogRepository {
         stale: !peekedEnv.isFresh(),
         cachedAt: peekedEnv.cachedAt,
       );
+    }
+
+    // QA-40: paint cache/mock immediately; remote refresh is silent.
+    if (peeked != null) {
+      onImmediate?.call(peeked.copyWith(updating: !_shouldSkipRemote));
+      if (_shouldSkipRemote) {
+        _offline.markDegraded(peeked.source);
+        return peeked;
+      }
     }
 
     try {
@@ -524,13 +555,16 @@ class CatalogRepository {
       }
     } catch (e) {
       if (_offline.mode == MockDataMode.onlineOnly || !_isFallbackEligible(e)) {
-        if (peeked != null) return peeked;
+        if (peeked != null) {
+          _offline.markDegraded(peeked.source);
+          return peeked;
+        }
         rethrow;
       }
     }
 
     if (peeked != null) {
-      _offline.markSource(peeked.source);
+      _offline.markDegraded(peeked.source);
       return peeked;
     }
 
@@ -546,14 +580,20 @@ class CatalogRepository {
         cachedAt: DateTime.now(),
       ),
     );
-    _offline.markSource(DataSourceKind.mock);
-    return ResolvedResult(data: rows, source: DataSourceKind.mock, stale: true);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
+    final mock = ResolvedResult(
+      data: rows,
+      source: DataSourceKind.mock,
+      stale: true,
+    );
+    onImmediate?.call(mock.copyWith(updating: false));
+    return mock;
   }
 
   Future<ResolvedResult<Cart>> getMockCart() async {
     final data = await _assets.dataOf('cart.json');
     final cart = Cart.fromJson(Map<String, dynamic>.from(data as Map));
-    _offline.markSource(DataSourceKind.mock);
+    _offline.markSource(DataSourceKind.mock, asDegraded: true);
     return ResolvedResult(data: cart, source: DataSourceKind.mock, stale: true);
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:nursery_admin_mobile/core/api_client.dart';
+import 'package:nursery_admin_mobile/core/refresh_coalescer.dart';
 import 'package:nursery_admin_mobile/models/models.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 
@@ -19,9 +20,13 @@ class DashboardProvider extends ChangeNotifier {
   int? pendingPos;
 
   Future<void> load() async {
-    loading = true;
+    final soft = inventoryDash != null || recentOrders.isNotEmpty;
+    if (!soft) {
+      loading = true;
+      notifyListeners();
+    }
     error = null;
-    notifyListeners();
+    if (soft) notifyListeners();
     try {
       if (_auth.can('inventory.view')) {
         inventoryDash = await _api.getData(
@@ -70,7 +75,11 @@ class OrdersProvider extends ChangeNotifier {
 
   Future<void> load({bool reset = false}) async {
     if (reset) page = 1;
-    loading = true;
+    // Keep existing rows visible during pull-to-refresh / filter reload.
+    final keepList = orders.isNotEmpty;
+    if (!keepList) {
+      loading = true;
+    }
     error = null;
     notifyListeners();
     try {
@@ -91,13 +100,15 @@ class OrdersProvider extends ChangeNotifier {
       lastPage = (pag?['last_page'] as num?)?.toInt() ?? 1;
     } catch (e) {
       error = e is ApiException ? e.userMessage : e.toString();
+      if (!keepList) orders = [];
     }
     loading = false;
     notifyListeners();
   }
 
   Future<void> loadDetail(int id) async {
-    loading = true;
+    final soft = detail != null;
+    if (!soft) loading = true;
     error = null;
     notifyListeners();
     try {
@@ -107,7 +118,7 @@ class OrdersProvider extends ChangeNotifier {
       );
     } catch (e) {
       error = e is ApiException ? e.userMessage : e.toString();
-      detail = null;
+      if (!soft) detail = null;
     }
     loading = false;
     notifyListeners();
@@ -148,7 +159,8 @@ class InventoryProvider extends ChangeNotifier {
   bool lowOnly = false;
 
   Future<void> load({bool lowStock = false}) async {
-    loading = true;
+    final keep = rows.isNotEmpty;
+    if (!keep) loading = true;
     error = null;
     notifyListeners();
     try {
@@ -172,7 +184,8 @@ class InventoryProvider extends ChangeNotifier {
   }
 
   Future<void> loadItem(int id) async {
-    loading = true;
+    final soft = selectedDetail != null;
+    if (!soft) loading = true;
     error = null;
     notifyListeners();
     try {
@@ -189,7 +202,8 @@ class InventoryProvider extends ChangeNotifier {
   }
 
   Future<void> loadMovements({int? productId}) async {
-    loading = true;
+    final soft = movements.isNotEmpty;
+    if (!soft) loading = true;
     error = null;
     notifyListeners();
     try {
@@ -269,7 +283,8 @@ class PurchasingProvider extends ChangeNotifier {
   List<Map<String, dynamic>> warehouses = [];
 
   Future<void> loadPos({String? status}) async {
-    loading = true;
+    final keep = orders.isNotEmpty;
+    if (!keep) loading = true;
     error = null;
     notifyListeners();
     try {
@@ -293,7 +308,8 @@ class PurchasingProvider extends ChangeNotifier {
   }
 
   Future<void> loadPo(int id) async {
-    loading = true;
+    final soft = detail != null;
+    if (!soft) loading = true;
     error = null;
     notifyListeners();
     try {
@@ -303,7 +319,7 @@ class PurchasingProvider extends ChangeNotifier {
       );
     } catch (e) {
       error = e is ApiException ? e.userMessage : e.toString();
-      detail = null;
+      if (!soft) detail = null;
     }
     loading = false;
     notifyListeners();
@@ -325,7 +341,8 @@ class PurchasingProvider extends ChangeNotifier {
   }
 
   Future<void> loadSuppliers() async {
-    loading = true;
+    final soft = suppliers.isNotEmpty;
+    if (!soft) loading = true;
     error = null;
     notifyListeners();
     try {
@@ -343,7 +360,8 @@ class PurchasingProvider extends ChangeNotifier {
   }
 
   Future<void> loadWarehouses() async {
-    loading = true;
+    final soft = warehouses.isNotEmpty;
+    if (!soft) loading = true;
     error = null;
     notifyListeners();
     try {

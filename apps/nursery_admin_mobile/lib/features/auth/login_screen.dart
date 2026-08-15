@@ -120,9 +120,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     _password.text,
                                   );
                                 },
-                          child: Text(
-                            auth.loading ? 'Signing in…' : 'Sign in',
-                          ),
+                          child: auth.loading
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Sign in'),
                         ),
                       ],
                     ),

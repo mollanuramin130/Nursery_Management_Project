@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:nursery_admin_mobile/core/api_client.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
@@ -27,32 +29,59 @@ class AuthProvider extends ChangeNotifier {
       hasAnyPermission(user!.permissions, user!.roles, needed);
 
   Future<void> bootstrap() async {
+    final cached = await _storage.readUserJson();
+    if (cached != null) {
+      try {
+        final restored = AdminUser.fromJson(cached);
+        if (isStaffUser(
+          roles: restored.roles,
+          permissions: restored.permissions,
+        )) {
+          user = restored;
+        }
+      } catch (_) {
+        user = null;
+      }
+    }
+    bootstrapped = true;
+    notifyListeners();
+    unawaited(_revalidateSession());
+  }
+
+  Future<void> _revalidateSession() async {
     final access = await _storage.getAccessToken();
     final refresh = await _storage.getRefreshToken();
     if (access == null && refresh == null) {
-      bootstrapped = true;
-      notifyListeners();
+      if (user != null) {
+        user = null;
+        notifyListeners();
+      }
       return;
     }
     try {
       final me = await _api.getData(
         '/auth/me',
-        map: (data) => AdminUser.fromJson(Map<String, dynamic>.from(data as Map)),
+        map: (data) =>
+            AdminUser.fromJson(Map<String, dynamic>.from(data as Map)),
       );
       if (!isStaffUser(roles: me.roles, permissions: me.permissions)) {
         await _storage.clearTokens();
         user = null;
         error = 'Staff account required for Operations app.';
-      } else {
-        user = me;
-        await _registerDeviceQuietly();
+        notifyListeners();
+        return;
       }
-    } catch (_) {
-      await _storage.clearTokens();
-      user = null;
+      user = me;
+      await _storage.saveUserJson(me.toJson());
+      await _registerDeviceQuietly();
+      notifyListeners();
+    } catch (e) {
+      if (e is ApiException && (e.statusCode == 401 || e.statusCode == 403)) {
+        await _storage.clearTokens();
+        user = null;
+        notifyListeners();
+      }
     }
-    bootstrapped = true;
-    notifyListeners();
   }
 
   Future<bool> login(String email, String password) async {
@@ -96,6 +125,7 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
       user = me;
+      await _storage.saveUserJson(me.toJson());
       await _registerDeviceQuietly();
       loading = false;
       notifyListeners();

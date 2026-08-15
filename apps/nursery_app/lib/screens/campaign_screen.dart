@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:nursery_app/core/back_navigation.dart';
+import 'package:nursery_app/core/soft_future_refresh.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/product_card.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
@@ -52,16 +55,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Collection'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
+        leading: const GreenLeafBackButton(),
       ),
       body: FutureBuilder<_CampaignBundle>(
         future: _future,
@@ -73,7 +67,15 @@ class _CampaignScreenState extends State<CampaignScreen> {
             return ErrorStateView(
               title: 'Unable to load collection',
               message: ErrorStateView.sanitize(snap.error?.toString()),
-              onRetry: () => setState(() => _future = _load()),
+              onRetry: () {
+                softReplaceFuture(
+                  load: _load,
+                  onData: (data) {
+                    if (!mounted) return;
+                    setState(() => _future = completedFuture(data));
+                  },
+                );
+              },
             );
           }
           final data = snap.data!;
@@ -85,96 +87,107 @@ class _CampaignScreenState extends State<CampaignScreen> {
               onAction: () => context.go('/catalog'),
             );
           }
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpace.screen,
-                    AppSpace.sm,
-                    AppSpace.screen,
-                    AppSpace.lg,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (data.imageUrl != null && data.imageUrl!.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(AppRadii.lg),
-                          child: AspectRatio(
-                            aspectRatio: 16 / 9,
-                            child: Image.network(
-                              data.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(color: AppColors.surfaceMuted),
+          return RefreshIndicator(
+            onRefresh: () async {
+              await softReplaceFuture(
+                load: _load,
+                onData: (data) {
+                  if (!mounted) return;
+                  setState(() => _future = completedFuture(data));
+                },
+              );
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpace.screen,
+                      AppSpace.sm,
+                      AppSpace.screen,
+                      AppSpace.lg,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (data.imageUrl != null && data.imageUrl!.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadii.lg),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: ResilientNetworkImage(
+                                url: data.imageUrl,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                        ),
-                      if (data.imageUrl != null) const SizedBox(height: 12),
-                      if (data.status != null)
-                        AppBadge(
-                          label: data.status!.replaceAll('_', ' '),
-                          tone: data.status == 'active'
-                              ? AppBadgeTone.success
-                              : AppBadgeTone.neutral,
-                        ),
-                      const SizedBox(height: 8),
-                      Text(
-                        data.title,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              color: AppColors.primaryDeep,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                      if (data.subtitle != null && data.subtitle!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: AppSpace.xs),
-                          child: Text(
-                            data.subtitle!,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.inkSoft),
+                        if (data.imageUrl != null) const SizedBox(height: 12),
+                        if (data.status != null)
+                          AppBadge(
+                            label: data.status!.replaceAll('_', ' '),
+                            tone: data.status == 'active'
+                                ? AppBadgeTone.success
+                                : AppBadgeTone.neutral,
                           ),
+                        const SizedBox(height: 8),
+                        Text(
+                          data.title,
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                color: AppColors.primaryDeep,
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
-                      if (data.description != null &&
-                          data.description!.isNotEmpty)
+                        if (data.subtitle != null && data.subtitle!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpace.xs),
+                            child: Text(
+                              data.subtitle!,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: AppColors.inkSoft),
+                            ),
+                          ),
+                        if (data.description != null &&
+                            data.description!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpace.sm),
+                            child: Text(data.description!),
+                          ),
                         Padding(
                           padding: const EdgeInsets.only(top: AppSpace.sm),
-                          child: Text(data.description!),
+                          child: Text(
+                            '${data.products.length} products',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpace.sm),
-                        child: Text(
-                          '${data.products.length} products',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpace.screen,
-                  0,
-                  AppSpace.screen,
-                  AppSpace.xxl,
-                ),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: AppSpace.lg,
-                    crossAxisSpacing: AppSpace.md,
-                    childAspectRatio: AppLayout.productGridAspectRatio,
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpace.screen,
+                    0,
+                    AppSpace.screen,
+                    AppSpace.xxl,
                   ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) => ProductCard(product: data.products[i]),
-                    childCount: data.products.length,
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: AppSpace.lg,
+                      crossAxisSpacing: AppSpace.md,
+                      childAspectRatio: AppLayout.productGridAspectRatio,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, i) => ProductCard(product: data.products[i]),
+                      childCount: data.products.length,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

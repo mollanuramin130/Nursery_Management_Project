@@ -33,6 +33,16 @@ class AdminUser {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+        'roles': roles,
+        'permissions': permissions,
+        'status': status,
+        'phone': phone,
+      };
+
   bool get isSuperAdmin => roles.contains('super_admin');
 
   bool can(String permission) =>

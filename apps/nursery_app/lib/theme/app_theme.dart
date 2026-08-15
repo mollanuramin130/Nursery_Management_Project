@@ -194,6 +194,25 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadii.full),
           ),
+        ).copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return AppColors.borderStrong;
+            }
+            if (states.contains(WidgetState.pressed)) {
+              return AppColors.primaryHover;
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return AppColors.primaryHover;
+            }
+            return AppColors.primaryDeep;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return AppColors.muted;
+            }
+            return Colors.white;
+          }),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(

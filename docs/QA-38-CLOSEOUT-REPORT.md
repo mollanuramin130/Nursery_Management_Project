@@ -1,47 +1,65 @@
 # QA-38 CLOSEOUT REPORT
 
-**Date:** 2026-08-13  
-**Verdict:** **COMPLETE** (TEST) · Vivo radio matrix **PARTIAL**  
+**Date:** 2026-08-15  
+**Verdict:** **PARTIAL** (UI polish shipped; Vivo device matrix unverified)  
 **GREEN:** **NO** · **LIVE:** **OUT OF SCOPE**
+
+Covers two QA-38 tracks:
+
+1. **Offline sync** (2026-08-13) — COMPLETE for TEST  
+2. **UI visual consistency & accessibility** (2026-08-15) — PARTIAL (code fixed; device unverified)
 
 ---
 
-## Scorecard
+## Scorecard — UI polish
 
 | Gate | Result |
 |------|--------|
-| Cache-first | **PASS** |
-| Mock fallback | **PASS** |
-| API authoritative | **PASS** |
-| Mock ≯ API cache | **PASS** (unit) |
-| Reconnect sync | **PASS** (code + unit) |
-| Wishlist flicker | **PASS** (epoch + no re-seed) |
-| Checkout/payment safety | **PASS** |
+| Customer Web | **PASS** (code) |
+| Customer Mobile | **PASS** (code) |
+| Admin Web | **PASS** (code) |
+| Admin Mobile | **PASS** (code) |
+| Colour consistency | **PASS** |
+| Contrast | **PASS** (high-risk fixed) |
+| Button visibility | **PASS** |
+| Wishlist | **PASS** |
+| Snackbar/toast overlap | **PASS** (web sticky CTA + mobile nav margin) |
+| Bottom navigation | **PARTIAL** (cart/order dual chrome open) |
+| Responsive UI | **PARTIAL** (no full device matrix) |
+| Dark/light theme | **N/A** (light-first) / **PASS** for light |
+| Loading states | **PASS** (admin login spinner) |
+| Empty / error / offline UI | **PASS** (not regressed) |
+| Cross-client consistency | **PARTIAL** |
+| Accessibility | **PARTIAL** (labels/focus improved; no a11y audit tool run) |
 | PHPUnit | **253 / 1209** |
 | Customer Flutter | **58** |
+| Admin Flutter | **27** |
 
 ---
 
-## FIXED (QA-38)
+## FIXED (UI track)
 
-| ID | Summary |
-|----|---------|
-| QA-38-001 | Cache envelopes + stale/fresh metadata |
-| QA-38-002 | Mock cannot overwrite API cache |
-| QA-38-003 | Cache-first Home/Catalog + soft “Updating…” |
-| QA-38-004 | Reconnect → syncGeneration + catalog sync |
-| QA-38-005 | Wishlist remove flicker (epoch / bootstrap seed) |
-| QA-38-006 | DEBUG `reconnect` simulation |
+QA-38-007 … QA-38-020 — see `QA-38-BUG-REGISTER.md` and `QA-38-REPORT.md`.
 
-## OPEN / UNVERIFIED
+## FIXED (offline sync track)
 
-- Exhaustive Vivo Wi‑Fi OFF / API-stop interactive matrix **UNVERIFIED**  
-- Mobile-data w/o reverse **UNVERIFIED**  
-- QA-ADM-002 intentional  
-- UPI settle **BLOCKED**
+QA-38-001 … QA-38-006 — unchanged; see `QA-38-OFFLINE-SYNC-REPORT.md`.
 
-## NEXT
+---
 
-QA-39 — optional Web catalog cache parity / LIVE gates (separate).
+## OPEN / UNVERIFIED / BLOCKED
 
-**Do not claim GREEN.**
+| Item | Class |
+|------|-------|
+| Vivo physical UI matrix (toast vs CTA / wishlist / bottom nav) | **UNVERIFIED** |
+| Cart + shell dual bottom chrome | **OPEN** (MEDIUM) |
+| Offline banner on full-screen commerce routes | **OPEN** (MEDIUM) |
+| UPI-app settle | **BLOCKED** |
+| QA-ADM-002 | **OPEN** intentional |
+| LIVE / GREEN | **OUT OF SCOPE** |
+
+---
+
+## Explicit non-claims
+
+No GREEN · No LIVE · No redesign · No payment/auth architecture change.

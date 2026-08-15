@@ -9,7 +9,6 @@ import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_button.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
 import 'package:nursery_app/widgets/app_motion.dart';
-import 'package:nursery_app/widgets/mini_cart_sheet.dart';
 import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +33,7 @@ class _ProductCardState extends State<ProductCard> {
       return const AppBadge(label: 'Out of stock', tone: AppBadgeTone.error);
     }
     if (product.badges.contains('sale') || product.hasDiscount) {
-      return const AppBadge(label: 'Sale', tone: AppBadgeTone.warning);
+      return const AppBadge(label: 'Sale', tone: AppBadgeTone.sale);
     }
     if (product.badges.contains('bestseller')) {
       return const AppBadge(label: 'Bestseller', tone: AppBadgeTone.brand);
@@ -64,8 +63,10 @@ class _ProductCardState extends State<ProductCard> {
       AppFeedback.success(
         context,
         'Added to cart',
-        actionLabel: 'View',
-        onAction: () => showMiniCart(context),
+        actionLabel: 'Open',
+        onAction: () {
+          if (context.mounted) context.go('/cart');
+        },
       );
     } catch (_) {
       if (!mounted) return;
@@ -148,7 +149,9 @@ class _ProductCardState extends State<ProductCard> {
                         shape: const CircleBorder(),
                         child: WishlistHeart(
                           saved: wishSaved,
-                          onPressed: _wishBusy ? null : _toggleWish,
+                          busy: _wishBusy,
+                          productName: product.name,
+                          onPressed: _toggleWish,
                         ),
                       ),
                     ),

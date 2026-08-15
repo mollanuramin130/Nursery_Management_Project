@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/network_errors.dart';
+import 'package:nursery_app/core/refresh_coalescer.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/data/mock_data_mode.dart';
 import 'package:nursery_app/data/offline_local_store.dart';
@@ -29,6 +30,7 @@ class CartProvider extends ChangeNotifier {
   String? message;
   String? error;
   bool localOnly = false;
+  final RefreshCoalescer _fetchRefresh = RefreshCoalescer();
 
   bool get hasError => error != null;
 
@@ -36,8 +38,15 @@ class CartProvider extends ChangeNotifier {
     _catalog = catalog;
   }
 
-  Future<void> fetch() async {
-    loading = true;
+  Future<void> fetch({bool soft = false}) =>
+      _fetchRefresh.run(() => _fetchBody(soft: soft));
+
+  Future<void> _fetchBody({required bool soft}) async {
+    // QA-40-M: keep cart visible during pull-to-refresh / reconnect.
+    final keepVisible = soft || cart.items.isNotEmpty;
+    if (!keepVisible) {
+      loading = true;
+    }
     error = null;
     notifyListeners();
 
@@ -57,6 +66,7 @@ class CartProvider extends ChangeNotifier {
         localOnly = false;
         await _persistCart();
         loading = false;
+        _offline?.markRemoteOk();
         notifyListeners();
         return;
       } catch (e) {
@@ -77,7 +87,7 @@ class CartProvider extends ChangeNotifier {
       cart = Cart.fromJson(cached);
       localOnly = true;
       error = null;
-      _offline?.markSource(DataSourceKind.cache);
+      _offline?.markSource(DataSourceKind.cache, asDegraded: true);
       loading = false;
       notifyListeners();
       return;
@@ -361,7 +371,7 @@ class CartProvider extends ChangeNotifier {
     localOnly = true;
     message = 'Added to cart (saved on this device)';
     error = null;
-    _offline?.markSource(DataSourceKind.mock);
+    _offline?.markSource(DataSourceKind.mock, asDegraded: true);
     await _persistCart();
     notifyListeners();
   }

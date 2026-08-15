@@ -147,16 +147,73 @@ QA-36 COMPLETE: final TEST stability + cross-platform feature parity audit;
   /returns remap, payment header, Mobile bottom-nav shell, wishlist remove flicker).
   Feature matrix: docs/QA-36-FEATURE-PARITY-MATRIX.md
   Regression PHPUnit 253/1209; Customer Flutter 38; GREEN NO.
-QA-38 COMPLETE: Offline sync hardening on QA-37 foundation;
-  cache-first + CacheEnvelope; mock cannot overwrite API; reconnect soft sync;
-  wishlist remove flicker fix; DEBUG reconnect sim.
-  Docs: QA-38-OFFLINE-SYNC-REPORT.md · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
-  Regression PHPUnit 253/1209; Customer Flutter 58; GREEN NO.
+QA-42A PARTIAL: Refresh UX — normal PTR ≠ offline banner (2026-08-15).
+  Root: cache peek marked servingLocal → "saved GreenLeaf data" on every refresh.
+  Fixed: quiet markSource; markDegraded only on real fallback; banner rules + Back online.
+  Docs: QA-42A-REFRESH-UX-REPORT · TEST-MATRIX · BUG-REGISTER
+  Evidence: docs/qa42a-mobile/ (online PTR + API-down banner)
+  Regression: PHPUnit 253/1209; Customer Flutter 73; Admin Flutter 29; Web unit PASS.
+  GREEN NO · multi-screen PTR matrix UNVERIFIED.
+QA-42 PARTIAL: Full Vivo matrix + TEST payment smoke (2026-08-15).
+  Fixed: Admin soft-error keep-data (OpsStaleBanner); checkout/reviews soft load;
+  QA-40-M-008 closed (Inventory stand-in; no mobile /products).
+  COD API smoke PASS; Razorpay TEST initiate PASS; stub verify rejected under TEST keys.
+  Docs: QA-42-REPORT · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  Evidence: docs/qa42-mobile/
+  Regression: PHPUnit 253/1209; Customer Flutter 68; Admin Flutter 29; Web unit PASS.
+  GREEN NO · Admin post-login matrix UNVERIFIED · Razorpay Checkout E2E UNVERIFIED · LIVE OUT OF SCOPE.
+QA-41 PARTIAL: Mobile stability + refresh + images + soft FutureBuilder (2026-08-15).
+  Fixed: DEBUG FAB clear of categories; CategoryGlyphAvatar for null image_url;
+  Retry bumpSyncGeneration + image cacheKey; soft onRetry/mutations;
+  catalog filter remount (QA-40-M-009); admin notifications/fulfillment/purchasing soft-load.
+  Physical Vivo requires: adb reverse + --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
+  Docs: QA-41-REPORT · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  Evidence: docs/qa41-mobile/*.png
+  Regression: PHPUnit 253/1209; Customer Flutter 68; Admin Flutter 28.
+  GREEN NO · LIVE OUT OF SCOPE · full device matrix / COD-TEST UNVERIFIED.
+QA-40 MOBILE PARTIAL: Pull-to-refresh + cache/API recovery (2026-08-15).
+  Root cause: Addresses onRefresh did not await; FutureBuilder refresh blanked UI.
+  Fixed: soft_future_refresh helper; cart fetch(soft); syncGeneration fan-out;
+  PDP PTR; admin dash/orders/inventory soft loading; reconnect silent wishlist.
+  Docs: QA-40-MOBILE-REFRESH-REPORT · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  Evidence: docs/qa40-mobile/*.png (API ON/OFF/ON + cart pull)
+  Regression: PHPUnit 253/1209; Customer Flutter 66; Admin Flutter 27.
+  GREEN NO · Admin full Vivo matrix UNVERIFIED.
+QA-40 PARTIAL: UI polish + render stability + data resilience (2026-08-15).
+  Fixed: AppButton loading contrast (Checkout Working… dark-on-muted);
+  cart snackbar sticky+tabs; FadeInUp flash; orders cache-first;
+  ResilientNetworkImage / SafeImage; AnalyticsShell soft refresh;
+  warning/success tokens; wishlist keep-alive + semantics.
+  Docs: QA-40-REPORT · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  Evidence: docs/qa40/vivo_*.png
+  Regression: PHPUnit 253/1209; Customer Flutter 63; Admin Flutter 27; Web unit PASS.
+  GREEN NO · LIVE OUT OF SCOPE · Admin list flicker / COD / web responsive OPEN/UNVERIFIED.
+QA-39 PARTIAL: Real device UX on Vivo 1951 (2026-08-15).
+  adb reverse tcp:8000; Customer Mobile Home/Shop/Cart/Account/PDP verified.
+  Fixed: snackbar "View Cart" truncation → Open; ShellNavPolicy;
+  wishlist bootstrap race; order-detail dual chrome.
+  Docs: QA-39-REPORT · DEVICE · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  Evidence: docs/qa39/vivo_*.png
+  GREEN NO · LIVE OUT OF SCOPE · Admin Mobile / COD / Razorpay TEST UNVERIFIED.
+QA-38 PARTIAL: UI visual consistency & accessibility polish (2026-08-15)
+  + prior offline sync COMPLETE (2026-08-13).
+  UI: toast/snackbar clear of sticky CTAs & bottom nav; wishlist red/neutral;
+  disabled buttons; sale badge; admin toast contrast; login spinner.
+  Docs: QA-38-REPORT.md · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  · QA-38-OFFLINE-SYNC-REPORT.md
+  Regression PHPUnit 253/1209; Customer Flutter 58; Admin Flutter 27; GREEN NO.
+  Vivo UI matrix UNVERIFIED this pass.
 QA-37 COMPLETE: parity + network + offline-first Mobile (QA-37-001…013).
   Docs: QA-37-OFFLINE-ARCHITECTURE.md · MOCK-DATA-CONTRACT · NETWORK/PARITY
   DEBUG: flutter run → QA Network Sim (mockOnly / offline / apiError / reconnect).
   Server upstream (Next server env): API_PROXY_TARGET=http://127.0.0.1:8000/api/v1
+See docs/QA-42A-REFRESH-UX-REPORT.md
+See docs/QA-42-CLOSEOUT-REPORT.md
+See docs/QA-41-CLOSEOUT-REPORT.md
+See docs/QA-40-CLOSEOUT-REPORT.md
+See docs/QA-39-CLOSEOUT-REPORT.md
 See docs/QA-38-CLOSEOUT-REPORT.md
+See docs/QA-38-REPORT.md
 See docs/QA-37-CLOSEOUT-REPORT.md
 See docs/QA-36-CLOSEOUT-REPORT.md
 See docs/QA-35-CLOSEOUT-REPORT.md

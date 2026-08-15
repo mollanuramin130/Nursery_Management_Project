@@ -64,6 +64,15 @@ export default function CheckoutPage() {
   useEffect(() => {
     upiStatusRef.current = upiUi?.status ?? "pending";
   }, [upiUi?.status]);
+
+  // QA-38: lift toasts above mobile sticky Place Order strip on review step.
+  useEffect(() => {
+    if (step !== 4) return;
+    const root = document.documentElement;
+    root.style.setProperty("--sticky-cta-h", "4.5rem");
+    return () => root.style.removeProperty("--sticky-cta-h");
+  }, [step]);
+
   const [notes, setNotes] = useState("");
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [preview, setPreview] = useState<{
@@ -746,7 +755,7 @@ export default function CheckoutPage() {
 
         {/* Mobile sticky pay on review */}
         {step === 4 ? (
-          <div className="fixed inset-x-0 bottom-[var(--bottom-nav-h)] z-[35] border-t border-[var(--color-border)] bg-white/95 p-3 backdrop-blur lg:hidden">
+          <div className="fixed inset-x-0 bottom-[var(--bottom-nav-h)] z-[35] border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 p-3 backdrop-blur lg:hidden">
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <p className="text-xs text-[var(--color-muted)]">Total</p>

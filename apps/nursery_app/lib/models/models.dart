@@ -12,6 +12,13 @@ class User {
     email: json['email'] as String,
     phone: json['phone'] as String?,
   );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'phone': phone,
+  };
 }
 
 class ProductSummary {
@@ -337,7 +344,8 @@ class HomeFeed {
         return CategoryChip(
           name: m['name'] as String,
           slug: m['slug'] as String,
-          imageUrl: m['image_url'] as String?,
+          imageUrl: (m['image_url'] ?? m['image'] ?? m['thumbnail_url'])
+              as String?,
           parentId: m['parent_id'] as int?,
         );
       }).toList(),

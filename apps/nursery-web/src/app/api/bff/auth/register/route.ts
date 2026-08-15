@@ -44,7 +44,10 @@ export async function POST(req: Request) {
   };
 
   if (!upstream.ok || !json.success || !json.data) {
-    return NextResponse.json(json, { status: upstream.status });
+    const res = NextResponse.json(json, { status: upstream.status });
+    const retryAfter = upstream.headers.get("retry-after");
+    if (retryAfter) res.headers.set("Retry-After", retryAfter);
+    return res;
   }
 
   const access = json.data.access_token;

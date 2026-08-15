@@ -83,7 +83,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
           Expanded(
             child: inv.loading && inv.rows.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : inv.error != null
+                : inv.error != null && inv.rows.isEmpty
                     ? OpsError(message: inv.error!, onRetry: inv.load)
                     : inv.rows.isEmpty
                         ? OpsEmpty(
@@ -154,7 +154,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
       appBar: AppBar(title: Text(d?['product_name']?.toString() ?? 'Stock')),
       body: inv.loading && d == null
           ? const Center(child: CircularProgressIndicator())
-          : inv.error != null
+          : inv.error != null && d == null
               ? OpsError(
                   message: inv.error!,
                   onRetry: () => inv.loadItem(widget.itemId),
@@ -164,6 +164,14 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
+                        if (inv.error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: OpsStaleBanner(
+                              message: inv.error!,
+                              onRetry: () => inv.loadItem(widget.itemId),
+                            ),
+                          ),
                         Text(d['sku']?.toString() ?? '',
                             style: const TextStyle(color: OpsColors.muted)),
                         const SizedBox(height: 8),
@@ -382,7 +390,7 @@ class _MovementsScreenState extends State<MovementsScreen> {
       appBar: AppBar(title: const Text('Stock movements')),
       body: inv.loading && inv.movements.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : inv.error != null
+          : inv.error != null && inv.movements.isEmpty
               ? OpsError(message: inv.error!, onRetry: inv.loadMovements)
               : inv.movements.isEmpty
                   ? const OpsEmpty(title: 'No movements')

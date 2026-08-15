@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nursery_app/app.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/config.dart';
@@ -51,8 +52,11 @@ Future<void> main() async {
       try {
         await catalog.syncAfterReconnect();
         if (!offline.forceTransportFailure) {
-          await cart.fetch();
-          await wishlist.bootstrap(signedIn: auth.user != null);
+          await cart.fetch(soft: true);
+          await wishlist.bootstrap(
+            signedIn: auth.user != null,
+            silent: true,
+          );
         }
         offline.endSync(success: true);
       } catch (_) {
@@ -85,12 +89,54 @@ Future<void> main() async {
   );
 }
 
-class NurseryAppHost extends StatelessWidget {
+class NurseryAppHost extends StatefulWidget {
   const NurseryAppHost({super.key});
 
   @override
+  State<NurseryAppHost> createState() => _NurseryAppHostState();
+}
+
+class _NurseryAppHostState extends State<NurseryAppHost> {
+  late GoRouter _router;
+  bool _showSplash = true;
+  bool? _wasSignedIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = createRouter();
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  void _rebuildRouterAfterLogout() {
+    final previous = _router;
+    _router = createRouter();
+    previous.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return NurseryApp(router: createRouter());
+    final signedIn = context.watch<AuthProvider>().isAuthenticated;
+    if (_wasSignedIn == true && !signedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(_rebuildRouterAfterLogout);
+      });
+    }
+    _wasSignedIn = signedIn;
+
+    return NurseryApp(
+      router: _router,
+      showSplash: _showSplash,
+      onSplashFinished: () {
+        if (mounted) setState(() => _showSplash = false);
+      },
+    );
   }
 }
 

@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
@@ -6,6 +6,7 @@ import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
 
@@ -185,16 +186,7 @@ class _FindYourPlantScreenState extends State<FindYourPlantScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Find your plant'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
+        leading: const GreenLeafBackButton(),
       ),
       body: !_started
           ? _Start(onStart: () => setState(() => _started = true))
@@ -484,18 +476,12 @@ class _Results extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadii.md),
-                      child: best.product.thumbnailUrl == null
-                          ? Container(
-                              width: 88,
-                              height: 88,
-                              color: AppColors.surfaceMuted,
-                            )
-                          : CachedNetworkImage(
-                              imageUrl: best.product.thumbnailUrl!,
-                              width: 88,
-                              height: 88,
-                              fit: BoxFit.cover,
-                            ),
+                      child: ResilientNetworkImage(
+                            url: best.product.thumbnailUrl,
+                            width: 88,
+                            height: 88,
+                            fit: BoxFit.cover,
+                          ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -574,12 +560,10 @@ class _Results extends StatelessWidget {
           ...results.skip(1).map(
             (row) => ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: row.product.thumbnailUrl == null
-                  ? const SizedBox(width: 48, height: 48)
-                  : ClipRRect(
+              leading: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: row.product.thumbnailUrl!,
+                      child: ResilientNetworkImage(
+                        url: row.product.thumbnailUrl,
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,

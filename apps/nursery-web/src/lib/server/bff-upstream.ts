@@ -94,6 +94,8 @@ export async function forwardLaravelResponse(
   if (cart) res.headers.set("X-Cart-Token", cart);
   const reqId = upstream.headers.get("x-request-id");
   if (reqId) res.headers.set("X-Request-Id", reqId);
+  const retryAfter = upstream.headers.get("retry-after");
+  if (retryAfter) res.headers.set("Retry-After", retryAfter);
 
   if (opts?.clearTokens) clearAuthCookies(res);
   if (opts?.setTokens) {

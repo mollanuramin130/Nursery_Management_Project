@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/data/mock_data_mode.dart';
 import 'package:nursery_app/models/models.dart';
+import 'package:nursery_app/core/refresh_coalescer.dart';
 import 'package:nursery_app/widgets/catalog_filters.dart';
 
 /// Shared catalog listing — cache-first, soft refresh (QA-38).
@@ -9,6 +10,7 @@ class CatalogProvider extends ChangeNotifier {
   CatalogProvider(this._repo);
 
   final CatalogRepository _repo;
+  final RefreshCoalescer _resetRefresh = RefreshCoalescer();
 
   CatalogFilters filters = const CatalogFilters();
   List<ProductSummary> items = [];
@@ -30,6 +32,13 @@ class CatalogProvider extends ChangeNotifier {
   }
 
   Future<void> load({required bool reset}) async {
+    if (reset) {
+      return _resetRefresh.run(() => _loadBody(reset: true));
+    }
+    return _loadBody(reset: false);
+  }
+
+  Future<void> _loadBody({required bool reset}) async {
     final requestId = ++_requestId;
 
     if (reset) {

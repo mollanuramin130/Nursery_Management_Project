@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/core/refresh_coalescer.dart';
 import 'package:nursery_app/data/mock_asset_store.dart';
+import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
@@ -28,7 +30,8 @@ class CategoryItem {
     id: json['id'] as int,
     name: json['name'] as String,
     slug: json['slug'] as String,
-    imageUrl: json['image_url'] as String?,
+    imageUrl: (json['image_url'] ?? json['image'] ?? json['thumbnail_url'])
+        as String?,
     children: ((json['children'] as List?) ?? [])
         .whereType<Map>()
         .map((e) => CategoryItem.fromJson(Map<String, dynamic>.from(e)))
@@ -44,12 +47,64 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  late Future<List<CategoryItem>> _future;
+  List<CategoryItem>? _cats;
+  Object? _error;
+  bool _loading = true;
+  bool _softUpdating = false;
+  int _epoch = 0;
+  int _lastSyncGen = -1;
+  final _refresh = RefreshCoalescer();
 
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final gen = context.watch<OfflineController>().syncGeneration;
+    if (_lastSyncGen >= 0 && gen != _lastSyncGen && _cats != null) {
+      _lastSyncGen = gen;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reload();
+      });
+    } else {
+      _lastSyncGen = gen;
+    }
+  }
+
+  Future<void> _reload() => _refresh.run(_reloadBody);
+
+  Future<void> _reloadBody() async {
+    final epoch = ++_epoch;
+    final hasData = _cats != null;
+    setState(() {
+      if (hasData) {
+        _softUpdating = true;
+      } else {
+        _loading = true;
+      }
+      _error = null;
+    });
+    try {
+      final cats = await _load();
+      if (!mounted || epoch != _epoch) return;
+      setState(() {
+        _cats = cats;
+        _loading = false;
+        _softUpdating = false;
+        _error = null;
+      });
+    } catch (e) {
+      if (!mounted || epoch != _epoch) return;
+      setState(() {
+        _loading = false;
+        _softUpdating = false;
+        if (_cats == null) _error = e;
+      });
+    }
   }
 
   Future<List<CategoryItem>> _load() async {
@@ -74,30 +129,30 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Categories')),
-      body: FutureBuilder<List<CategoryItem>>(
-        future: _future,
-        builder: (context, snap) {
-          if (snap.connectionState != ConnectionState.done) {
-            return const CategoryGridSkeleton();
-          }
-          if (snap.hasError) {
-            return ErrorStateView(
-              title: 'Unable to load categories',
-              message: ErrorStateView.sanitize(snap.error?.toString()),
-              onRetry: () => setState(() => _future = _load()),
-            );
-          }
-          final cats = snap.data ?? [];
-          if (cats.isEmpty) {
-            return EmptyStateView(
-              title: 'No categories yet',
-              message: 'Browse the full shop while we grow this list.',
-              actionLabel: 'Shop all',
-              onAction: () => context.push('/catalog'),
-              icon: Icons.grid_view_rounded,
-            );
-          }
+      body: _loading && _cats == null
+          ? const CategoryGridSkeleton()
+          : _error != null && _cats == null
+              ? ErrorStateView(
+                  title: 'Unable to load categories',
+                  message: ErrorStateView.sanitize(_error?.toString()),
+                  onRetry: _reload,
+                )
+              : (_cats == null || _cats!.isEmpty)
+                  ? EmptyStateView(
+                      title: 'No categories yet',
+                      message: 'Browse the full shop while we grow this list.',
+                      actionLabel: 'Shop all',
+                      onAction: () => context.push('/catalog'),
+                      icon: Icons.grid_view_rounded,
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _reload,
+                      child: _buildGrid(context, _cats!),
+                    ),
+    );
+  }
 
+  Widget _buildGrid(BuildContext context, List<CategoryItem> cats) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(
               AppSpace.screen,
@@ -183,10 +238,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(AppRadii.lg),
                               ),
-                              child: ResilientNetworkImage(
-                                url: c.imageUrl,
-                                fit: BoxFit.cover,
-                              ),
+                              child: (c.imageUrl == null ||
+                                      c.imageUrl!.trim().isEmpty)
+                                  ? ColoredBox(
+                                      color: AppColors.primarySoft,
+                                      child: Center(
+                                        child: CategoryGlyphAvatar(
+                                          name: c.name,
+                                          size: 56,
+                                        ),
+                                      ),
+                                    )
+                                  : ResilientNetworkImage(
+                                      url: c.imageUrl,
+                                      fit: BoxFit.cover,
+                                    ),
                             ),
                           ),
                           Padding(
@@ -226,8 +292,5 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               ),
             ],
           );
-        },
-      ),
-    );
   }
 }

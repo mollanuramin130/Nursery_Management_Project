@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_button.dart';
@@ -46,16 +47,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Forgot password'),
-        leading: IconButton(
-          tooltip: 'Go back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go(AuthNavigation.loginLocation(redirect: redirect));
-            }
-          },
+        leading: GreenLeafBackButton(
+          fallback: AuthNavigation.loginLocation(redirect: redirect),
         ),
       ),
       body: SafeArea(

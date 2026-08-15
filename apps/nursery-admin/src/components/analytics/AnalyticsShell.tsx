@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { ErrorState, LoadingBlock, PageHeader } from "@/components/feedback/States";
@@ -62,9 +62,12 @@ export function AnalyticsShell({
 
   const range = useMemo(() => rangeFromSearchParams(searchParams), [searchParams]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [exporting, setExporting] = useState(false);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const setRange = (next: AnalyticsRangeParams) => {
     const q = new URLSearchParams(rangeToQuery(next));
@@ -74,19 +77,23 @@ export function AnalyticsShell({
   const reload = useCallback(async () => {
     if (!canView) {
       setLoading(false);
+      setRefreshing(false);
       setError("Missing permission reports.view");
       return;
     }
-    setLoading(true);
+    const hadData = dataRef.current != null;
     setError(null);
+    if (hadData) setRefreshing(true);
+    else setLoading(true);
     try {
       const res = await load(range);
       setData(res.data);
     } catch (err) {
       setError(err instanceof ApiError || err instanceof Error ? err.message : "Failed to load");
-      setData(null);
+      if (!hadData) setData(null);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [canView, load, range]);
 
@@ -144,9 +151,20 @@ export function AnalyticsShell({
         ) : null}
       </div>
 
-      {loading ? <LoadingBlock label="Loading analytics…" /> : null}
-      {error ? <ErrorState message={error} onRetry={() => void reload()} /> : null}
-      {!loading && !error ? children({ range, data, reload }) : null}
+      {loading && !data ? <LoadingBlock label="Loading analytics…" /> : null}
+      {refreshing && data ? (
+        <p className="mb-2 text-xs font-medium text-[var(--admin-muted)]">Updating…</p>
+      ) : null}
+      {error && !data ? <ErrorState message={error} onRetry={() => void reload()} /> : null}
+      {error && data ? (
+        <p className="mb-3 text-sm text-[var(--admin-danger)]">
+          {error}{" "}
+          <button type="button" className="font-semibold underline" onClick={() => void reload()}>
+            Retry
+          </button>
+        </p>
+      ) : null}
+      {data ? children({ range, data, reload }) : null}
     </div>
   );
 }

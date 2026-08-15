@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_search_field.dart';
@@ -133,12 +134,12 @@ class _SearchScreenState extends State<SearchScreen> {
     final q = (term ?? _controller.text).trim();
     if (q.isEmpty) return;
     _pushRecent(q);
-    context.go('/catalog?q=${Uri.encodeQueryComponent(q)}');
+    context.push('/catalog?q=${Uri.encodeQueryComponent(q)}');
   }
 
   void _openSuggestion(_Suggestion s) {
     if (s.type == 'category') {
-      context.go('/catalog?category=${Uri.encodeQueryComponent(s.slug)}');
+      context.push('/catalog?category=${Uri.encodeQueryComponent(s.slug)}');
       return;
     }
     context.push('/product/${s.slug}');
@@ -152,16 +153,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Search'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
+        leading: const GreenLeafBackButton(),
       ),
       body: Column(
         children: [

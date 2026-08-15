@@ -78,10 +78,13 @@ class _FulfillmentQueueScreenState extends State<FulfillmentQueueScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final soft = _rows.isNotEmpty;
+    if (mounted) {
+      setState(() {
+        if (!soft) _loading = true;
+        _error = null;
+      });
+    }
     try {
       final api = context.read<ApiClient>();
       final data = await api.getData(
@@ -109,9 +112,9 @@ class _FulfillmentQueueScreenState extends State<FulfillmentQueueScreen> {
       appBar: AppBar(title: Text(title)),
       body: RefreshIndicator(
         onRefresh: _load,
-        child: _loading
+        child: _loading && _rows.isEmpty
             ? const Center(child: CircularProgressIndicator())
-            : _error != null
+            : _error != null && _rows.isEmpty
                 ? ListView(
                     children: [
                       OpsError(message: _error!, onRetry: _load),
@@ -184,10 +187,13 @@ class _FulfillmentOrderScreenState extends State<FulfillmentOrderScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final soft = _order != null;
+    if (mounted) {
+      setState(() {
+        if (!soft) _loading = true;
+        _error = null;
+      });
+    }
     try {
       final api = context.read<ApiClient>();
       final data = await api.getData(
@@ -237,13 +243,13 @@ class _FulfillmentOrderScreenState extends State<FulfillmentOrderScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    if (_loading) {
+    if (_loading && _order == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Fulfillment')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
-    if (_error != null || _order == null) {
+    if (_order == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Fulfillment')),
         body: OpsError(message: _error ?? 'Not found', onRetry: _load),

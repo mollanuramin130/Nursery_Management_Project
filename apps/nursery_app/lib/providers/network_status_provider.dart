@@ -21,13 +21,12 @@ class NetworkStatusProvider extends ChangeNotifier {
   String? get message => _message;
   bool get isDegraded =>
       _kind != NetworkKind.online && _kind != NetworkKind.unknownError;
+  /// Visible degraded network only — never "online" / "reconnecting" (QA-43).
   bool get showBanner =>
       _kind == NetworkKind.offline ||
       _kind == NetworkKind.apiUnavailable ||
       _kind == NetworkKind.apiTimeout ||
-      _kind == NetworkKind.serverError ||
-      _kind == NetworkKind.reconnecting ||
-      _kind == NetworkKind.connecting;
+      _kind == NetworkKind.serverError;
 
   String get bannerText => _message ?? bannerCopy(_kind);
 
@@ -38,18 +37,10 @@ class NetworkStatusProvider extends ChangeNotifier {
     _wasDegraded = false;
     if (_kind == NetworkKind.online && _message == null && !recovered) return;
     _kind = NetworkKind.online;
-    _message = recovered ? 'Connection restored' : null;
+    _message = null;
     notifyListeners();
     if (recovered) {
       onReconnected?.call();
-      // Clear brief "Connection restored" after a moment.
-      Timer(const Duration(seconds: 2), () {
-        if (_kind == NetworkKind.online &&
-            _message == 'Connection restored') {
-          _message = null;
-          notifyListeners();
-        }
-      });
     }
   }
 
@@ -75,9 +66,7 @@ class NetworkStatusProvider extends ChangeNotifier {
   Future<void> retryNow() async {
     if (_probing) return;
     _probing = true;
-    _kind = NetworkKind.reconnecting;
-    _message = bannerCopy(NetworkKind.reconnecting);
-    notifyListeners();
+    // Keep the existing degraded banner; do not flash "reconnecting".
     final health = await probeApiHealth();
     _probing = false;
     if (health.ok) {

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SessionStorage {
@@ -10,6 +12,7 @@ class SessionStorage {
   static const _refresh = 'gl_refresh_token';
   static const _cart = 'gl_cart_token';
   static const _device = 'gl_device_id';
+  static const _user = 'gl_user_json';
 
   Future<String?> getAccessToken() => _storage.read(key: _access);
   Future<String?> getRefreshToken() => _storage.read(key: _refresh);
@@ -35,6 +38,22 @@ class SessionStorage {
   Future<void> clearTokens() async {
     await _storage.delete(key: _access);
     await _storage.delete(key: _refresh);
+    await _storage.delete(key: _user);
+  }
+
+  Future<void> saveUserJson(Map<String, dynamic> json) async {
+    await _storage.write(key: _user, value: jsonEncode(json));
+  }
+
+  Future<Map<String, dynamic>?> readUserJson() async {
+    final raw = await _storage.read(key: _user);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (_) {}
+    return null;
   }
 
   Future<void> saveCartToken(String? token) async {

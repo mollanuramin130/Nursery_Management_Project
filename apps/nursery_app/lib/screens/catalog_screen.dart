@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/providers/catalog_provider.dart';
+import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_search_field.dart';
 import 'package:nursery_app/widgets/catalog_filters.dart';
@@ -22,8 +24,9 @@ class CatalogScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // QA-41: do not remount CatalogProvider on filter/query changes —
+    // remount cleared items and flashed ProductGridSkeleton (QA-40-M-009).
     return ChangeNotifierProvider(
-      key: ValueKey(initialFilters.toRouteQuery().toString()),
       create: (ctx) => CatalogProvider(ctx.read<CatalogRepository>())
         ..applyFilters(initialFilters),
       child: _CatalogView(
@@ -48,6 +51,7 @@ class _CatalogViewState extends State<_CatalogView> {
   late final TextEditingController _search;
   final _focus = FocusNode();
   final _scroll = ScrollController();
+  int _lastSyncGen = -1;
 
   @override
   void initState() {
@@ -58,6 +62,34 @@ class _CatalogViewState extends State<_CatalogView> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focus.requestFocus();
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _CatalogView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialFilters.toRouteQuery().toString() !=
+        widget.initialFilters.toRouteQuery().toString()) {
+      _search.text = widget.initialFilters.q ?? '';
+      context.read<CatalogProvider>().applyFilters(widget.initialFilters);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final gen = context.watch<OfflineController>().syncGeneration;
+    if (_lastSyncGen >= 0 && gen != _lastSyncGen) {
+      _lastSyncGen = gen;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final catalog = context.read<CatalogProvider>();
+        if (catalog.items.isNotEmpty) {
+          catalog.load(reset: true);
+        }
+      });
+    } else {
+      _lastSyncGen = gen;
     }
   }
 
@@ -114,7 +146,10 @@ class _CatalogViewState extends State<_CatalogView> {
     final titled = title[0].toUpperCase() + title.substring(1);
 
     return Scaffold(
-      appBar: AppBar(title: Text(titled)),
+      appBar: AppBar(
+        title: Text(titled),
+        leading: const GreenLeafBackButton(),
+      ),
       body: Column(
         children: [
           Padding(

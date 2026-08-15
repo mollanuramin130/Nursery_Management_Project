@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:nursery_app/theme/tokens.dart';
 
 /// Soft entrance for home/list content. Respects reduced motion.
-class FadeInUp extends StatelessWidget {
+///
+/// QA-40: delay Future is created once in [initState] so soft-refresh
+/// rebuilds do not reset opacity to 0 (FutureBuilder identity flash).
+class FadeInUp extends StatefulWidget {
   const FadeInUp({
     super.key,
     required this.child,
@@ -18,29 +21,37 @@ class FadeInUp extends StatelessWidget {
   final double offset;
 
   @override
+  State<FadeInUp> createState() => _FadeInUpState();
+}
+
+class _FadeInUpState extends State<FadeInUp> {
+  late final Future<void> _delayFuture =
+      Future<void>.delayed(widget.delay);
+
+  @override
   Widget build(BuildContext context) {
-    if (MediaQuery.disableAnimationsOf(context)) return child;
+    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
 
     return FutureBuilder<void>(
-      future: Future<void>.delayed(delay),
+      future: _delayFuture,
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          return Opacity(opacity: 0, child: child);
+          return Opacity(opacity: 0, child: widget.child);
         }
         return TweenAnimationBuilder<double>(
           tween: Tween(begin: 0, end: 1),
-          duration: duration,
+          duration: widget.duration,
           curve: Curves.easeOutCubic,
           builder: (context, t, child) {
             return Opacity(
               opacity: t,
               child: Transform.translate(
-                offset: Offset(0, offset * (1 - t)),
+                offset: Offset(0, widget.offset * (1 - t)),
                 child: child,
               ),
             );
           },
-          child: child,
+          child: widget.child,
         );
       },
     );
@@ -108,17 +119,30 @@ class WishlistHeart extends StatelessWidget {
     required this.saved,
     required this.onPressed,
     this.size = 20,
+    this.busy = false,
+    this.productName,
   });
 
   final bool saved;
   final VoidCallback? onPressed;
   final double size;
+  final bool busy;
+  final String? productName;
 
   @override
   Widget build(BuildContext context) {
+    final color =
+        saved ? AppColors.wishlistActive : AppColors.wishlistInactive;
+    final name = (productName ?? '').trim();
+    final label = name.isEmpty
+        ? (saved ? 'Remove from wishlist' : 'Add to wishlist')
+        : (saved
+            ? 'Remove $name from wishlist'
+            : 'Add $name to wishlist');
     return IconButton(
-      tooltip: saved ? 'Remove from wishlist' : 'Add to wishlist',
-      onPressed: onPressed,
+      tooltip: label,
+      // Keep colour visible while in-flight — disable via no-op instead of null.
+      onPressed: busy ? () {} : onPressed,
       constraints: const BoxConstraints(
         minWidth: AppTouch.iconButton,
         minHeight: AppTouch.iconButton,
@@ -132,7 +156,8 @@ class WishlistHeart extends StatelessWidget {
           saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
           key: ValueKey(saved),
           size: size,
-          color: saved ? AppColors.sale : AppColors.primaryDeep,
+          color: color.withValues(alpha: busy ? 0.55 : 1),
+          semanticLabel: label,
         ),
       ),
     );

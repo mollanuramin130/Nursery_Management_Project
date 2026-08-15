@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/core/soft_future_refresh.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
@@ -9,6 +9,7 @@ import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/services/razorpay_checkout.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
@@ -122,7 +123,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       } else {
         AppFeedback.success(context, 'Payment successful');
       }
-      setState(() => _future = _load());
+      await softReplaceFuture(
+        load: _load,
+        onData: (data) {
+          if (!mounted) return;
+          setState(() => _future = completedFuture(data));
+        },
+      );
     } on RazorpayCheckoutCancelled {
       if (!mounted) return;
       AppFeedback.info(context, 'Payment cancelled');
@@ -236,7 +243,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       );
       if (!mounted) return;
       AppFeedback.success(context, 'Order cancelled');
-      setState(() => _future = _load());
+      await softReplaceFuture(
+        load: _load,
+        onData: (data) {
+          if (!mounted) return;
+          setState(() => _future = completedFuture(data));
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       AppFeedback.error(
@@ -399,7 +412,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       );
       if (!mounted) return;
       AppFeedback.success(context, 'Your return request has been submitted.');
-      setState(() => _future = _load());
+      await softReplaceFuture(
+        load: _load,
+        onData: (data) {
+          if (!mounted) return;
+          setState(() => _future = completedFuture(data));
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       AppFeedback.error(
@@ -538,7 +557,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             body: ErrorStateView(
               title: 'Unable to load order',
               message: ErrorStateView.sanitize(snap.error?.toString()),
-              onRetry: () => setState(() => _future = _load()),
+              onRetry: () {
+                softReplaceFuture(
+                  load: _load,
+                  onData: (data) {
+                    if (!mounted) return;
+                    setState(() => _future = completedFuture(data));
+                  },
+                );
+              },
             ),
           );
         }
@@ -560,59 +587,37 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 tooltip: 'Refresh',
                 onPressed: _busy
                     ? null
-                    : () => setState(() => _future = _load()),
+                    : () async {
+                        await softReplaceFuture(
+                          load: _load,
+                          onData: (data) {
+                            if (!mounted) return;
+                            setState(() => _future = completedFuture(data));
+                          },
+                          onError: (e) {
+                            if (!mounted) return;
+                            AppFeedback.error(context, e.toString());
+                          },
+                        );
+                      },
                 icon: const Icon(Icons.refresh),
               ),
             ],
           ),
-          bottomNavigationBar: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (order.canReturn)
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.tonal(
-                        onPressed: _busy
-                            ? null
-                            : () => _showReturnSheet(order),
-                        child: const Text('Return item'),
-                      ),
-                    ),
-                  if (order.canReturn && (order.canReorder || order.canCancel))
-                    const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (order.canReorder)
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: _busy ? null : () => _reorder(order),
-                            child: const Text('Reorder'),
-                          ),
-                        ),
-                      if (order.canReorder && order.canCancel)
-                        const SizedBox(width: 8),
-                      if (order.canCancel)
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _busy
-                                ? null
-                                : () => _showCancelSheet(order),
-                            child: const Text('Cancel order'),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          bottomNavigationBar: null,
           body: RefreshIndicator(
             onRefresh: () async {
-              setState(() => _future = _load());
-              await _future;
+              await softReplaceFuture(
+                load: _load,
+                onData: (data) {
+                  if (!mounted) return;
+                  setState(() => _future = completedFuture(data));
+                },
+                onError: (e) {
+                  if (!mounted) return;
+                  AppFeedback.error(context, e.toString());
+                },
+              );
             },
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -931,30 +936,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(AppRadii.md),
-                          child: item.thumbnailUrl == null
-                              ? Container(
-                                  width: 56,
-                                  height: 56,
-                                  color: AppColors.surfaceMuted,
-                                )
-                              : CachedNetworkImage(
-                                  imageUrl: item.thumbnailUrl!,
-                                  width: 56,
-                                  height: 56,
-                                  fit: BoxFit.cover,
-                                  memCacheWidth: 168,
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                        width: 56,
-                                        height: 56,
-                                        color: AppColors.surfaceMuted,
-                                        alignment: Alignment.center,
-                                        child: const Icon(
-                                          Icons.local_florist_outlined,
-                                          color: AppColors.muted,
-                                        ),
-                                      ),
-                                ),
+                          child: ResilientNetworkImage(
+                            url: item.thumbnailUrl,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1071,6 +1058,47 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 if (order.taxTotal > 0) _row('Tax', money(order.taxTotal)),
                 const Divider(height: 24),
                 _row('Total', money(order.grandTotal), bold: true),
+                // QA-39: in-body actions — avoid stacking a second bottom bar
+                // above shell Home/Shop/Cart/Orders/Account tabs.
+                if (order.canReturn || order.canReorder || order.canCancel) ...[
+                  const SizedBox(height: 24),
+                  if (order.canReturn)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonal(
+                        onPressed:
+                            _busy ? null : () => _showReturnSheet(order),
+                        child: const Text('Return item'),
+                      ),
+                    ),
+                  if (order.canReturn &&
+                      (order.canReorder || order.canCancel))
+                    const SizedBox(height: 8),
+                  if (order.canReorder || order.canCancel)
+                    Row(
+                      children: [
+                        if (order.canReorder)
+                          Expanded(
+                            child: FilledButton(
+                              onPressed:
+                                  _busy ? null : () => _reorder(order),
+                              child: const Text('Reorder'),
+                            ),
+                          ),
+                        if (order.canReorder && order.canCancel)
+                          const SizedBox(width: 8),
+                        if (order.canCancel)
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _showCancelSheet(order),
+                              child: const Text('Cancel order'),
+                            ),
+                          ),
+                      ],
+                    ),
+                ],
               ],
             ),
           ),

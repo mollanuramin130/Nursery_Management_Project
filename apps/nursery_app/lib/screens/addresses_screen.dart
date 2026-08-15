@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_messages.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/soft_future_refresh.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
@@ -22,29 +23,67 @@ class AddressesScreen extends StatefulWidget {
 
 class _AddressesScreenState extends State<AddressesScreen> {
   Future<List<Address>>? _future;
+  List<Address>? _items;
   int? _busyId;
+  int _epoch = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload(initial: true));
   }
 
-  void _reload() {
+  Future<List<Address>> _fetch() {
+    return context.read<ApiClient>().getData(
+      '/customer/addresses',
+      map: (data) => (data as List)
+          .whereType<Map>()
+          .map((e) => Address.fromJson(Map<String, dynamic>.from(e)))
+          .toList(),
+    );
+  }
+
+  Future<void> _reload({bool initial = false}) async {
     final user = context.read<AuthProvider>().user;
     if (user == null) {
-      setState(() => _future = null);
+      setState(() {
+        _future = null;
+        _items = null;
+      });
       return;
     }
-    setState(() {
-      _future = context.read<ApiClient>().getData(
-        '/customer/addresses',
-        map: (data) => (data as List)
-            .whereType<Map>()
-            .map((e) => Address.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-      );
-    });
+
+    final epoch = ++_epoch;
+    if (initial || _items == null) {
+      final pending = _fetch();
+      setState(() => _future = pending);
+      try {
+        final data = await pending;
+        if (!mounted || epoch != _epoch) return;
+        setState(() {
+          _items = data;
+          _future = completedFuture(data);
+        });
+      } catch (_) {
+        // FutureBuilder surfaces the error from [pending].
+      }
+      return;
+    }
+
+    await softReplaceFuture<List<Address>>(
+      load: _fetch,
+      onData: (data) {
+        if (!mounted || epoch != _epoch) return;
+        setState(() {
+          _items = data;
+          _future = completedFuture(data);
+        });
+      },
+      onError: (e) {
+        if (!mounted) return;
+        AppFeedback.error(context, AuthMessages.fromException(e));
+      },
+    );
   }
 
   Future<void> _delete(Address address) async {
@@ -65,7 +104,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
       );
       if (!mounted) return;
       AppFeedback.success(context, 'Address removed');
-      _reload();
+      await _reload();
     } catch (e) {
       if (!mounted) return;
       AppFeedback.error(context, AuthMessages.fromException(e));
@@ -86,7 +125,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
       );
       if (!mounted) return;
       AppFeedback.success(context, 'Default address updated');
-      _reload();
+      await _reload();
     } catch (e) {
       if (!mounted) return;
       AppFeedback.error(context, AuthMessages.fromException(e));
@@ -156,7 +195,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () async => _reload(),
+            onRefresh: _reload,
             child: ListView.separated(
               padding: const EdgeInsets.all(AppSpace.screen),
               itemCount: addresses.length + 1,

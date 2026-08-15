@@ -27,14 +27,17 @@ export default function MyReviewsPage() {
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const [rows, setRows] = useState<MyReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await apiGet<MyReview[]>("/customer/reviews", { per_page: 30 });
       setRows(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      setRows([]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load reviews");
+      // QA-40: keep previous rows on refresh failure
     } finally {
       setLoading(false);
     }
@@ -72,7 +75,13 @@ export default function MyReviewsPage() {
           <h1 className="display text-4xl text-[var(--color-primary-deep)]">My reviews</h1>
           <p>Pending reviews appear on product pages after moderation.</p>
         </div>
-        {loading ? (
+        {error && !rows.length ? (
+          <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white p-6 text-center">
+            <p className="font-semibold text-[var(--color-primary-deep)]">Couldn’t load reviews</p>
+            <p className="mt-2 text-sm text-[var(--color-muted)]">{error}</p>
+            <div className="mt-4"><Button onClick={() => void load()}>Try again</Button></div>
+          </div>
+        ) : loading && !rows.length ? (
           <Skeleton className="h-24 w-full" />
         ) : !rows.length ? (
           <EmptyState

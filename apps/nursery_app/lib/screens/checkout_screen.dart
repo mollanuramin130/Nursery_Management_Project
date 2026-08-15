@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/core/checkout_preview_rules.dart';
 import 'package:nursery_app/core/config.dart';
 import 'package:nursery_app/models/models.dart';
@@ -106,13 +107,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       return;
     }
 
+    final soft = addresses.isNotEmpty ||
+        methods.isNotEmpty ||
+        cartProvider.cart.items.isNotEmpty;
     setState(() {
-      loading = true;
+      if (!soft) loading = true;
       error = null;
     });
 
     try {
-      await cartProvider.fetch();
+      await cartProvider.fetch(soft: soft);
       if (!mounted) return;
       if (cartProvider.cart.items.isEmpty) {
         setState(() {
@@ -160,7 +164,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       setState(() {
         loading = false;
-        error = e.toString();
+        if (!soft) error = e.toString();
       });
     }
   }
@@ -583,15 +587,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>().cart;
 
-    if (loading) {
+    if (loading && addresses.isEmpty && methods.isEmpty) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Checkout'),
-          leading: IconButton(
-            tooltip: 'Go back',
-            onPressed: () => context.pop(),
-            icon: const Icon(Icons.arrow_back_rounded),
-          ),
+          leading: const GreenLeafBackButton(fallback: '/cart'),
         ),
         body: const SafeArea(child: CartSkeleton()),
       );
@@ -642,12 +642,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final blockPop = _busy || _submissionLocked;
+    final routerCanPop = GoRouter.of(context).canPop();
 
     return PopScope(
-      canPop: !blockPop,
+      canPop: !blockPop && step == 0 && routerCanPop,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop || blockPop) return;
-        if (step > 0) setState(() => step -= 1);
+        if (step > 0) {
+          setState(() => step -= 1);
+          return;
+        }
+        BackNavigation.toolbarBack(context, fallback: '/cart');
       },
       child: Scaffold(
         appBar: AppBar(
@@ -660,7 +665,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     if (step > 0) {
                       setState(() => step -= 1);
                     } else {
-                      context.pop();
+                      BackNavigation.toolbarBack(context, fallback: '/cart');
                     }
                   },
             icon: const Icon(Icons.arrow_back_rounded),

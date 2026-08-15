@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { loginHref } from "@/lib/auth-redirect";
@@ -36,6 +36,13 @@ export function ProductActions({
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
   const [wishBusy, setWishBusy] = useState(false);
+
+  // QA-38: lift toasts above the mobile sticky Buy/Cart strip.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--sticky-cta-h", "4.5rem");
+    return () => root.style.removeProperty("--sticky-cta-h");
+  }, []);
 
   async function addToCart(openDrawer = true): Promise<boolean> {
     if (outOfStock || busy) return false;
@@ -104,18 +111,38 @@ export function ProductActions({
           <Button variant="secondary" onClick={() => void buyNow()} disabled={busy || outOfStock}>
             Buy now
           </Button>
-          <Button variant="outline" onClick={toggleWish} disabled={wishBusy}>
-            {wishBusy ? "…" : wishHas ? "Saved" : "Wishlist"}
+          <Button
+            variant="outline"
+            onClick={toggleWish}
+            disabled={wishBusy}
+            aria-pressed={wishHas}
+            className={
+              wishHas
+                ? "border-[var(--color-wishlist-active)] text-[var(--color-wishlist-active)]"
+                : undefined
+            }
+          >
+            {wishBusy ? "…" : wishHas ? "♥ Saved" : "♡ Wishlist"}
           </Button>
         </div>
         <div className="flex flex-wrap gap-3 md:hidden">
-          <Button variant="outline" onClick={toggleWish} disabled={wishBusy}>
-            {wishBusy ? "…" : wishHas ? "Saved" : "Wishlist"}
+          <Button
+            variant="outline"
+            onClick={toggleWish}
+            disabled={wishBusy}
+            aria-pressed={wishHas}
+            className={
+              wishHas
+                ? "border-[var(--color-wishlist-active)] text-[var(--color-wishlist-active)]"
+                : undefined
+            }
+          >
+            {wishBusy ? "…" : wishHas ? "♥ Saved" : "♡ Wishlist"}
           </Button>
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-[var(--bottom-nav-h)] z-[35] border-t border-[var(--color-border)] bg-white/95 p-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-[var(--bottom-nav-h)] z-[35] border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 p-3 backdrop-blur md:hidden">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-[var(--color-muted)]">{productName}</p>

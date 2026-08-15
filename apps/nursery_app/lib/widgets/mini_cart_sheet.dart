@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
@@ -8,6 +7,7 @@ import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_bottom_sheet.dart';
 import 'package:nursery_app/widgets/app_button.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:provider/provider.dart';
 
 /// Lightweight cart preview sheet — full cart remains the tab.
@@ -70,30 +70,12 @@ class _MiniCartBody extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadii.md),
-                  child: item.thumbnailUrl == null
-                      ? Container(
-                          width: 56,
-                          height: 56,
-                          color: AppColors.surfaceMuted,
-                        )
-                      : CachedNetworkImage(
-                          imageUrl: item.thumbnailUrl!,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 168,
-                          errorWidget: (context, url, error) => Container(
-                            width: 56,
-                            height: 56,
-                            color: AppColors.surfaceMuted,
-                            alignment: Alignment.center,
-                            child: const Icon(
-                              Icons.local_florist_outlined,
-                              color: AppColors.muted,
-                              size: 20,
-                            ),
-                          ),
-                        ),
+                  child: ResilientNetworkImage(
+                    url: item.thumbnailUrl,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                  ),
                 ),
                 const SizedBox(width: AppSpace.md),
                 Expanded(

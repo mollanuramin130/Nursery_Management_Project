@@ -22,15 +22,21 @@ abstract final class AppColors {
   static const border = Color(0xFFE2E8E3);
   static const borderStrong = Color(0xFFC9D4CC);
 
-  static const success = Color(0xFF2F7D4A);
+  static const success = Color(0xFF1F6B3A);
   static const successSoft = Color(0xFFE6F4EA);
-  static const warning = Color(0xFFB7791F);
+  static const warning = Color(0xFF92400E);
   static const warningSoft = Color(0xFFFEF3C7);
   static const error = Color(0xFFB42318);
   static const errorSoft = Color(0xFFFEE4E2);
   static const info = Color(0xFF175CD3);
 
   static const sale = Color(0xFFB42318);
+
+  /// Active wishlist heart — high-contrast red on product imagery.
+  static const wishlistActive = Color(0xFFB42318);
+
+  /// Inactive wishlist heart — neutral, not brand green.
+  static const wishlistInactive = Color(0xFF5A655E);
 
   /// Darker gold for WCAG-friendly contrast on light surfaces.
   static const rating = Color(0xFFA16207);

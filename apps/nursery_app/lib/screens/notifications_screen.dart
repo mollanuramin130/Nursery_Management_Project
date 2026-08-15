@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/core/soft_future_refresh.dart';
+import 'package:nursery_app/widgets/app_feedback.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/services/notification_deep_link.dart';
@@ -73,7 +75,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 map: (_) => null,
               );
               if (!mounted) return;
-              setState(() => _future = _load());
+              await softReplaceFuture(
+                load: _load,
+                onData: (data) {
+                  if (!mounted) return;
+                  setState(() => _future = completedFuture(data));
+                },
+              );
             },
             child: const Text('Mark all'),
           ),
@@ -89,7 +97,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             return ErrorStateView(
               title: 'Unable to load',
               message: ErrorStateView.sanitize(snap.error?.toString()),
-              onRetry: () => setState(() => _future = _load()),
+              onRetry: () {
+                softReplaceFuture(
+                  load: _load,
+                  onData: (data) {
+                    if (!mounted) return;
+                    setState(() => _future = completedFuture(data));
+                  },
+                );
+              },
             );
           }
           final inbox = snap.data!;
@@ -101,8 +117,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }
           return RefreshIndicator(
             onRefresh: () async {
-              setState(() => _future = _load());
-              await _future;
+              await softReplaceFuture(
+                load: _load,
+                onData: (data) {
+                  if (!mounted) return;
+                  setState(() => _future = completedFuture(data));
+                },
+                onError: (e) {
+                  if (!mounted) return;
+                  AppFeedback.error(context, e.toString());
+                },
+              );
             },
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -140,7 +165,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     if (href != null) {
                       context.push(href);
                     } else {
-                      setState(() => _future = _load());
+                      await softReplaceFuture(
+                        load: _load,
+                        onData: (data) {
+                          if (!mounted) return;
+                          setState(() => _future = completedFuture(data));
+                        },
+                      );
                     }
                   },
                 );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:nursery_admin_mobile/app.dart';
 import 'package:nursery_admin_mobile/core/api_client.dart';
@@ -22,8 +23,6 @@ Future<void> main() async {
   auth = AuthProvider(api, storage);
   await auth.bootstrap();
 
-  final router = createOpsRouter(auth);
-
   runApp(
     MultiProvider(
       providers: [
@@ -35,7 +34,55 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => InventoryProvider(api)),
         ChangeNotifierProvider(create: (_) => PurchasingProvider(api)),
       ],
-      child: OpsApp(router: router),
+      child: OpsAppHost(auth: auth),
     ),
   );
+}
+
+class OpsAppHost extends StatefulWidget {
+  const OpsAppHost({super.key, required this.auth});
+
+  final AuthProvider auth;
+
+  @override
+  State<OpsAppHost> createState() => _OpsAppHostState();
+}
+
+class _OpsAppHostState extends State<OpsAppHost> {
+  late GoRouter _router;
+  bool _showSplash = true;
+  bool? _wasSignedIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = createOpsRouter(widget.auth);
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final signedIn = context.watch<AuthProvider>().isAuthenticated;
+    if (_wasSignedIn == true && !signedIn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final previous = _router;
+        setState(() => _router = createOpsRouter(widget.auth));
+        previous.dispose();
+      });
+    }
+    _wasSignedIn = signedIn;
+    return OpsApp(
+      router: _router,
+      showSplash: _showSplash,
+      onSplashFinished: () {
+        if (mounted) setState(() => _showSplash = false);
+      },
+    );
+  }
 }

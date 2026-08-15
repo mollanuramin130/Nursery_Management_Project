@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/core/api_health.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
@@ -89,17 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign in'),
-        leading: IconButton(
-          tooltip: 'Go back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
+        leading: const GreenLeafBackButton(),
       ),
       body: SafeArea(
         child: AutofillGroup(
@@ -277,13 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton(
                     onPressed: auth.loading
                         ? null
-                        : () {
-                            if (context.canPop()) {
-                              context.pop();
-                            } else {
-                              context.go('/');
-                            }
-                          },
+                        : () => BackNavigation.toolbarBack(context),
                     child: const Text('Continue as guest'),
                   ),
                 ],

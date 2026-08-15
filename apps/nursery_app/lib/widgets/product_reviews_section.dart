@@ -54,10 +54,13 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final soft = _reviews.isNotEmpty;
+    if (mounted) {
+      setState(() {
+        if (!soft) _loading = true;
+        _error = null;
+      });
+    }
     try {
       final api = context.read<ApiClient>();
       final auth = context.read<AuthProvider>();
@@ -97,7 +100,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.toString();
+        if (_reviews.isEmpty) _error = e.toString();
       });
     }
   }
@@ -234,7 +237,7 @@ class _ProductReviewsSectionState extends State<ProductReviewsSection> {
           ),
         ],
         const SizedBox(height: AppSpace.lg),
-        if (_loading)
+        if (_loading && _reviews.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: AppSpace.lg),
             child: Center(child: CircularProgressIndicator()),

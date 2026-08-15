@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:nursery_admin_mobile/core/back_navigation.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 
@@ -32,26 +33,29 @@ class AdminShell extends StatelessWidget {
     var selected = visibleIndexes.indexOf(currentBranch);
     if (selected < 0) selected = 0;
 
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selected.clamp(0, destinations.length - 1),
-        onDestinationSelected: (i) {
-          final branch = visibleIndexes[i.clamp(0, visibleIndexes.length - 1)];
-          navigationShell.goBranch(
-            branch,
-            initialLocation: branch == navigationShell.currentIndex,
-          );
-        },
-        destinations: destinations
-            .map(
-              (d) => NavigationDestination(
-                icon: Icon(d.icon),
-                selectedIcon: Icon(d.selected),
-                label: d.label,
-              ),
-            )
-            .toList(),
+    return OpsShellBackScope(
+      navigationShell: navigationShell,
+      child: Scaffold(
+        body: navigationShell,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: selected.clamp(0, destinations.length - 1),
+          onDestinationSelected: (i) {
+            final branch = visibleIndexes[i.clamp(0, visibleIndexes.length - 1)];
+            navigationShell.goBranch(
+              branch,
+              initialLocation: branch == navigationShell.currentIndex,
+            );
+          },
+          destinations: destinations
+              .map(
+                (d) => NavigationDestination(
+                  icon: Icon(d.icon),
+                  selectedIcon: Icon(d.selected),
+                  label: d.label,
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }

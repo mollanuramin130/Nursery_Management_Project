@@ -6,6 +6,7 @@ import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
+import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/providers/wishlist_provider.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
@@ -27,11 +28,51 @@ class _WishlistScreenState extends State<WishlistScreen> {
   bool _loading = false;
   final Set<int> _busyIds = {};
   int _listEpoch = 0;
+  Set<int> _lastSyncedIds = {};
+  int _lastSyncGen = -1;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _reload(initial: true));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // QA-40: IndexedStack keep-alive can leave a stale row list after hearts
+    // change on Home/Shop/PDP — soft-sync when provider ids diverge.
+    final ids = context.watch<WishlistProvider>().ids;
+    final next = Set<int>.from(ids);
+    if (_items != null &&
+        !_setEquals(next, _lastSyncedIds) &&
+        _busyIds.isEmpty) {
+      _lastSyncedIds = next;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _busyIds.isEmpty) _reload();
+      });
+    } else if (_items == null) {
+      _lastSyncedIds = next;
+    }
+
+    final gen = context.watch<OfflineController>().syncGeneration;
+    if (_lastSyncGen >= 0 &&
+        gen != _lastSyncGen &&
+        _items != null &&
+        _busyIds.isEmpty) {
+      _lastSyncGen = gen;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _busyIds.isEmpty) _reload();
+      });
+    } else {
+      _lastSyncGen = gen;
+    }
+  }
+
+  bool _setEquals(Set<int> a, Set<int> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    return a.containsAll(b);
   }
 
   /// QA-36-008 / QA-38: never flash skeleton or restore a removed row mid-flight.
@@ -89,11 +130,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
         _items = rows;
         _error = null;
         _loading = false;
+        _lastSyncedIds = idSet;
       });
-      // Soft sync IDs only — never re-seed over local removals.
-      if (auth.user != null && !wishNow.localOnly) {
-        await wishNow.bootstrap(signedIn: true);
-      }
+      // QA-39: do NOT re-bootstrap here — bootstrap(loading:true) + API race
+      // was restoring removed IDs and flashing the old list for a frame.
     } catch (e) {
       if (!mounted || epoch != _listEpoch) return;
       setState(() {
@@ -109,7 +149,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
     final productId = row.product.id;
     if (_busyIds.contains(productId)) return;
 
+    // Optimistic remove — bump epoch so in-flight reloads cannot restore the row.
     final previous = List<WishlistRow>.from(_items ?? const []);
+    _listEpoch++;
     setState(() {
       _busyIds.add(productId);
       _items = previous.where((r) => r.product.id != productId).toList();

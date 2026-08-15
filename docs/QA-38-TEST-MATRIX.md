@@ -1,27 +1,44 @@
-# QA-38 Test Matrix
+# QA-38 TEST MATRIX
 
-**Date:** 2026-08-13 · Device `2d3714f`
+**Date:** 2026-08-15 · **GREEN:** NO
 
-| # | Case | Result | Evidence |
-|---|------|--------|----------|
-| A | Cache → API → fresh cache | **PASS** | CatalogRepository + peek |
-| B | API unavailable → cache | **PASS** | fallback path |
-| C | No cache + offline → mock | **PASS** | mockOnly tests |
-| D | Cache + API 500 → keep cache | **PASS** | architecture |
-| E | Mock → API recovery → API wins | **PASS** | qa38_sync_priority_test |
-| F | Offline cart local | **PASS** | offline_local_cart_test |
-| G | Offline wishlist local | **PASS** | offline_local_cart_test |
-| H | Offline payment blocked | **PASS** | checkout localOnly guard |
-| I | Reconnect auto refresh | **PASS** | syncGeneration + onReconnected |
-| J | Home /home coalescing | **PASS** | `_homeInFlight` |
-| K | Wishlist remove no flash | **PASS** | epoch + busy guard |
-| L | Image fallback | **PASS** | ResilientNetworkImage |
-| M | Temp network ≠ logout | **PASS** | QA-37-006 retained |
-| N | 401 ≠ offline | **PASS** | classify + refresh rules |
-| O | 500 safe fallback | **PASS** | eligible fallback |
-| P | Timeout fallback | **PASS** | network_errors_test |
-| Q | Envelope JSON | **PASS** | cache_envelope_test |
-| — | PHPUnit regression | **PASS** | **253 / 1209** |
-| — | Flutter suite | **PASS** | **58** |
-| — | Vivo Wi‑Fi OFF physical | **UNVERIFIED** | DEBUG sim available |
-| — | LIVE / GREEN | **NO** | |
+## A. Offline sync (prior)
+
+| Case | Expected | Result |
+|------|----------|--------|
+| Cache-first home | Peek cache then soft update | PASS (unit) |
+| Mock ≯ API cache | `CacheEnvelope.mayWrite` | PASS (unit) |
+| Reconnect sync | syncGeneration bump | PASS (unit) |
+| Wishlist flicker | epoch / no reseed | PASS (unit) |
+
+## B. UI polish
+
+| Case | Platform | Expected | Result |
+|------|----------|----------|--------|
+| Toast above sticky Buy/Cart | Customer Web PDP | Toast clears CTA + bottom nav | PASS (code) / UNVERIFIED device |
+| Toast above Place Order | Customer Web checkout step 4 | Same | PASS (code) / UNVERIFIED device |
+| Network banner does not cover header | Customer Web | Banner in flow, readable | PASS (code) |
+| Wishlist active red | Web + Mobile | Filled red heart | PASS (code) |
+| Wishlist inactive neutral | Web + Mobile | Muted, not brand green | PASS (code) |
+| Disabled outline button | Customer Web | Visible disabled opacity | PASS (code) |
+| Sale badge red | Web + Mobile | `sale` tone | PASS (code) |
+| Snackbar above bottom nav | Customer Mobile | Margin ≥ nav + inset | PASS (code) / UNVERIFIED device |
+| Admin toast contrast | Admin Web | Solid white-on-semantic | PASS (code) |
+| Admin snackbar vs nav | Admin Mobile | insetPadding clears nav | PASS (code) |
+| Admin login loading | Admin Mobile | Spinner visible | PASS (code) |
+| Offline architecture intact | Mobile | No fake pay/order | PASS (regression) |
+
+## C. Regression suites
+
+| Suite | Result |
+|-------|--------|
+| `php artisan test` | 253 / 1209 (251+2 skip) |
+| `nursery_app` flutter test | 58 passed |
+| `nursery_admin_mobile` flutter test | 27 passed |
+| `nursery-web` qa-unit-checks | PASS |
+
+## D. Device
+
+| Device | Result |
+|--------|--------|
+| Vivo physical | **UNVERIFIED** this session |

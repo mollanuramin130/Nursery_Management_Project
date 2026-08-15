@@ -1,14 +1,16 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
+import 'package:nursery_app/core/refresh_coalescer.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
 import 'package:nursery_app/providers/cart_provider.dart';
+import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
+import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
 import 'package:provider/provider.dart';
@@ -46,10 +48,16 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
-  Future<List<OrderSummary>>? _future;
+  List<OrderSummary>? _orders;
+  Object? _error;
+  bool _loading = false;
+  bool _softUpdating = false;
   Object? _lastUserKey;
   String _filter = '';
   bool _busyId = false;
+  int _loadEpoch = 0;
+  int _lastSyncGen = -1;
+  final _refresh = RefreshCoalescer();
 
   @override
   void initState() {
@@ -68,31 +76,83 @@ class _OrdersScreenState extends State<OrdersScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _reload();
         });
-      } else if (_future != null) {
-        setState(() => _future = null);
+      } else {
+        setState(() {
+          _orders = null;
+          _error = null;
+          _loading = false;
+          _softUpdating = false;
+        });
       }
+    }
+    final gen = context.watch<OfflineController>().syncGeneration;
+    if (_lastSyncGen >= 0 && gen != _lastSyncGen && _orders != null) {
+      _lastSyncGen = gen;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _reload();
+      });
+    } else {
+      _lastSyncGen = gen;
     }
   }
 
-  void _reload() {
+  List<OrderSummary> _applyFilter(List<OrderSummary> list) {
+    if (_filter.isEmpty) return list;
+    return list
+        .where((o) => o.status.toUpperCase() == _filter.toUpperCase())
+        .toList();
+  }
+
+  Future<void> _reload() async {
     final user = context.read<AuthProvider>().user;
     if (user == null) {
-      setState(() => _future = null);
+      setState(() {
+        _orders = null;
+        _error = null;
+        _loading = false;
+        _softUpdating = false;
+      });
       return;
     }
-    final query = <String, String>{'per_page': '20'};
-    if (_filter.isNotEmpty) query['status'] = _filter;
+
+    final epoch = ++_loadEpoch;
+    final hasData = _orders != null;
     setState(() {
-      _future = context.read<CatalogRepository>().getOrders().then((r) {
-        var list = r.data;
-        if (_filter.isNotEmpty) {
-          list = list
-              .where((o) => o.status.toUpperCase() == _filter.toUpperCase())
-              .toList();
-        }
-        return list;
-      });
+      if (hasData) {
+        _softUpdating = true;
+      } else {
+        _loading = true;
+      }
+      _error = null;
     });
+
+    try {
+      final resolved = await context.read<CatalogRepository>().getOrders(
+        onImmediate: (peeked) {
+          if (!mounted || epoch != _loadEpoch) return;
+          setState(() {
+            _orders = _applyFilter(peeked.data);
+            _loading = false;
+            _softUpdating = peeked.updating;
+            _error = null;
+          });
+        },
+      );
+      if (!mounted || epoch != _loadEpoch) return;
+      setState(() {
+        _orders = _applyFilter(resolved.data);
+        _loading = false;
+        _softUpdating = false;
+        _error = null;
+      });
+    } catch (e) {
+      if (!mounted || epoch != _loadEpoch) return;
+      setState(() {
+        _loading = false;
+        _softUpdating = false;
+        if (_orders == null) _error = e;
+      });
+    }
   }
 
   AppBadgeTone _tone(String status) {
@@ -217,182 +277,213 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   ),
                 ),
                 Expanded(
-                  child: FutureBuilder<List<OrderSummary>>(
-                    future: _future,
-                    builder: (context, snap) {
-                      if (_future == null ||
-                          snap.connectionState != ConnectionState.done) {
-                        return const OrdersSkeleton();
-                      }
-                      if (snap.hasError) {
-                        return ErrorStateView(
-                          title: 'Unable to load orders',
-                          message: ErrorStateView.sanitize(
-                            snap.error?.toString(),
-                          ),
-                          onRetry: _reload,
-                        );
-                      }
-                      final orders = snap.data ?? [];
-                      if (orders.isEmpty) {
-                        return EmptyStateView(
-                          title: 'No orders yet',
-                          message: 'Find the perfect plant for your space.',
-                          actionLabel: 'Start shopping',
-                          onAction: () => context.push('/catalog'),
-                          icon: Icons.local_florist_outlined,
-                        );
-                      }
-                      return RefreshIndicator(
-                        onRefresh: () async => _reload(),
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(AppSpace.screen),
-                          itemCount: orders.length,
-                          separatorBuilder: (_, _) =>
-                              const SizedBox(height: AppSpace.sm),
-                          itemBuilder: (_, i) {
-                            final o = orders[i];
-                            return AppSurfaceCard(
-                              onTap: () => context.push('/orders/${o.id}'),
-                              padding: const EdgeInsets.all(AppSpace.md),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          o.orderNumber,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                        ),
-                                      ),
-                                      AppBadge(
-                                        label:
-                                            _statusLabels[o.status] ??
-                                            o.status.replaceAll('_', ' '),
-                                        tone: _tone(o.status),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: AppSpace.xs),
-                                  Text(
-                                    formatOrderDate(o.placedAt ?? o.createdAt),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  ),
-                                  const SizedBox(height: AppSpace.md),
-                                  Row(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadii.md,
-                                        ),
-                                        child: o.thumbnail == null
-                                            ? Container(
-                                                width: 56,
-                                                height: 56,
-                                                color: AppColors.surfaceMuted,
-                                                alignment: Alignment.center,
-                                                child: const Icon(
-                                                  Icons.local_florist_outlined,
-                                                  color: AppColors.muted,
-                                                ),
-                                              )
-                                            : CachedNetworkImage(
-                                                imageUrl: o.thumbnail!,
-                                                width: 56,
-                                                height: 56,
-                                                fit: BoxFit.cover,
-                                                memCacheWidth: 168,
-                                                errorWidget:
-                                                    (context, url, error) =>
-                                                        Container(
-                                                          width: 56,
-                                                          height: 56,
-                                                          color: AppColors
-                                                              .surfaceMuted,
-                                                        ),
-                                              ),
-                                      ),
-                                      const SizedBox(width: AppSpace.md),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              o.previewName ??
-                                                  '${o.itemCount ?? 0} item${(o.itemCount ?? 0) == 1 ? '' : 's'}',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                            if (o.itemCount != null)
-                                              Text(
-                                                '${o.itemCount} item${o.itemCount == 1 ? '' : 's'}',
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.bodySmall,
-                                              ),
-                                            Text(
-                                              money(o.grandTotal, o.currency),
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w800,
-                                                color: AppColors.primaryDeep,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: AppSpace.md),
-                                  Wrap(
-                                    spacing: AppSpace.sm,
-                                    runSpacing: AppSpace.sm,
-                                    children: [
-                                      OutlinedButton(
-                                        onPressed: () =>
-                                            context.push('/orders/${o.id}'),
-                                        child: const Text('View'),
-                                      ),
-                                      if (const {
-                                        'SHIPPED',
-                                        'OUT_FOR_DELIVERY',
-                                        'PACKED',
-                                        'PROCESSING',
-                                        'CONFIRMED',
-                                      }.contains(o.status))
-                                        OutlinedButton(
-                                          onPressed: () =>
-                                              context.push('/orders/${o.id}'),
-                                          child: const Text('Track'),
-                                        ),
-                                      if (o.canReorder)
-                                        FilledButton.tonal(
-                                          onPressed: _busyId
-                                              ? null
-                                              : () => _reorder(o),
-                                          child: const Text('Reorder'),
-                                        ),
-                                    ],
-                                  ),
-                                ],
+                  child: _loading && _orders == null
+                      ? const OrdersSkeleton()
+                      : _error != null && _orders == null
+                          ? ErrorStateView(
+                              title: 'Unable to load orders',
+                              message: ErrorStateView.sanitize(
+                                _error?.toString(),
                               ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                              onRetry: _reload,
+                            )
+                          : (_orders == null || _orders!.isEmpty)
+                              ? EmptyStateView(
+                                  title: 'No orders yet',
+                                  message:
+                                      'Find the perfect plant for your space.',
+                                  actionLabel: 'Start shopping',
+                                  onAction: () => context.push('/catalog'),
+                                  icon: Icons.local_florist_outlined,
+                                )
+                              : RefreshIndicator(
+                                  onRefresh: _reload,
+                                  child: Stack(
+                                    children: [
+                                      ListView.separated(
+                                        padding: const EdgeInsets.all(
+                                          AppSpace.screen,
+                                        ),
+                                        itemCount: _orders!.length,
+                                        separatorBuilder: (_, _) =>
+                                            const SizedBox(height: AppSpace.sm),
+                                        itemBuilder: (_, i) {
+                                          final o = _orders![i];
+                                          return AppSurfaceCard(
+                                            onTap: () =>
+                                                context.push('/orders/${o.id}'),
+                                            padding: const EdgeInsets.all(
+                                              AppSpace.md,
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        o.orderNumber,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .titleSmall
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    AppBadge(
+                                                      label: _statusLabels[
+                                                              o.status] ??
+                                                          o.status.replaceAll(
+                                                            '_',
+                                                            ' ',
+                                                          ),
+                                                      tone: _tone(o.status),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(
+                                                  height: AppSpace.xs,
+                                                ),
+                                                Text(
+                                                  formatOrderDate(
+                                                    o.placedAt ?? o.createdAt,
+                                                  ),
+                                                  style: Theme.of(
+                                                    context,
+                                                  ).textTheme.bodySmall,
+                                                ),
+                                                const SizedBox(
+                                                  height: AppSpace.md,
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                        AppRadii.md,
+                                                      ),
+                                                      child:
+                                                          ResilientNetworkImage(
+                                                        url: o.thumbnail,
+                                                        width: 56,
+                                                        height: 56,
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(
+                                                      width: AppSpace.md,
+                                                    ),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            o.previewName ??
+                                                                '${o.itemCount ?? 0} item${(o.itemCount ?? 0) == 1 ? '' : 's'}',
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                            ),
+                                                          ),
+                                                          if (o.itemCount !=
+                                                              null)
+                                                            Text(
+                                                              '${o.itemCount} item${o.itemCount == 1 ? '' : 's'}',
+                                                              style: Theme.of(
+                                                                context,
+                                                              )
+                                                                  .textTheme
+                                                                  .bodySmall,
+                                                            ),
+                                                          Text(
+                                                            money(
+                                                              o.grandTotal,
+                                                              o.currency,
+                                                            ),
+                                                            style:
+                                                                const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w800,
+                                                              color: AppColors
+                                                                  .primaryDeep,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(
+                                                  height: AppSpace.md,
+                                                ),
+                                                Wrap(
+                                                  spacing: AppSpace.sm,
+                                                  runSpacing: AppSpace.sm,
+                                                  children: [
+                                                    OutlinedButton(
+                                                      onPressed: () => context
+                                                          .push(
+                                                        '/orders/${o.id}',
+                                                      ),
+                                                      child: const Text('View'),
+                                                    ),
+                                                    if (const {
+                                                      'SHIPPED',
+                                                      'OUT_FOR_DELIVERY',
+                                                      'PACKED',
+                                                      'PROCESSING',
+                                                      'CONFIRMED',
+                                                    }.contains(o.status))
+                                                      OutlinedButton(
+                                                        onPressed: () =>
+                                                            context.push(
+                                                          '/orders/${o.id}',
+                                                        ),
+                                                        child:
+                                                            const Text('Track'),
+                                                      ),
+                                                    if (o.canReorder)
+                                                      FilledButton.tonal(
+                                                        onPressed: _busyId
+                                                            ? null
+                                                            : () =>
+                                                                _reorder(o),
+                                                        child: const Text(
+                                                          'Reorder',
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      if (_softUpdating)
+                                        const Positioned(
+                                          top: 0,
+                                          left: 0,
+                                          right: 0,
+                                          child: LinearProgressIndicator(
+                                            minHeight: 2,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                 ),
               ],
             ),

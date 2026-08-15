@@ -26,11 +26,12 @@ class _DebugNetworkOverlayState extends State<DebugNetworkOverlay> {
       children: [
         widget.child,
         Positioned(
-          right: 12,
+          // QA-41: bottom-left above shell nav — avoids category row + banners.
+          left: 12,
           bottom: 88,
           child: SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (_open) const _DebugPanel(),
                 FloatingActionButton.small(

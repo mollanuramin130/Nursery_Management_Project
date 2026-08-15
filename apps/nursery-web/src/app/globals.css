@@ -14,13 +14,13 @@
   --color-surface-muted: #f3f5f2;
   --color-ink: #1a241c;
   --color-ink-soft: #3d4a40;
-  --color-muted: #6b776f;
+  --color-muted: #5a655e;
   --color-border: #e2e8e3;
   --color-border-strong: #c9d4cc;
 
-  --color-success: #2f7d4a;
+  --color-success: #1f6b3a;
   --color-success-soft: #e6f4ea;
-  --color-warning: #b7791f;
+  --color-warning: #92400e;
   --color-warning-soft: #fef3c7;
   --color-error: #b42318;
   --color-error-soft: #fee4e2;
@@ -28,7 +28,13 @@
   --color-info-soft: #eff8ff;
 
   --color-sale: #b42318;
-  --color-rating: #eab308;
+  --color-rating: #a16207;
+  --color-wishlist-active: #b42318;
+  --color-wishlist-inactive: #5a655e;
+  --color-text-disabled: #8a948c;
+
+  /* Mobile sticky commerce CTA strip (Add/Buy) above bottom nav */
+  --sticky-cta-h: 0px;
 
   --shadow-sm: 0 1px 2px rgba(26, 36, 28, 0.05);
   --shadow-md: 0 8px 24px rgba(26, 36, 28, 0.08);
@@ -48,6 +54,7 @@
 
   --z-dropdown: 50;
   --z-sticky: 40;
+  --z-banner: 45;
   --z-drawer: 80;
   --z-modal: 90;
   --z-toast: 100;

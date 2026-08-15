@@ -28,14 +28,16 @@ export default function SubscriptionsPage() {
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const [rows, setRows] = useState<Sub[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await apiGet<Sub[]>("/subscriptions", { per_page: 30 });
       setRows(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      setRows([]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load subscriptions");
     } finally {
       setLoading(false);
     }

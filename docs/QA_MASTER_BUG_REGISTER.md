@@ -1,6 +1,6 @@
 # QA Master Bug Register
 
-**Date:** 2026-08-13 · **Through QA-37** · Release: **YELLOW** (GREEN blocked — LIVE Razorpay / prod `--strict` / Firebase / ops). **QA-SEC-001 CLOSED**. QA-37 Customer Web↔Mobile parity **COMPLETE** — see `docs/QA-37-CLOSEOUT-REPORT.md`. QA-27 LIVE readiness unchanged (**NOT READY**).
+**Date:** 2026-08-13 · **Through QA-42A** · Release: **YELLOW** (GREEN blocked — LIVE Razorpay / prod `--strict` / Firebase / ops). **QA-42A refresh UX PARTIAL** — see `docs/QA-42A-REFRESH-UX-REPORT.md`. QA-27 LIVE readiness unchanged (**NOT READY**).
 
 Severity: CRITICAL / HIGH / MEDIUM / LOW  
 Classification tags: API · BACKEND · FRONTEND · MOBILE · ADMIN · CONFIGURATION · AUTHENTICATION · PAYMENT · SECURITY · PARITY · UX
@@ -494,12 +494,76 @@ Classification tags: API · BACKEND · FRONTEND · MOBILE · ADMIN · CONFIGURAT
 - **GREEN:** **NO**
 
 ### QA-38-001…006 — Cache-first sync, API wins, reconnect, wishlist flicker
-- **Severity:** CRITICAL–MEDIUM · **Status:** **FIXED** (QA-38)
+- **Severity:** CRITICAL–MEDIUM · **Status:** **FIXED** (QA-38 offline sync)
 - **Docs:** `QA-38-OFFLINE-SYNC-REPORT.md`
 
-### QA-38 note — Offline sync hardening (2026-08-13)
+### QA-38-007…020 — UI contrast, wishlist, toast/snackbar overlap, buttons
+- **Severity:** CRITICAL–LOW · **Status:** **FIXED** (QA-38 UI polish; Vivo UNVERIFIED)
+- **Docs:** `QA-38-REPORT.md` · `QA-38-BUG-REGISTER.md`
+
+### QA-38 note — Offline sync + UI polish
+- Offline (2026-08-13) + UI accessibility (2026-08-15)
+- **GREEN:** NO · Device UI matrix UNVERIFIED
 - **Phase status:** **COMPLETE** (TEST) · Vivo radio matrix **PARTIAL/UNVERIFIED**
 - **Regression:** PHPUnit **253 / 1209**; Customer Flutter **58**
+- **GREEN:** **NO**
+
+### QA-39-001…005 — Vivo snackbar truncation, shell policy, wishlist bootstrap race
+- **Severity:** P1–P2 · **Status:** **FIXED** (device evidence for 001; others code-verified)
+- **Docs:** `QA-39-REPORT.md` · `QA-39-DEVICE-REPORT.md` · `QA-39-BUG-REGISTER.md`
+
+### QA-39 note — Real device UX (2026-08-15)
+- Vivo 1951 connected · adb reverse · Customer Mobile matrix PARTIAL
+- **GREEN:** **NO** · LIVE OUT OF SCOPE
+- Open: Admin Mobile full walk · COD/Razorpay TEST · wishlist flicker re-observe
+
+### QA-40-001…017 — UI polish, render stability, image/cache soft refresh
+- **Severity:** P1–P2 · **Status:** **FIXED** (code + unit; Vivo partial evidence in `docs/qa40/`)
+- **Docs:** `QA-40-REPORT.md` · `QA-40-CLOSEOUT-REPORT.md` · `QA-40-BUG-REGISTER.md` · `QA-40-TEST-MATRIX.md`
+- **Open:** QA-40-018…025 (admin list flicker, catalog remount, mock thumbs, device COD/Admin/web walk)
+
+### QA-40 note — UI polish + resilience (2026-08-15)
+- Checkout loading contrast root cause: Material disabled styles on `AppButton` loading
+- Pixel sample on Vivo cart CTA: primaryDeep fill `(15,61,40)` + white-ish glyphs
+- Regression: PHPUnit **253 / 1209**; Customer Flutter **63**; Admin Flutter **27**; Web unit **PASS**
+- **GREEN:** **NO**
+
+### QA-40-M-001…007 — Mobile pull-to-refresh / soft FutureBuilder / cart soft fetch
+- **Severity:** P0–P2 · **Status:** **FIXED** (code + unit; Vivo PARTIAL evidence in `docs/qa40-mobile/`)
+- **Docs:** `QA-40-MOBILE-REFRESH-REPORT.md` · `QA-40-MOBILE-BUG-REGISTER.md` · `QA-40-MOBILE-CLOSEOUT-REPORT.md`
+- **Open:** Admin full device matrix · remaining admin hard-load screens
+
+### QA-40-M note — Mobile refresh (2026-08-15)
+- Root “refresh does nothing”: Addresses `onRefresh` did not await Future
+- Soft FutureBuilder pattern + syncGeneration fan-out + cart `fetch(soft:)`
+- Customer Flutter **66** · Admin Flutter **27** · PHPUnit **253 / 1209**
+- **GREEN:** **NO**
+
+### QA-41-001…007 — Mobile stability (images, Retry, soft FutureBuilder, catalog remount, admin soft-load)
+- **Severity:** P0–P2 · **Status:** **FIXED** (code + unit; Vivo PARTIAL in `docs/qa41-mobile/`)
+- **Docs:** `QA-41-REPORT.md` · `QA-41-CLOSEOUT-REPORT.md` · `QA-41-BUG-REGISTER.md` · `QA-41-TEST-MATRIX.md`
+- **Open / carry-forward:** QA-40-M-008 residual · QA-40-M-010 admin matrix · QA-40-M-012 COD/Razorpay TEST · LIVE BLOCKED
+
+### QA-41 note — Mobile stability (2026-08-15)
+- Screenshot root causes: DEBUG FAB over categories; null category `image_url`; physical device `10.0.2.2` default
+- Customer Flutter **68** · Admin Flutter **28** · PHPUnit **253 / 1209**
+- **GREEN:** **NO**
+
+### QA-42-001…005 — Soft-error keep-data, checkout/reviews soft load, Admin Products clarification
+- **Severity:** P1–P2 · **Status:** **FIXED** / INTENTIONAL (no mobile `/products`)
+- **Docs:** `QA-42-REPORT.md` · CLOSEOUT · TEST-MATRIX · BUG-REGISTER · `docs/qa42-mobile/`
+- **Carry:** Admin post-login Vivo matrix UNVERIFIED · Razorpay TEST Checkout E2E UNVERIFIED · LIVE BLOCKED
+
+### QA-42 note — Matrix + payment smoke (2026-08-15)
+- COD API smoke PASS; Razorpay initiate PASS; stub verify correctly rejected under TEST keys
+- Customer Flutter **68** · Admin Flutter **29** · PHPUnit **253 / 1209** · Web unit PASS
+- **GREEN:** **NO**
+
+### QA-42A-001…003 — Normal refresh must not look like offline
+- **Severity:** P0 · **Status:** **FIXED** (unit + Vivo Home PTR evidence)
+- **Root:** cache peek → `servingLocal` → saved-data banner on every pull-to-refresh
+- **Docs:** `QA-42A-REFRESH-UX-REPORT.md` · TEST-MATRIX · BUG-REGISTER · `docs/qa42a-mobile/`
+- Customer Flutter **73** · Admin Flutter **29** · PHPUnit **253 / 1209**
 - **GREEN:** **NO**
 
 ### QA-09-001 — EnsurePermission only evaluated first slug of comma-separated middleware

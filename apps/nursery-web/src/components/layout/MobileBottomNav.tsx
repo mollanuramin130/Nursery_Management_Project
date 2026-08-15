@@ -38,8 +38,14 @@ export function MobileBottomNav() {
                   active ? "text-[var(--color-primary-deep)]" : "text-[var(--color-muted)]",
                 )}
               >
-                <span className="text-base leading-none" aria-hidden>
-                  {item.icon}
+                <span
+                  className={cn(
+                    "text-base leading-none",
+                    item.href === "/wishlist" && active && "text-[var(--color-wishlist-active)]",
+                  )}
+                  aria-hidden
+                >
+                  {item.href === "/wishlist" && active ? "♥" : item.icon}
                 </span>
                 {item.label}
                 {item.href === "/cart" && count > 0 ? (

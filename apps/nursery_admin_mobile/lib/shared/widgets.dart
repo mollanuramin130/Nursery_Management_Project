@@ -128,6 +128,53 @@ class OpsError extends StatelessWidget {
   }
 }
 
+/// Non-blocking banner when refresh fails but usable rows remain (QA-42).
+class OpsStaleBanner extends StatelessWidget {
+  const OpsStaleBanner({
+    super.key,
+    required this.message,
+    this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: OpsColors.warningSoft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off_outlined, size: 18, color: OpsColors.warning),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: OpsColors.warning,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            if (onRetry != null)
+              TextButton(
+                onPressed: onRetry,
+                style: TextButton.styleFrom(
+                  foregroundColor: OpsColors.warning,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: const Text('Retry'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class KpiTile extends StatelessWidget {
   const KpiTile({
     super.key,

@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:nursery_app/core/shell_nav_policy.dart';
 import 'package:nursery_app/theme/tokens.dart';
+import 'package:nursery_app/widgets/sticky_commerce_bar.dart';
 
 enum AppFeedbackTone { success, error, info }
 
 /// Consistent snackbar feedback — prefer this over ad-hoc SnackBars.
 abstract final class AppFeedback {
+  static double _bottomClearance(BuildContext context) {
+    final inset = MediaQuery.viewPaddingOf(context).bottom;
+    final router = GoRouter.maybeOf(context);
+    final path = router?.routeInformationProvider.value.uri.path ?? '';
+    // Fullscreen PDP/checkout: only clear sticky commerce bar.
+    if (path.isNotEmpty && ShellNavPolicy.isFullscreenLocation(path)) {
+      return inset + StickyCommerceBar.clearance;
+    }
+    // Shell tabs: clear NavigationBar; cart also has sticky Checkout above tabs.
+    var clearance = inset + ShellNavPolicy.tabBarHeight + 16;
+    if (path.isNotEmpty && ShellNavPolicy.shellHasStickyCommerce(path)) {
+      clearance += StickyCommerceBar.clearance;
+    }
+    return clearance;
+  }
+
   static void show(
     BuildContext context, {
     required String message,
@@ -27,15 +46,19 @@ abstract final class AppFeedback {
       AppFeedbackTone.info => Icons.info_outline_rounded,
     };
 
+    final label = actionLabel == null
+        ? null
+        : (actionLabel.length > 8 ? actionLabel.substring(0, 8) : actionLabel);
+
     messenger.showSnackBar(
       SnackBar(
         backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(
+        margin: EdgeInsets.fromLTRB(
           AppSpace.lg,
           0,
           AppSpace.lg,
-          AppSpace.lg,
+          AppSpace.sm + _bottomClearance(context),
         ),
         content: Row(
           children: [
@@ -44,6 +67,8 @@ abstract final class AppFeedback {
             Expanded(
               child: Text(
                 message,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -52,9 +77,9 @@ abstract final class AppFeedback {
             ),
           ],
         ),
-        action: actionLabel != null && onAction != null
+        action: label != null && onAction != null
             ? SnackBarAction(
-                label: actionLabel,
+                label: label,
                 textColor: Colors.white,
                 onPressed: onAction,
               )

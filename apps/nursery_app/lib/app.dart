@@ -29,10 +29,14 @@ import 'package:nursery_app/screens/subscriptions_screen.dart';
 import 'package:nursery_app/screens/search_screen.dart';
 import 'package:nursery_app/screens/shell_screen.dart';
 import 'package:nursery_app/screens/wishlist_screen.dart';
+import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/data/mock_data_mode.dart';
+import 'package:nursery_app/screens/splash_screen.dart';
 import 'package:nursery_app/theme/app_theme.dart';
 import 'package:nursery_app/widgets/catalog_filters.dart';
 import 'package:nursery_app/widgets/debug_network_panel.dart';
+
+Widget _fullscreen(Widget child) => FullscreenBackScope(child: child);
 
 /// QA-36-007 — Shell architecture:
 /// Primary tabs (Home / Shop / Cart / Orders / Account) keep bottom navigation for
@@ -109,7 +113,12 @@ GoRouter createRouter() {
                           int.tryParse(state.pathParameters['id'] ?? '');
                       if (id == null) {
                         return Scaffold(
-                          appBar: AppBar(title: const Text('Order')),
+                          appBar: AppBar(
+                            title: const Text('Order'),
+                            leading: const GreenLeafBackButton(
+                              fallback: '/orders',
+                            ),
+                          ),
                           body: const Center(
                             child: Text('Invalid order link.'),
                           ),
@@ -212,69 +221,89 @@ GoRouter createRouter() {
       // Full-screen flows — no bottom navigation (intentional).
       GoRoute(
         path: '/product/:slug',
-        builder: (context, state) => ProductDetailScreen(
-          slug: state.pathParameters['slug']!,
-          openReviewForm: state.uri.queryParameters['review'] == '1',
+        builder: (context, state) => _fullscreen(
+          ProductDetailScreen(
+            slug: state.pathParameters['slug']!,
+            openReviewForm: state.uri.queryParameters['review'] == '1',
+          ),
         ),
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) =>
-            LoginScreen(redirectTo: state.uri.queryParameters['redirect']),
+        builder: (context, state) => _fullscreen(
+          LoginScreen(redirectTo: state.uri.queryParameters['redirect']),
+        ),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) =>
-            RegisterScreen(redirectTo: state.uri.queryParameters['redirect']),
+        builder: (context, state) => _fullscreen(
+          RegisterScreen(redirectTo: state.uri.queryParameters['redirect']),
+        ),
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (context, state) => ForgotPasswordScreen(
-          redirectTo: state.uri.queryParameters['redirect'],
+        builder: (context, state) => _fullscreen(
+          ForgotPasswordScreen(
+            redirectTo: state.uri.queryParameters['redirect'],
+          ),
         ),
       ),
       GoRoute(
         path: '/reset-password',
-        builder: (context, state) => ResetPasswordScreen(
-          email: state.uri.queryParameters['email'],
-          token: state.uri.queryParameters['token'],
-          redirectTo: state.uri.queryParameters['redirect'],
+        builder: (context, state) => _fullscreen(
+          ResetPasswordScreen(
+            email: state.uri.queryParameters['email'],
+            token: state.uri.queryParameters['token'],
+            redirectTo: state.uri.queryParameters['redirect'],
+          ),
         ),
       ),
       // Address list + forms use sticky save bars — keep outside shell.
       GoRoute(
         path: '/account/addresses',
-        builder: (context, state) => const AddressesScreen(),
+        builder: (context, state) => _fullscreen(const AddressesScreen()),
       ),
       GoRoute(
         path: '/account/addresses/new',
-        builder: (context, state) => const AddressFormScreen(),
+        builder: (context, state) => _fullscreen(const AddressFormScreen()),
       ),
       GoRoute(
         path: '/account/addresses/:id/edit',
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('Address')),
-              body: const Center(child: Text('Invalid address link.')),
+            return _fullscreen(
+              Scaffold(
+                appBar: AppBar(
+                  title: const Text('Address'),
+                  leading: const GreenLeafBackButton(fallback: '/account'),
+                ),
+                body: const Center(child: Text('Invalid address link.')),
+              ),
             );
           }
-          return AddressFormScreen(addressId: id);
+          return _fullscreen(AddressFormScreen(addressId: id));
         },
       ),
       GoRoute(
         path: '/checkout',
-        builder: (context, state) => const CheckoutScreen(),
+        builder: (context, state) => _fullscreen(const CheckoutScreen()),
       ),
     ],
   );
 }
 
 class NurseryApp extends StatelessWidget {
-  const NurseryApp({super.key, required this.router});
+  const NurseryApp({
+    super.key,
+    required this.router,
+    this.showSplash = false,
+    this.onSplashFinished,
+  });
 
   final GoRouter router;
+  final bool showSplash;
+  final VoidCallback? onSplashFinished;
 
   @override
   Widget build(BuildContext context) {
@@ -285,9 +314,20 @@ class NurseryApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       // QA panel must sit under MaterialApp (Directionality), not outside it.
       builder: (context, child) {
-        final content = child ?? const SizedBox.shrink();
-        if (!allowDebugNetworkPanel) return content;
-        return DebugNetworkOverlay(child: content);
+        Widget content = child ?? const SizedBox.shrink();
+        if (allowDebugNetworkPanel) {
+          content = DebugNetworkOverlay(child: content);
+        }
+        if (showSplash && onSplashFinished != null) {
+          content = Stack(
+            fit: StackFit.expand,
+            children: [
+              content,
+              GreenLeafSplashScreen(onFinished: onSplashFinished!),
+            ],
+          );
+        }
+        return content;
       },
     );
   }

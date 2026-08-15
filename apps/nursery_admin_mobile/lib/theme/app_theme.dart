@@ -12,6 +12,7 @@ class OpsColors {
   static const border = Color(0xFFD5DDD8);
   static const danger = Color(0xFFB42318);
   static const warning = Color(0xFFB54708);
+  static const warningSoft = Color(0xFFFFF4E5);
   static const success = Color(0xFF027A48);
 }
 
@@ -66,16 +67,41 @@ ThemeData buildOpsTheme() {
       style: FilledButton.styleFrom(
         backgroundColor: OpsColors.brand,
         foregroundColor: Colors.white,
+        disabledBackgroundColor: OpsColors.brand.withValues(alpha: 0.45),
+        disabledForegroundColor: Colors.white.withValues(alpha: 0.9),
         minimumSize: const Size(48, 48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: OpsColors.brandDark,
+      contentTextStyle: GoogleFonts.figtree(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
+      ),
+      // Clear AdminShell NavigationBar (~64) + inset.
+      insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: Colors.white,
       indicatorColor: OpsColors.brand.withValues(alpha: 0.12),
-      labelTextStyle: WidgetStatePropertyAll(
-        GoogleFonts.figtree(fontSize: 12, fontWeight: FontWeight.w600),
-      ),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return GoogleFonts.figtree(
+          fontSize: 12,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          color: selected ? OpsColors.brandDark : OpsColors.muted,
+        );
+      }),
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return IconThemeData(
+          size: 24,
+          color: selected ? OpsColors.brandDark : OpsColors.muted,
+        );
+      }),
     ),
   );
 }

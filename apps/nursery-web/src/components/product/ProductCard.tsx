@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { ProductPrice } from "@/components/product/ProductPrice";
 import { ProductRating } from "@/components/product/ProductRating";
 import { SafeImage } from "@/components/ui/SafeImage";
+import { cn } from "@/lib/cn";
 import { loginHref } from "@/lib/auth-redirect";
 import type { ProductSummary } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
@@ -19,7 +20,7 @@ import { useWishlistStore } from "@/store/wishlist";
 function primaryBadge(badges?: string[], stock?: string, compareAt?: number | null, price?: number) {
   if (stock === "out_of_stock") return { label: "Out of stock", tone: "error" as const };
   if (badges?.includes("sale") || (compareAt != null && price != null && compareAt > price))
-    return { label: "Sale", tone: "warning" as const };
+    return { label: "Sale", tone: "sale" as const };
   if (badges?.includes("bestseller")) return { label: "Bestseller", tone: "brand" as const };
   if (badges?.includes("new") || badges?.includes("new-arrival"))
     return { label: "New", tone: "success" as const };
@@ -111,7 +112,13 @@ export function ProductCard({ product }: { product: ProductSummary }) {
           onClick={onWish}
           disabled={wishBusy}
           aria-label={wishHas ? "Remove from wishlist" : "Add to wishlist"}
-          className="absolute right-2.5 top-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-lg shadow-[var(--shadow-sm)] backdrop-blur transition hover:bg-white disabled:opacity-60"
+          aria-pressed={wishHas}
+          className={cn(
+            "absolute right-2.5 top-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg shadow-[var(--shadow-sm)] ring-1 ring-[var(--color-border)] transition hover:bg-[var(--color-surface-muted)] disabled:opacity-70",
+            wishHas
+              ? "text-[var(--color-wishlist-active)]"
+              : "text-[var(--color-wishlist-inactive)]",
+          )}
         >
           {wishHas ? "♥" : "♡"}
         </button>

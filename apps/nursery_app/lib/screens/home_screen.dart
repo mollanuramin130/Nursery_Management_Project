@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/config.dart';
+import 'package:nursery_app/core/refresh_coalescer.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/data/mock_data_mode.dart';
 import 'package:nursery_app/models/models.dart';
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _page = PageController(viewportFraction: 0.92);
   final _bannerIndex = ValueNotifier<int>(0);
   int _lastSyncGen = -1;
+  final _refresh = RefreshCoalescer();
 
   static const _needs = [
     ('Beginner plants', '/catalog?difficulty_level=easy&product_type=plant'),
@@ -66,7 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _load({bool soft = false}) async {
+  Future<void> _load({bool soft = false}) =>
+      _refresh.run(() => _loadBody(soft: soft));
+
+  Future<void> _loadBody({bool soft = false}) async {
     final repo = context.read<CatalogRepository>();
     if (!soft || _bundle == null) {
       // Cache-first peek for instant paint.
@@ -183,21 +188,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-
-                if (_softUpdating)
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Text(
-                        'Updating…',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ),
-                  ),
 
                 if (banners.isNotEmpty) ...[
                   const SliverToBoxAdapter(
@@ -372,17 +362,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 76,
                               child: Column(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 30,
-                                    backgroundColor: AppColors.primarySoft,
-                                    child: ClipOval(
-                                      child: ResilientNetworkImage(
-                                        url: c.imageUrl,
-                                        width: 60,
-                                        height: 60,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
+                                  CategoryCircleImage(
+                                    name: c.name,
+                                    imageUrl: c.imageUrl,
+                                    size: 60,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(

@@ -6,7 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
 import { sanitizeNext } from "@/lib/auth-redirect";
-import { authUserMessage } from "@/lib/auth-messages";
+import {
+  authRateLimitMessage,
+  authUserMessage,
+  formatAuthCountdown,
+  getAuthRetryAfterSeconds,
+  isAuthRateLimited,
+} from "@/lib/auth-messages";
 import { resolveBrowserApiBaseUrl } from "@/lib/api-base";
 import { probeApiHealth, type ApiHealthState } from "@/lib/api-health";
 import { useAuthStore } from "@/store/auth";
@@ -26,15 +32,37 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [apiHealth, setApiHealth] = useState<ApiHealthState>({ status: "checking" });
+  const [unlockAt, setUnlockAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const showDemo = process.env.NODE_ENV === "development";
+  const lockSeconds =
+    unlockAt != null ? Math.max(0, Math.ceil((unlockAt - now) / 1000)) : 0;
+  const isLocked = lockSeconds > 0;
 
   useEffect(() => {
     void probeApiHealth(resolveBrowserApiBaseUrl()).then(setApiHealth);
   }, []);
 
+  useEffect(() => {
+    if (!unlockAt) return;
+    setNow(Date.now());
+    const id = window.setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= unlockAt) {
+        setUnlockAt(null);
+      }
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [unlockAt]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (isLocked) {
+      toast(authRateLimitMessage(lockSeconds), "error");
+      return;
+    }
     if (apiHealth.status === "down") {
       toast(apiHealth.detail, "error");
       return;
@@ -45,6 +73,12 @@ function LoginForm() {
       toast("Welcome back");
       router.push(next);
     } catch (err) {
+      if (isAuthRateLimited(err)) {
+        const seconds = getAuthRetryAfterSeconds(err) ?? 60;
+        setUnlockAt(Date.now() + seconds * 1000);
+        toast(authRateLimitMessage(seconds), "error");
+        return;
+      }
       toast(authUserMessage(err, "Login failed"), "error");
     }
   }
@@ -78,6 +112,19 @@ function LoginForm() {
               {apiHealth.detail}
             </p>
           ) : null}
+          {isLocked ? (
+            <p
+              className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+              role="alert"
+              aria-live="polite"
+            >
+              Too many sign-in attempts. Try again in{" "}
+              <span className="font-semibold tabular-nums">
+                {formatAuthCountdown(lockSeconds)}
+              </span>
+              .
+            </p>
+          ) : null}
           {apiHealth.status === "ok" && showDemo ? (
             <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
               API ready · demo: asha@example.com / Secret@123
@@ -91,6 +138,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLocked}
             />
           </Field>
           <Field label="Password" htmlFor="password">
@@ -102,11 +150,13 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLocked}
               />
               <button
                 type="button"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[var(--color-primary)]"
                 onClick={() => setShowPassword((v) => !v)}
+                disabled={isLocked}
               >
                 {showPassword ? "Hide" : "Show"}
               </button>
@@ -120,8 +170,12 @@ function LoginForm() {
               Forgot password?
             </Link>
           </div>
-          <Button type="submit" fullWidth disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
+          <Button type="submit" fullWidth disabled={loading || isLocked || apiHealth.status === "down"}>
+            {loading
+              ? "Signing in…"
+              : isLocked
+                ? `Try again in ${formatAuthCountdown(lockSeconds)}`
+                : "Sign in"}
           </Button>
           <p className="text-sm">
             New here?{" "}

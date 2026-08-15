@@ -3,6 +3,10 @@
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/cn";
 
+/**
+ * QA-38: sit above bottom nav + sticky commerce CTAs so toasts never cover
+ * Add to Cart / Buy / Place Order / bottom navigation.
+ */
 export function ToastViewport() {
   const items = useToastStore((s) => s.items);
   const dismiss = useToastStore((s) => s.dismiss);
@@ -11,7 +15,7 @@ export function ToastViewport() {
 
   return (
     <div
-      className="pointer-events-none fixed bottom-[calc(var(--bottom-nav-h)+1rem)] left-1/2 z-[80] flex w-[min(420px,calc(100%-2rem))] -translate-x-1/2 flex-col gap-2 md:bottom-6"
+      className="pointer-events-none fixed bottom-[calc(var(--bottom-nav-h)+var(--sticky-cta-h)+1rem)] left-1/2 z-[var(--z-toast)] flex w-[min(420px,calc(100%-2rem))] -translate-x-1/2 flex-col gap-2 md:bottom-6"
       aria-live="polite"
     >
       {items.map((t) => (
@@ -30,7 +34,7 @@ export function ToastViewport() {
               type="button"
               className="opacity-80 hover:opacity-100"
               onClick={() => dismiss(t.id)}
-              aria-label="Dismiss"
+              aria-label="Dismiss notification"
             >
               ×
             </button>

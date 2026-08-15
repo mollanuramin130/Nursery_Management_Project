@@ -1,7 +1,7 @@
 # QA FINAL RELEASE REPORT — GreenLeaf Nursery Platform
 
-**Date:** 2026-08-13  
-**Updated under:** QA-38 (offline sync hardening)
+**Date:** 2026-08-15  
+**Updated under:** QA-42A refresh UX + QA-42 matrix
 
 ---
 
@@ -14,9 +14,9 @@
 | Mode | Allowed? |
 |------|----------|
 | Local/UAT demo | YES |
-| Offline browse (cache/mock) + reconnect sync | YES (QA-38) |
-| COD soft-launch | YES (disclosures) |
-| Razorpay TEST | YES |
+| Offline browse (cache/mock) + reconnect sync | YES |
+| COD soft-launch | YES |
+| Razorpay TEST | YES (device Checkout UNVERIFIED) |
 | LIVE Razorpay / LIVE FCM / production | **NO** |
 | Claim GREEN | **NO** |
 
@@ -24,12 +24,11 @@
 
 ## Latest evidence
 
-- QA-38: cache-first · API wins over mock · reconnect soft sync · wishlist flicker fix  
-- PHPUnit **253 / 1209** · Customer Flutter **58**  
-- Open/unverified: Vivo radio matrix · UPI settle · mobile-data path · QA-ADM-002  
+- QA-42A: normal PTR no longer shows saved-data banner; true offline banner only when degraded — `docs/qa42a-mobile/`  
+- PHPUnit **253 / 1209** · Customer Flutter **73** · Admin Flutter **29** · Web unit **PASS**  
 
 ---
 
 ## Explicit non-claims
 
-No GREEN · No LIVE · No fake offline orders/payments · Mock is presentation-only  
+No GREEN · No LIVE · No fabricated device passes · Offline cannot fake payments/orders  

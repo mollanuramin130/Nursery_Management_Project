@@ -1,4 +1,10 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import {
+  AuthApiError,
+  authRateLimitMessage,
+  formatAuthCountdown,
+  parseRetryAfterSeconds,
+} from "@/lib/auth-messages";
 import { ensureCsrf, getCsrfToken, setCsrfToken } from "@/lib/csrf";
 import {
   classifyHttpStatus,
@@ -8,6 +14,39 @@ import {
 import { storage } from "@/lib/storage";
 import type { ApiEnvelope } from "@/lib/types";
 import { useNetworkStatusStore } from "@/store/network-status";
+
+const DEFAULT_AUTH_RETRY_AFTER_SECONDS = 60;
+
+function retryAfterFromAxios(error: AxiosError): number {
+  const headers = error.response?.headers;
+  const raw =
+    headers?.["retry-after"] ??
+    headers?.["Retry-After"] ??
+    (typeof headers?.get === "function" ? headers.get("retry-after") : null);
+  return (
+    parseRetryAfterSeconds(raw as string | number | null | undefined) ??
+    DEFAULT_AUTH_RETRY_AFTER_SECONDS
+  );
+}
+
+function throwApiFailure(error: unknown, fallback: string): never {
+  if (axios.isAxiosError(error) && error.response?.status === 429) {
+    const retryAfterSeconds = retryAfterFromAxios(error);
+    const path = String(error.config?.url ?? "");
+    const msg =
+      path.includes("/orders") && !path.includes("/orders/")
+        ? `You tried to place an order too many times. Please wait ${formatAuthCountdown(retryAfterSeconds)}, then try again.`
+        : authRateLimitMessage(retryAfterSeconds);
+    useNetworkStatusStore.getState().reportFailure({
+      kind: "rateLimited",
+      userMessage: msg,
+      statusCode: 429,
+      retryable: true,
+    });
+    throw new AuthApiError(msg, { statusCode: 429, retryAfterSeconds });
+  }
+  throw new Error(unwrapError(error, fallback));
+}
 
 /** QA-33: browser talks only to same-origin BFF — JWTs stay HttpOnly. */
 const proxyBase = "/api/bff/proxy";
@@ -195,7 +234,7 @@ export async function apiGet<T>(url: string, params?: Record<string, unknown>) {
     useNetworkStatusStore.getState().reportSuccess();
     return data;
   } catch (error) {
-    throw new Error(unwrapError(error, "Request failed"));
+    throwApiFailure(error, "Request failed");
   }
 }
 
@@ -216,7 +255,7 @@ export async function apiSend<T>(
     useNetworkStatusStore.getState().reportSuccess();
     return data;
   } catch (error) {
-    throw new Error(unwrapError(error, "Request failed"));
+    throwApiFailure(error, "Request failed");
   }
 }
 
@@ -244,7 +283,7 @@ export async function authSend<T>(
     if (!data.success) throw new Error(data.message || "Request failed");
     return data;
   } catch (error) {
-    throw new Error(unwrapError(error, "Request failed"));
+    throwApiFailure(error, "Request failed");
   }
 }
 

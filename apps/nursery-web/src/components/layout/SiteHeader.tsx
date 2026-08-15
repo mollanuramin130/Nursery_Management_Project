@@ -79,13 +79,15 @@ export function SiteHeader() {
           <Link
             href="/wishlist"
             className={cn(
-              "relative hidden h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold hover:bg-[var(--color-primary-soft)] sm:inline-flex",
+              "relative hidden h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-surface-muted)] sm:inline-flex",
               pathname === "/wishlist" && "text-[var(--color-primary-deep)]",
             )}
           >
             Wishlist
             {wishCount > 0 ? (
-              <span className="rounded-full bg-[var(--color-primary-soft)] px-1.5 text-xs">{wishCount}</span>
+              <span className="rounded-full bg-[var(--color-wishlist-active)] px-1.5 text-xs font-bold text-white">
+                {wishCount}
+              </span>
             ) : null}
           </Link>
           {user ? (

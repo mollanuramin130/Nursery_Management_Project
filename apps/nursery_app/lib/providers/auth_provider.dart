@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_messages.dart';
@@ -20,11 +22,27 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => user != null;
 
   Future<void> bootstrap() async {
+    final cached = await _storage.readUserJson();
+    if (cached != null) {
+      try {
+        user = User.fromJson(cached);
+      } catch (_) {
+        user = null;
+      }
+    }
+    bootstrapped = true;
+    notifyListeners();
+    unawaited(_revalidateSession());
+  }
+
+  Future<void> _revalidateSession() async {
     final access = await _storage.getAccessToken();
     final refresh = await _storage.getRefreshToken();
     if (access == null && refresh == null) {
-      bootstrapped = true;
-      notifyListeners();
+      if (user != null) {
+        user = null;
+        notifyListeners();
+      }
       return;
     }
     try {
@@ -32,13 +50,24 @@ class AuthProvider extends ChangeNotifier {
         '/auth/me',
         map: (data) => User.fromJson(Map<String, dynamic>.from(data as Map)),
       );
+      await _storage.saveUserJson(user!.toJson());
       await _registerDeviceQuietly();
-    } catch (_) {
-      await _storage.clearTokens();
-      user = null;
+      notifyListeners();
+    } catch (e) {
+      // QA-33/37/43: transport failure must not wipe a local session.
+      if (_isTerminalAuthFailure(e)) {
+        await _storage.clearTokens();
+        user = null;
+        notifyListeners();
+      }
     }
-    bootstrapped = true;
-    notifyListeners();
+  }
+
+  bool _isTerminalAuthFailure(Object e) {
+    if (e is ApiException) {
+      return e.statusCode == 401 || e.statusCode == 403;
+    }
+    return false;
   }
 
   Future<bool> login(String email, String password) async {
@@ -182,6 +211,7 @@ class AuthProvider extends ChangeNotifier {
         map: (d) => Map<String, dynamic>.from(d as Map),
       );
       user = User.fromJson(data);
+      await _storage.saveUserJson(user!.toJson());
       loading = false;
       notifyListeners();
       return true;
@@ -246,6 +276,7 @@ class AuthProvider extends ChangeNotifier {
     );
     await _storage.saveCartToken(null);
     user = User.fromJson(Map<String, dynamic>.from(data['user'] as Map));
+    await _storage.saveUserJson(user!.toJson());
     await _registerDeviceQuietly();
   }
 

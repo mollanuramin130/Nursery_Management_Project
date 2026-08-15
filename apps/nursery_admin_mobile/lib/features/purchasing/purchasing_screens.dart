@@ -29,7 +29,7 @@ class _PurchaseOrdersScreenState extends State<PurchaseOrdersScreen> {
       appBar: AppBar(title: const Text('Purchase orders')),
       body: p.loading && p.orders.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : p.error != null
+          : p.error != null && p.orders.isEmpty
               ? OpsError(message: p.error!, onRetry: p.loadPos)
               : p.orders.isEmpty
                   ? const OpsEmpty(
@@ -99,7 +99,7 @@ class _PurchaseOrderDetailScreenState extends State<PurchaseOrderDetailScreen> {
       appBar: AppBar(title: Text(d?['po_number']?.toString() ?? 'PO')),
       body: p.loading && d == null
           ? const Center(child: CircularProgressIndicator())
-          : p.error != null
+          : p.error != null && d == null
               ? OpsError(
                   message: p.error!,
                   onRetry: () => p.loadPo(widget.poId),
@@ -109,6 +109,14 @@ class _PurchaseOrderDetailScreenState extends State<PurchaseOrderDetailScreen> {
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
+                        if (p.error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: OpsStaleBanner(
+                              message: p.error!,
+                              onRetry: () => p.loadPo(widget.poId),
+                            ),
+                          ),
                         OpsStatusChip(d['status']?.toString() ?? ''),
                         const SizedBox(height: 8),
                         Text('Supplier: ${d['supplier'] ?? '—'}'),
@@ -321,7 +329,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       appBar: AppBar(title: const Text('Suppliers')),
       body: p.loading && p.suppliers.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : p.error != null
+          : p.error != null && p.suppliers.isEmpty
               ? OpsError(message: p.error!, onRetry: p.loadSuppliers)
               : ListView.builder(
                   itemCount: p.suppliers.length,
@@ -365,7 +373,7 @@ class _WarehousesScreenState extends State<WarehousesScreen> {
       appBar: AppBar(title: const Text('Warehouses')),
       body: p.loading && p.warehouses.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : p.error != null
+          : p.error != null && p.warehouses.isEmpty
               ? OpsError(message: p.error!, onRetry: p.loadWarehouses)
               : ListView.builder(
                   itemCount: p.warehouses.length,

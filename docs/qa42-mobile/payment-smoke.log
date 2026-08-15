@@ -1,0 +1,15 @@
+[PASS] Login
+[PASS] Product — id=703
+[PASS] Add cart
+[PASS] Address
+[PASS] Shipping
+[PASS] Preview — total=549
+[PASS] Place razorpay order — id=9073
+[PASS] Cart retained after unpaid place — count=1
+[PASS] Initiate amount matches order — pay=5535 amt=549
+[FAIL] Verify confirms order — Payment verification failed
+[FAIL] Cart cleared after paid confirm
+[FAIL] Verify idempotent
+[PASS] COD confirms immediately — status=CONFIRMED
+[PASS] Cart cleared after COD
+DONE

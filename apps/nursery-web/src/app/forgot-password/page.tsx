@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Input";
-import { authUserMessage } from "@/lib/auth-messages";
+import {
+  authRateLimitMessage,
+  authUserMessage,
+  formatAuthCountdown,
+  getAuthRetryAfterSeconds,
+  isAuthRateLimited,
+} from "@/lib/auth-messages";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
@@ -14,14 +20,41 @@ export default function ForgotPasswordPage() {
   const toast = useToastStore((s) => s.push);
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [unlockAt, setUnlockAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  const lockSeconds =
+    unlockAt != null ? Math.max(0, Math.ceil((unlockAt - now) / 1000)) : 0;
+  const isLocked = lockSeconds > 0;
+
+  useEffect(() => {
+    if (!unlockAt) return;
+    setNow(Date.now());
+    const id = window.setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= unlockAt) setUnlockAt(null);
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [unlockAt]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (isLocked) {
+      toast(authRateLimitMessage(lockSeconds), "error");
+      return;
+    }
     try {
       await forgotPassword(email.trim());
       setSent(true);
       toast("If that email exists, a reset link was sent.");
     } catch (err) {
+      if (isAuthRateLimited(err)) {
+        const seconds = getAuthRetryAfterSeconds(err) ?? 60;
+        setUnlockAt(Date.now() + seconds * 1000);
+        toast(authRateLimitMessage(seconds), "error");
+        return;
+      }
       toast(authUserMessage(err, "Request failed"), "error");
     }
   }
@@ -56,6 +89,19 @@ export default function ForgotPasswordPage() {
             onSubmit={onSubmit}
             className="space-y-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-[var(--shadow-sm)]"
           >
+            {isLocked ? (
+              <p
+                className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+                role="alert"
+                aria-live="polite"
+              >
+                Too many reset requests. Try again in{" "}
+                <span className="font-semibold tabular-nums">
+                  {formatAuthCountdown(lockSeconds)}
+                </span>
+                .
+              </p>
+            ) : null}
             <Field label="Email" htmlFor="email">
               <Input
                 id="email"
@@ -64,10 +110,15 @@ export default function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLocked}
               />
             </Field>
-            <Button type="submit" fullWidth disabled={loading}>
-              {loading ? "Sending…" : "Send reset link"}
+            <Button type="submit" fullWidth disabled={loading || isLocked}>
+              {loading
+                ? "Sending…"
+                : isLocked
+                  ? `Try again in ${formatAuthCountdown(lockSeconds)}`
+                  : "Send reset link"}
             </Button>
             <p className="text-sm">
               <Link href="/login" className="font-semibold text-[var(--color-primary)]">
