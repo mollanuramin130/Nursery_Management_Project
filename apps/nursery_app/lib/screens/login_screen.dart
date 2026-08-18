@@ -71,6 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
     final auth = context.read<AuthProvider>();
+    if (auth.loading) return;
     final cart = context.read<CartProvider>();
     final wishlist = context.read<WishlistProvider>();
     final ok = await auth.login(email.text.trim(), password.text);

@@ -1,18 +1,28 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ContinueShoppingRail } from "@/components/home/ContinueShoppingRail";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { bannerHref } from "@/lib/deep-link";
 import { serverGet } from "@/lib/server-api";
 import type { Category, HomeData } from "@/lib/types";
 
 const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "GreenLeaf Nursery";
 
-const SHOP_BY_NEED = [
-  { title: "Beginner plants", q: "beginner", blurb: "Easy care for new plant parents" },
+const SHOP_BY_NEED: { title: string; q: string; blurb: string; href?: string }[] = [
+  {
+    title: "Beginner plants",
+    q: "beginner",
+    blurb: "Easy care for new plant parents",
+    href: "/shop?product_type=plant&difficulty_level=easy",
+  },
   { title: "Low light", q: "low light", blurb: "For rooms without harsh sun" },
   { title: "Air purifying", q: "air purifying", blurb: "Fresher indoor air" },
-  { title: "Balcony greens", q: "balcony", blurb: "Compact outdoor picks" },
+  {
+    title: "Balcony greens",
+    q: "balcony",
+    blurb: "Compact outdoor picks",
+    href: "/shop?product_type=plant&indoor_outdoor=both",
+  },
 ];
 
 export default async function HomePage() {
@@ -38,7 +48,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden bg-[var(--color-primary-deep)] text-white">
         <div className="absolute inset-0">
           {hero?.image_url ? (
-            <Image
+            <SafeImage
               src={hero.image_url}
               alt=""
               fill
@@ -102,7 +112,7 @@ export default async function HomePage() {
                 className="group relative min-h-36 overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)] md:min-h-44"
               >
                 {c.image_url ? (
-                  <Image
+                  <SafeImage
                     src={c.image_url}
                     alt=""
                     fill
@@ -267,7 +277,7 @@ export default async function HomePage() {
             {SHOP_BY_NEED.map((item) => (
               <Link
                 key={item.q}
-                href={`/search?q=${encodeURIComponent(item.q)}`}
+                href={item.href ?? `/search?q=${encodeURIComponent(item.q)}`}
                 className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition hover:border-[var(--color-primary)] hover:shadow-[var(--shadow-sm)]"
               >
                 <h3 className="font-semibold text-[var(--color-primary-deep)]">{item.title}</h3>
@@ -301,7 +311,7 @@ export default async function HomePage() {
                   className="group relative min-h-64 overflow-hidden rounded-[var(--radius-xl)]"
                 >
                   {c.image_url ? (
-                    <Image
+                    <SafeImage
                       src={c.image_url}
                       alt=""
                       fill
@@ -357,7 +367,7 @@ export default async function HomePage() {
                 Find your plant
               </Link>
               <Link
-                href="/search?q=beginner"
+                href="/shop?product_type=plant&difficulty_level=easy"
                 className="inline-flex min-h-11 items-center rounded-full border border-[var(--color-primary)] px-5 text-sm font-semibold text-[var(--color-primary-deep)]"
               >
                 Beginner picks

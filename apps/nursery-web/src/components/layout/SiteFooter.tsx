@@ -49,6 +49,7 @@ export function SiteFooter() {
               { href: "/account", label: "My account" },
               { href: "/wishlist", label: "Wishlist" },
               { href: "/register", label: "Create account" },
+              { href: "tel:8926627220", label: "Support 8926627220" },
             ]}
           />
           <div>
@@ -82,9 +83,15 @@ function FooterCol({
       <ul className="space-y-2 text-sm text-[#c5d8cc]">
         {links.map((l) => (
           <li key={l.href}>
-            <Link href={l.href} className="hover:text-white">
-              {l.label}
-            </Link>
+            {l.href.startsWith("tel:") ? (
+              <a href={l.href} className="hover:text-white">
+                {l.label}
+              </a>
+            ) : (
+              <Link href={l.href} className="hover:text-white">
+                {l.label}
+              </Link>
+            )}
           </li>
         ))}
       </ul>

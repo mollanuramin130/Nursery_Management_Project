@@ -31,6 +31,18 @@ Physical Android: do NOT use 10.0.2.2 — use Mac LAN IP.
 - Database name: nursery_local
 - Load sample data once: database/nursery_sample_data.sql
 
+ Start MySQL copy and past in terminal:
+
+source ~/.zshrc
+~/opt/mysql-8.0.31-macos12-x86_64/bin/mysqld --daemonize \
+  --basedir="$HOME/opt/mysql-8.0.31-macos12-x86_64" \
+  --datadir="$HOME/opt/mysql-data" \
+  --port=3306 \
+  --bind-address=127.0.0.1 \
+  --socket=/tmp/mysql.sock \
+  --mysqlx=0 \
+  --pid-file="$HOME/opt/mysql-data/mysqld.pid" \
+  --log-error=/tmp/mysqld.log
 
 --------------------------------
 2) API (must stay running)
@@ -147,6 +159,22 @@ QA-36 COMPLETE: final TEST stability + cross-platform feature parity audit;
   /returns remap, payment header, Mobile bottom-nav shell, wishlist remove flicker).
   Feature matrix: docs/QA-36-FEATURE-PARITY-MATRIX.md
   Regression PHPUnit 253/1209; Customer Flutter 38; GREEN NO.
+QA-43 PARTIAL: Auth/throttle friction + error handling + splash (2026-08-18).
+  Root: global API 120/min/IP + login 10/min; browsing exhausted the bucket;
+  valid login 429 shown as brute-force; Web locked 60s without Retry-After.
+  Fix: env-aware named limiters (local/testing relaxed, production kept);
+  health/webhooks skip global bucket; login single-flight; 429 ≠ offline.
+  Docs: QA-43-REPORT (Track 3) · CLOSEOUT · TEST-MATRIX · BUG-REGISTER
+  Also: error helpline 8926627220; splash Grow Better. Live Greener.
+  GREEN NO · LIVE OUT OF SCOPE · device rapid-flow UNVERIFIED.
+QA-43 PARTIAL: Global error handling + helpline 8926627220 (2026-08-18).
+  Categories A–F; branded GreenLeafErrorView; tel: dialer (never auto-call);
+  500/503 ≠ “You’re offline”; cache peek still silent (QA-42A).
+  Branding: customer seed→sprout splash + Grow Better. Live Greener.;
+  admin leaf+shield+grid; native first-frame no longer a finished plant.
+  Docs: QA-43-REPORT · SPLASH · BRANDING · ERROR-HANDLING · CLOSEOUT
+  Customer splash unit PASS; Admin splash unit PASS; Vivo cold start UNVERIFIED.
+  GREEN NO · LIVE OUT OF SCOPE.
 QA-42A PARTIAL: Refresh UX — normal PTR ≠ offline banner (2026-08-15).
   Root: cache peek marked servingLocal → "saved GreenLeaf data" on every refresh.
   Fixed: quiet markSource; markDegraded only on real fallback; banner rules + Back online.
@@ -207,6 +235,11 @@ QA-37 COMPLETE: parity + network + offline-first Mobile (QA-37-001…013).
   Docs: QA-37-OFFLINE-ARCHITECTURE.md · MOCK-DATA-CONTRACT · NETWORK/PARITY
   DEBUG: flutter run → QA Network Sim (mockOnly / offline / apiError / reconnect).
   Server upstream (Next server env): API_PROXY_TARGET=http://127.0.0.1:8000/api/v1
+See docs/QA-43-REPORT.md
+See docs/QA-43-SPLASH-REPORT.md
+See docs/QA-43-BRANDING-REPORT.md
+See docs/QA-43-ERROR-HANDLING-REPORT.md
+See docs/QA-43-CLOSEOUT-REPORT.md
 See docs/QA-42A-REFRESH-UX-REPORT.md
 See docs/QA-42-CLOSEOUT-REPORT.md
 See docs/QA-41-CLOSEOUT-REPORT.md

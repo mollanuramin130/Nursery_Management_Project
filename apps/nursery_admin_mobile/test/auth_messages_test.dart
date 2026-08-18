@@ -28,7 +28,7 @@ void main() {
       final e = ApiException('Too Many Attempts.', statusCode: 429);
       expect(
         e.userMessage,
-        contains('wait about a minute'),
+        contains('wait'),
       );
     });
   });

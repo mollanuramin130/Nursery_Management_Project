@@ -9,6 +9,7 @@ import {
   authUserMessage,
   formatAuthCountdown,
   parseRetryAfterSeconds,
+  resolveAuthLockSeconds,
 } from "./auth-messages";
 import {
   isPasswordValid,
@@ -56,7 +57,7 @@ assert(
   "network mapping",
 );
 assert(
-  authUserMessage(new Error("Too Many Attempts.")).toLowerCase().includes("minute"),
+  authUserMessage(new Error("Too Many Attempts.")).toLowerCase().includes("wait"),
   "429 mapping",
 );
 assert(formatAuthCountdown(65) === "1:05", "countdown mm:ss");
@@ -68,6 +69,11 @@ assert(
   "429 countdown message",
 );
 assert(authRateLimitMessage(90).includes("1:30"), "rate limit copy");
+assert(resolveAuthLockSeconds({} ) === 10, "lock fallback 10s");
+assert(
+  resolveAuthLockSeconds(new AuthApiError("x", { statusCode: 429, retryAfterSeconds: 90 })) === 30,
+  "lock cap 30s",
+);
 
 assert(!isPasswordValid("short"), "reject short");
 assert(!isPasswordValid("alllowercase1"), "reject no upper");
@@ -310,8 +316,48 @@ assert(
 );
 assert(isTransientAxiosFailure({ code: "ERR_NETWORK" }) === true, "transient network");
 assert(
-  sanitizeTechnical("Confirm API_PROXY_TARGET and php artisan serve").includes("offline"),
+  !sanitizeTechnical("Confirm API_PROXY_TARGET and php artisan serve")
+    .toLowerCase()
+    .includes("artisan"),
   "hide ops toast",
+);
+assert(
+  sanitizeTechnical("Confirm API_PROXY_TARGET and php artisan serve").toLowerCase().includes(
+    "connect",
+  ),
+  "ops toast is connection copy",
+);
+assert(classifyHttpStatus(500).kind === "serverError", "500 server");
+assert(
+  !classifyHttpStatus(500).userMessage.toLowerCase().includes("offline"),
+  "500 is not offline",
+);
+assert(classifyHttpStatus(429).kind === "rateLimited", "429 is rate limited");
+assert(
+  !classifyHttpStatus(429).userMessage.toLowerCase().includes("offline"),
+  "429 is not offline",
+);
+
+import { looksLikeErrorReference, newErrorReference, GREENLEAF_SUPPORT_PHONE } from "./support";
+import { categoryForNetwork, shouldOfferSupport } from "./error-category";
+assert(GREENLEAF_SUPPORT_PHONE === "8926627220", "helpline");
+assert(looksLikeErrorReference(newErrorReference()), "GL reference");
+assert(categoryForNetwork("apiTimeout") === "temporaryNetwork", "timeout category");
+assert(shouldOfferSupport("temporaryNetwork") === false, "no support on blip");
+assert(shouldOfferSupport("unexpected") === true, "support on unknown");
+assert(shouldOfferSupport("apiUnavailable", { retryCount: 2 }) === true, "persist API support");
+
+import { shouldBypassNextImageOptimizer } from "./remote-image";
+
+assert(
+  shouldBypassNextImageOptimizer(
+    "https://upload.wikimedia.org/wikipedia/commons/2/2e/DrumstickFlower.jpg",
+  ),
+  "bypass wiki optimizer",
+);
+assert(
+  !shouldBypassNextImageOptimizer("https://images.unsplash.com/photo-123?w=800"),
+  "keep unsplash optimizer",
 );
 
 console.log("qa-unit-checks: PASS");

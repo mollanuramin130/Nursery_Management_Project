@@ -5,6 +5,7 @@ namespace App\Modules\Auth\Services;
 use App\Modules\Auth\Models\RefreshToken;
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
+use App\Modules\Auth\Services\OtpService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,22 +19,25 @@ class AuthService
 {
     public function register(array $payload): array
     {
-        if (User::query()->where('email', $payload['email'])->exists()) {
+        $mobile = OtpService::normalizeMobile($payload['mobile']);
+
+        if (User::query()->where('phone', $mobile)->exists()) {
+            throw new ConflictHttpException('Mobile number already registered');
+        }
+
+        if (! empty($payload['email']) && User::query()->where('email', $payload['email'])->exists()) {
             throw new ConflictHttpException('Email already registered');
         }
 
-        if (! empty($payload['phone']) && User::query()->where('phone', $payload['phone'])->exists()) {
-            throw new ConflictHttpException('Phone already registered');
-        }
-
-        return DB::transaction(function () use ($payload) {
+        return DB::transaction(function () use ($payload, $mobile) {
             $user = new User([
                 'name' => $payload['name'],
-                'email' => $payload['email'],
-                'phone' => $payload['phone'] ?? null,
+                'email' => $payload['email'] ?? null,
+                'phone' => $mobile,
                 'password' => $payload['password'],
             ]);
             $user->status = 'active';
+            $user->phone_verified_at = now();
             $user->save();
 
             $customerRole = Role::query()->where('slug', 'customer')->first();
@@ -58,12 +62,54 @@ class AuthService
         });
     }
 
+    public function loginViaOtp(string $mobile, array $device = []): array
+    {
+        $mobile = OtpService::normalizeMobile($mobile);
+        $user = User::query()->where('phone', $mobile)->first();
+
+        if (! $user) {
+            throw new AuthenticationException('No account found with this mobile number');
+        }
+
+        if (! $user->isActive()) {
+            throw new AuthenticationException('Account is blocked');
+        }
+
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        return $this->issueTokenPair($user, $device);
+    }
+
+    public function resetPasswordViaMobile(string $mobile, string $newPassword): void
+    {
+        $mobile = OtpService::normalizeMobile($mobile);
+        $user = User::query()->where('phone', $mobile)->first();
+
+        if (! $user) {
+            throw new AuthenticationException('No account found with this mobile number');
+        }
+
+        $user->forceFill(['password' => $newPassword])->save();
+
+        RefreshToken::query()
+            ->where('user_id', $user->id)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
+    }
+
     public function login(array $payload): array
     {
-        $user = User::query()->where('email', $payload['email'])->first();
+        if (! empty($payload['mobile'])) {
+            $mobile = OtpService::normalizeMobile($payload['mobile']);
+            $user = User::query()->where('phone', $mobile)->first();
+            $failMsg = 'Invalid mobile number or password';
+        } else {
+            $user = User::query()->where('email', $payload['email'])->first();
+            $failMsg = 'Invalid email or password';
+        }
 
         if (! $user || ! Hash::check($payload['password'], $user->password)) {
-            throw new AuthenticationException('Invalid email or password');
+            throw new AuthenticationException($failMsg);
         }
 
         if (! $user->isActive()) {
@@ -180,6 +226,7 @@ class AuthService
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'phone_verified' => $user->phone_verified_at !== null,
             'roles' => $user->roleSlugs(),
             'permissions' => $user->permissionSlugs(),
         ];

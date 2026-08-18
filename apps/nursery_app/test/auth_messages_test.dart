@@ -21,7 +21,7 @@ void main() {
     test('maps too many attempts', () {
       expect(
         AuthMessages.sanitize('Too Many Attempts.', statusCode: 429),
-        contains('wait about a minute'),
+        contains('wait'),
       );
     });
   });

@@ -71,11 +71,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
-    if (loading) return false;
+    if (loading) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] duplicate login prevented');
+      }
+      return false;
+    }
     loading = true;
     error = null;
     notifyListeners();
     try {
+      if (kDebugMode) {
+        debugPrint('[AUTH] login request started');
+      }
       // X-Cart-Token is attached by ApiClient so the backend can merge the
       // guest cart during this request — do not clear the token beforehand.
       final data = await _api.sendData<Map<String, dynamic>>(
@@ -90,6 +98,9 @@ class AuthProvider extends ChangeNotifier {
       );
       await _applyAuthSession(data);
       loading = false;
+      if (kDebugMode) {
+        debugPrint('[AUTH] login request completed');
+      }
       notifyListeners();
       return true;
     } catch (e) {

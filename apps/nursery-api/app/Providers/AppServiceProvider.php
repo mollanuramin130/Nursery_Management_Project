@@ -7,6 +7,7 @@ use App\Modules\Campaign\Models\Campaign;
 use App\Modules\Catalog\Models\Category;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Services\HomeService;
+use App\Shared\Support\RateLimiterConfigurator;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiterConfigurator::register();
+
         $invalidateHome = static fn () => HomeService::forgetCache();
 
         Product::saved($invalidateHome);

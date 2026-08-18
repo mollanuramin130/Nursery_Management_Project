@@ -125,8 +125,9 @@ class OfflineController extends ChangeNotifier {
   }
 
   /// Compact copy only when genuinely serving local after an API failure (QA-43).
+  /// Offline wording is reserved for [NetworkKind.offline] — not HTTP 5xx.
   String? localBannerSuffix(NetworkKind kind) {
     if (!_servingLocal) return null;
-    return "You're offline · Showing saved data";
+    return statusBannerText(kind: kind, servingLocal: true);
   }
 }

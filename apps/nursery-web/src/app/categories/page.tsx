@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { serverGet } from "@/lib/server-api";
 import type { Category } from "@/lib/types";
 
@@ -40,7 +40,7 @@ export default async function CategoriesPage() {
                 <Link href={`/category/${c.slug}`} className="group block">
                   <div className="relative min-h-44 bg-[var(--color-surface-muted)]">
                     {c.image_url ? (
-                      <Image
+                      <SafeImage
                         src={c.image_url}
                         alt={c.name}
                         fill

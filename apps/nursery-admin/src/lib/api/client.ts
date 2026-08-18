@@ -135,12 +135,30 @@ function unwrapError(error: unknown, fallback: string) {
         ? error.response.headers["x-request-id"]
         : undefined) ??
       (typeof body?.meta?.request_id === "string" ? body.meta.request_id : undefined);
-    if (error.response?.status === 429) {
+    const status = error.response?.status;
+    if (!error.response) {
+      const offline =
+        typeof navigator !== "undefined" && navigator.onLine === false;
+      return new ApiError(
+        offline
+          ? "Connection temporarily unavailable."
+          : "Unable to connect to GreenLeaf right now.",
+      );
+    }
+    if (status && status >= 500) {
+      return new ApiError(
+        status === 500
+          ? "GreenLeaf server is temporarily unavailable."
+          : "Unable to connect to GreenLeaf right now.",
+        { status, requestId },
+      );
+    }
+    if (status === 429) {
       const apiMsg = body?.message?.trim() ?? "";
       const message =
         apiMsg && !/^too many attempts\.?$/i.test(apiMsg)
           ? apiMsg
-          : "You're doing that too quickly. Please wait about a minute, then try again.";
+          : "You're doing that too quickly. Please wait a moment, then try again.";
       return new ApiError(message, {
         status: 429,
         errors: body?.errors ?? null,
@@ -148,8 +166,19 @@ function unwrapError(error: unknown, fallback: string) {
       });
     }
     if (body?.message) {
-      return new ApiError(body.message, {
-        status: error.response?.status,
+      const raw = body.message;
+      const lower = raw.toLowerCase();
+      const safe =
+        lower.includes("exception") ||
+        lower.includes("sql") ||
+        lower.includes("stack") ||
+        lower.includes("artisan") ||
+        lower.includes("api_proxy") ||
+        raw.length > 140
+          ? "Something went wrong while loading this section."
+          : raw;
+      return new ApiError(safe, {
+        status,
         code:
           typeof body.meta?.error_code === "string"
             ? body.meta.error_code
@@ -158,18 +187,15 @@ function unwrapError(error: unknown, fallback: string) {
         requestId,
       });
     }
-    if (!error.response) {
-      return new ApiError(
-        "Cannot reach Admin BFF / API. Confirm nursery-admin is running and API_PROXY_TARGET points at Laravel.",
-      );
-    }
     return new ApiError(fallback, {
-      status: error.response?.status,
+      status,
       errors: body?.errors ?? null,
       requestId,
     });
   }
-  if (error instanceof Error) return new ApiError(error.message);
+  if (error instanceof Error) {
+    return new ApiError("Something went wrong while loading this section.");
+  }
   return new ApiError(fallback);
 }
 

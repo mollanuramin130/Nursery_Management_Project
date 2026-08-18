@@ -55,9 +55,10 @@ class NetworkStatusProvider extends ChangeNotifier {
             error.statusCode != 429) {
       return;
     }
-    _kind = error.kind == NetworkKind.unknownError
+    final kind = error.kind == NetworkKind.unknownError
         ? NetworkKind.apiUnavailable
         : error.kind;
+    _kind = kind;
     _message = error.userMessage;
     notifyListeners();
     _scheduleAutoProbe();
@@ -73,8 +74,7 @@ class NetworkStatusProvider extends ChangeNotifier {
       reportSuccess();
     } else {
       _kind = NetworkKind.apiUnavailable;
-      _message =
-          'GreenLeaf is temporarily unavailable. Please try again.';
+      _message = 'Unable to connect to GreenLeaf right now.';
       notifyListeners();
       _scheduleAutoProbe();
     }

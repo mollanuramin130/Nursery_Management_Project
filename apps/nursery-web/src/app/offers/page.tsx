@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/ProductCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { serverGet } from "@/lib/server-api";
 import type { OffersFeed } from "@/lib/types";
 
@@ -64,7 +64,7 @@ export default async function OffersPage() {
             className="group relative mb-14 block min-h-[280px] overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-primary-deep)] text-white"
           >
             {(hero.banner_image || hero.image_url) ? (
-              <Image
+              <SafeImage
                 src={(hero.banner_image || hero.image_url)!}
                 alt=""
                 fill
@@ -108,7 +108,7 @@ export default async function OffersPage() {
                   className="group relative min-h-[200px] overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-primary-deep)] text-white"
                 >
                   {(c.image_url || c.banner_image) ? (
-                    <Image
+                    <SafeImage
                       src={(c.image_url || c.banner_image)!}
                       alt=""
                       fill

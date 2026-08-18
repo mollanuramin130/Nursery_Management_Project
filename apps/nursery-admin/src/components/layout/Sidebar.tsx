@@ -78,6 +78,14 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+      {!sidebarCollapsed ? (
+        <a
+          href="tel:8926627220"
+          className="border-t border-white/10 px-4 py-3 text-[11px] text-[var(--admin-sidebar-muted)] hover:text-white"
+        >
+          Support 8926627220
+        </a>
+      ) : null}
     </aside>
   );
 

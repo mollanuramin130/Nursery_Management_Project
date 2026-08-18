@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:nursery_admin_mobile/core/api_client.dart';
+import 'package:nursery_admin_mobile/core/app_error.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 import 'package:nursery_admin_mobile/shared/widgets.dart';
 import 'package:nursery_admin_mobile/theme/app_theme.dart';
@@ -98,7 +99,7 @@ class _FulfillmentQueueScreenState extends State<FulfillmentQueueScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = e is ApiException ? e.userMessage : e.toString();
+        _error = sanitizeCaughtError(e);
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -207,7 +208,7 @@ class _FulfillmentOrderScreenState extends State<FulfillmentOrderScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = e is ApiException ? e.userMessage : e.toString();
+        _error = sanitizeCaughtError(e);
       });
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -223,7 +224,7 @@ class _FulfillmentOrderScreenState extends State<FulfillmentOrderScreen> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      final msg = e is ApiException ? e.userMessage : e.toString();
+      final msg = sanitizeCaughtError(e);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } finally {
       if (mounted) setState(() => _busy = false);

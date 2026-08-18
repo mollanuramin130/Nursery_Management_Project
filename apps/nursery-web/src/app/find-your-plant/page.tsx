@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { apiSend } from "@/lib/api";
@@ -10,6 +9,7 @@ import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { SafeImage } from "@/components/ui/SafeImage";
 
 type Answers = {
   location: string;
@@ -108,7 +108,7 @@ export default function FindYourPlantPage() {
     } else if (answers.location === "balcony") {
       qs.set("indoor_outdoor", "both");
     }
-    if (answers.sunlight) qs.set("sunlight", answers.sunlight === "full_sun" ? "full_sun" : answers.sunlight);
+    if (answers.sunlight) qs.set("sunlight", answers.sunlight);
     if (answers.watering === "rarely") qs.set("water_requirement", "low");
     if (answers.watering === "weekly") qs.set("water_requirement", "medium");
     if (answers.watering === "often") qs.set("water_requirement", "high");
@@ -231,7 +231,7 @@ export default function FindYourPlantPage() {
                     <div className="flex gap-3">
                       <div className="relative h-20 w-20 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
                         {row.product.thumbnail_url ? (
-                          <Image src={row.product.thumbnail_url} alt="" fill className="object-cover" sizes="80px" />
+                          <SafeImage src={row.product.thumbnail_url} alt="" fill className="object-cover" sizes="80px" />
                         ) : null}
                       </div>
                       <div className="flex-1">
@@ -357,7 +357,7 @@ function BestMatch({
       <div className="flex flex-wrap items-start gap-5">
         <div className="relative h-36 w-36 overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)]">
           {row.product.thumbnail_url ? (
-            <Image src={row.product.thumbnail_url} alt="" fill className="object-cover" sizes="144px" />
+            <SafeImage src={row.product.thumbnail_url} alt="" fill className="object-cover" sizes="144px" />
           ) : null}
         </div>
         <div className="min-w-0 flex-1">

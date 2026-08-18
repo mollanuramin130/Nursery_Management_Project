@@ -47,16 +47,21 @@ ClassifiedNetworkError classifyDioException(DioException e) {
   if (e.type == DioExceptionType.connectionError ||
       (e.type == DioExceptionType.unknown && e.response == null)) {
     final msg = (e.message ?? '').toLowerCase();
-    final looksOffline = msg.contains('socket') ||
-        msg.contains('failed host lookup') ||
-        msg.contains('network is unreachable') ||
-        msg.contains('connection refused') ||
-        msg.contains('no address associated');
+    final simulated = msg.contains('simulated');
+    // DEBUG network-sim only. A real phone DNS/socket failure is NOT "offline"
+    // just because the emulator host 10.0.2.2 is unreachable.
+    if (simulated) {
+      return const ClassifiedNetworkError(
+        kind: NetworkKind.offline,
+        userMessage: "You're offline. Check your internet connection.",
+      );
+    }
+    final refused = msg.contains('connection refused');
     return ClassifiedNetworkError(
-      kind: looksOffline ? NetworkKind.offline : NetworkKind.apiUnavailable,
-      userMessage: looksOffline
-          ? "You're offline. Check your internet connection."
-          : 'GreenLeaf is temporarily unavailable. Please try again.',
+      kind: NetworkKind.apiUnavailable,
+      userMessage: refused
+          ? 'Unable to connect to GreenLeaf right now.'
+          : 'Connection temporarily unavailable.',
       statusCode: status,
     );
   }
@@ -126,7 +131,8 @@ ClassifiedNetworkError classifyHttpStatus(int? status, [String? apiMessage]) {
     case 500:
       return const ClassifiedNetworkError(
         kind: NetworkKind.serverError,
-        userMessage: 'Something went wrong on our side. Please try again.',
+        userMessage:
+            'GreenLeaf server is temporarily unavailable. Please try again.',
         statusCode: 500,
       );
     case 502:
@@ -134,7 +140,7 @@ ClassifiedNetworkError classifyHttpStatus(int? status, [String? apiMessage]) {
     case 504:
       return ClassifiedNetworkError(
         kind: NetworkKind.apiUnavailable,
-        userMessage: 'GreenLeaf is temporarily unavailable. Please try again.',
+        userMessage: 'Unable to connect to GreenLeaf right now.',
         statusCode: status,
       );
     default:
@@ -168,14 +174,14 @@ ClassifiedNetworkError classifyApiException(ApiException e) {
   if (lower.contains('offline') || lower.contains('internet')) {
     return ClassifiedNetworkError(
       kind: NetworkKind.offline,
-      userMessage: "You're offline. Check your internet connection.",
+      userMessage: 'Connection temporarily unavailable.',
       statusCode: e.statusCode,
     );
   }
   if (lower.contains('unavailable') || lower.contains('unable to connect')) {
     return ClassifiedNetworkError(
       kind: NetworkKind.apiUnavailable,
-      userMessage: 'GreenLeaf is temporarily unavailable. Please try again.',
+      userMessage: 'Unable to connect to GreenLeaf right now.',
       statusCode: e.statusCode,
     );
   }
@@ -208,12 +214,16 @@ String? _envelopeMessage(dynamic data) {
 
 String _sanitize(String raw) {
   final lower = raw.toLowerCase();
+  if (lower.contains('connection refused') ||
+      lower.contains('api_proxy') ||
+      lower.contains('artisan')) {
+    return 'Unable to connect to GreenLeaf right now.';
+  }
   if (lower.contains('socketexception') ||
       lower.contains('failed host lookup') ||
-      lower.contains('connection refused') ||
       lower.contains('xmlhttprequest') ||
       lower.contains('dioexception')) {
-    return "You're offline. Check your internet connection.";
+    return 'Connection temporarily unavailable.';
   }
   if (raw.length > 180) return 'Something went wrong. Please try again.';
   return raw.trim();
@@ -222,21 +232,77 @@ String _sanitize(String raw) {
 String bannerCopy(NetworkKind kind) {
   switch (kind) {
     case NetworkKind.offline:
-      return "You're offline · Reconnecting when possible";
+      return "You're offline";
     case NetworkKind.reconnecting:
     case NetworkKind.connecting:
-      return 'Connection interrupted · Reconnecting…';
+      return 'Checking connection…';
     case NetworkKind.apiUnavailable:
+      return 'Unable to connect to GreenLeaf right now.';
     case NetworkKind.serverError:
-      return 'GreenLeaf is temporarily unavailable · Retrying…';
+      return 'GreenLeaf server is temporarily unavailable.';
     case NetworkKind.apiTimeout:
-      return 'Connection is slow · Still trying…';
+      return 'Connection is taking too long.';
     case NetworkKind.rateLimited:
       return 'Too many requests · Please wait a moment';
     case NetworkKind.authExpired:
       return 'Your session has expired';
     case NetworkKind.online:
     case NetworkKind.unknownError:
-      return 'Connection interrupted · Reconnecting…';
+      return 'Unable to refresh.';
   }
+}
+
+/// Compact banner line. Never says "You're offline" for HTTP 5xx / timeouts.
+String statusBannerText({
+  required NetworkKind kind,
+  required bool servingLocal,
+  String? message,
+}) {
+  String base(String live, String withSaved) =>
+      servingLocal ? withSaved : live;
+
+  switch (kind) {
+    case NetworkKind.offline:
+      return base(
+        "You're offline",
+        "You're offline · Showing saved data",
+      );
+    case NetworkKind.serverError:
+      return base(
+        'GreenLeaf server is temporarily unavailable.',
+        'GreenLeaf server is temporarily unavailable · Showing saved data',
+      );
+    case NetworkKind.apiUnavailable:
+      return base(
+        'Unable to connect to GreenLeaf right now.',
+        'Unable to connect to GreenLeaf right now · Showing saved data',
+      );
+    case NetworkKind.apiTimeout:
+      return base(
+        'Connection is taking too long.',
+        'Connection is taking too long · Showing saved data',
+      );
+    case NetworkKind.connecting:
+    case NetworkKind.reconnecting:
+      return 'Checking connection…';
+    default:
+      if (servingLocal) return 'Unable to refresh · Showing saved data';
+      return message ?? bannerCopy(kind);
+  }
+}
+
+/// Banner is for a verified degraded network state only.
+/// Cache leftover (`servingLocal`) must not keep "You're offline" after the
+/// API is healthy again (kind == online).
+bool shouldShowNetworkBanner({
+  required NetworkKind kind,
+  required bool showBanner,
+  required bool servingLocal,
+}) {
+  if (kind == NetworkKind.online ||
+      kind == NetworkKind.connecting ||
+      kind == NetworkKind.reconnecting) {
+    return false;
+  }
+  return showBanner || servingLocal;
 }

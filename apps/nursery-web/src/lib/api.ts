@@ -10,12 +10,13 @@ import {
   classifyHttpStatus,
   classifyTransport,
   isTransientAxiosFailure,
+  sanitizeTechnical,
 } from "@/lib/network-errors";
 import { storage } from "@/lib/storage";
 import type { ApiEnvelope } from "@/lib/types";
 import { useNetworkStatusStore } from "@/store/network-status";
 
-const DEFAULT_AUTH_RETRY_AFTER_SECONDS = 60;
+const DEFAULT_AUTH_RETRY_AFTER_SECONDS = 10;
 
 function retryAfterFromAxios(error: AxiosError): number {
   const headers = error.response?.headers;
@@ -209,7 +210,7 @@ function unwrapError(error: unknown, fallback: string) {
       const path = String(error.config?.url ?? "");
       if (path.includes("/orders") && !path.includes("/orders/")) {
         const msg =
-          "You tried to place an order too many times. Please wait about a minute, then try again.";
+          "You tried to place an order too many times. Please wait a moment, then try again.";
         useNetworkStatusStore.getState().reportFailure({
           kind: "rateLimited",
           userMessage: msg,
@@ -223,7 +224,10 @@ function unwrapError(error: unknown, fallback: string) {
     useNetworkStatusStore.getState().reportFailure(classified);
     return classified.userMessage;
   }
-  if (error instanceof Error && error.message) return error.message;
+  if (error instanceof Error && error.message) {
+    const safe = sanitizeTechnical(error.message);
+    return safe || fallback;
+  }
   return fallback;
 }
 
@@ -261,7 +265,7 @@ export async function apiSend<T>(
 
 /** Auth endpoints that set HttpOnly cookies (tokens never returned to JS). */
 export async function authSend<T>(
-  path: "login" | "register" | "logout" | "refresh",
+  path: "login" | "login-otp" | "register" | "logout" | "refresh" | "otp/send" | "otp/verify" | "reset-password-mobile",
   body?: unknown,
 ) {
   await ensureCsrf();

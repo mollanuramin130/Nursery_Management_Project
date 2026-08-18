@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/app.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/core/app_error_handler.dart';
 import 'package:nursery_app/core/config.dart';
 import 'package:nursery_app/core/session_storage.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
@@ -16,8 +17,17 @@ import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/providers/wishlist_provider.dart';
 import 'package:provider/provider.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  installAppErrorHandling();
+  runZonedGuarded(() {
+    unawaited(_boot());
+  }, (error, stack) {
+    AppErrorHandler.record(error, stack, screen: 'zone');
+  });
+}
+
+Future<void> _boot() async {
   AppConfig.assertReleaseConfiguration();
 
   final storage = SessionStorage();
@@ -46,6 +56,9 @@ Future<void> main() async {
 
   // QA-38 — health recovery triggers soft sync (no full-screen reload).
   network.onReconnected = () {
+    // Health probe proved the API is reachable — drop the stale local banner
+    // immediately instead of waiting for catalog/cart to finish.
+    offline.markRemoteOk();
     offline.notifyReconnected();
     unawaited(() async {
       offline.beginSync();
@@ -105,10 +118,14 @@ class _NurseryAppHostState extends State<NurseryAppHost> {
   void initState() {
     super.initState();
     _router = createRouter();
+    AppErrorHandler.onRebuildRequested = () {
+      if (mounted) setState(() {});
+    };
   }
 
   @override
   void dispose() {
+    AppErrorHandler.onRebuildRequested = null;
     _router.dispose();
     super.dispose();
   }

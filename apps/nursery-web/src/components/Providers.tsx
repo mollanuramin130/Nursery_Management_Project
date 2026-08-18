@@ -8,6 +8,7 @@ import { ToastViewport } from "@/components/ui/ToastViewport";
 import { MiniCartDrawer } from "@/components/cart/MiniCartDrawer";
 import { MobileSearchOverlay } from "@/components/layout/MobileSearchOverlay";
 import { NetworkStatusBanner } from "@/components/layout/NetworkStatusBanner";
+import { AppErrorBoundary } from "@/components/error/AppErrorBoundary";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const bootstrap = useAuthStore((s) => s.bootstrap);
@@ -31,7 +32,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <>
       <NetworkStatusBanner />
-      {children}
+      <AppErrorBoundary>
+        {children}
+      </AppErrorBoundary>
       <MiniCartDrawer />
       <MobileSearchOverlay />
       <ToastViewport />

@@ -69,7 +69,13 @@ export function formatAuthCountdown(totalSeconds: number): string {
 
 export function authRateLimitMessage(seconds: number): string {
   const s = Math.max(1, Math.ceil(seconds));
-  return `Too many attempts. Please wait ${formatAuthCountdown(s)}, then try again.`;
+  return `Please wait ${formatAuthCountdown(s)}, then try again.`;
+}
+
+/** Lock the auth form using Retry-After when present; never default to a full minute. */
+export function resolveAuthLockSeconds(error: unknown, fallback = 10, cap = 30): number {
+  const raw = getAuthRetryAfterSeconds(error) ?? fallback;
+  return Math.min(cap, Math.max(1, Math.ceil(raw)));
 }
 
 export function authUserMessage(
@@ -77,8 +83,9 @@ export function authUserMessage(
   fallback = "Something went wrong. Please try again.",
 ): string {
   if (error instanceof AuthApiError && error.statusCode === 429) {
-    const secs = error.retryAfterSeconds ?? 60;
-    return authRateLimitMessage(secs);
+    const secs = error.retryAfterSeconds;
+    if (secs != null) return authRateLimitMessage(secs);
+    return "Please wait a moment, then try again.";
   }
 
   const raw =
@@ -128,7 +135,7 @@ export function authUserMessage(
     lower.includes("wait about a minute") ||
     lower.includes("too quickly")
   ) {
-    return "Too many attempts. Please wait about a minute, then try again.";
+    return "Please wait a moment, then try again.";
   }
 
   if (lower.includes("does not have admin") || lower.includes("staff")) {

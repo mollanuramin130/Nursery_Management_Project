@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
+use App\Modules\Catalog\Models\PlantProfile;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Catalog\Models\StockAlertSubscription;
 use App\Modules\Inventory\Models\InventoryItem;
@@ -151,5 +152,149 @@ class Phase16CustomerExperienceTest extends TestCase
         $this->getJson('/api/v1/cart')
             ->assertOk()
             ->assertJsonStructure(['data' => ['warnings', 'checkout_blocked', 'free_delivery']]);
+    }
+
+    public function test_placement_both_returns_indoor_and_outdoor_plants(): void
+    {
+        $indoor = Product::query()->create([
+            'name' => 'Indoor P16',
+            'slug' => 'indoor-p16',
+            'sku' => 'P16-IN',
+            'product_type' => 'plant',
+            'status' => 'active',
+            'price' => 199,
+            'currency' => 'INR',
+            'stock_status' => 'in_stock',
+        ]);
+        $outdoor = Product::query()->create([
+            'name' => 'Outdoor P16',
+            'slug' => 'outdoor-p16',
+            'sku' => 'P16-OUT',
+            'product_type' => 'plant',
+            'status' => 'active',
+            'price' => 249,
+            'currency' => 'INR',
+            'stock_status' => 'in_stock',
+        ]);
+        PlantProfile::query()->create([
+            'product_id' => $indoor->id,
+            'common_name' => 'Indoor P16',
+            'indoor_outdoor' => 'indoor',
+            'sunlight' => 'low',
+            'water_requirement' => 'low',
+            'difficulty_level' => 'easy',
+        ]);
+        PlantProfile::query()->create([
+            'product_id' => $outdoor->id,
+            'common_name' => 'Outdoor P16',
+            'indoor_outdoor' => 'outdoor',
+            'sunlight' => 'full_sun',
+            'water_requirement' => 'medium',
+            'difficulty_level' => 'easy',
+        ]);
+
+        $both = $this->getJson('/api/v1/products?indoor_outdoor=both&product_type=plant&per_page=50')
+            ->assertOk()
+            ->json('data');
+        $ids = collect($both)->pluck('id')->all();
+        $this->assertContains($indoor->id, $ids);
+        $this->assertContains($outdoor->id, $ids);
+
+        $indoorOnly = $this->getJson('/api/v1/products?indoor_outdoor=indoor&product_type=plant&per_page=50')
+            ->assertOk()
+            ->json('data');
+        $indoorIds = collect($indoorOnly)->pluck('id')->all();
+        $this->assertContains($indoor->id, $indoorIds);
+        $this->assertNotContains($outdoor->id, $indoorIds);
+    }
+
+    public function test_catalog_filter_aliases_match_stored_attributes(): void
+    {
+        $plant = Product::query()->create([
+            'name' => 'Alias Plant P16',
+            'slug' => 'alias-p16',
+            'sku' => 'P16-ALIAS',
+            'product_type' => 'plant',
+            'status' => 'active',
+            'price' => 199,
+            'currency' => 'INR',
+            'stock_status' => 'in_stock',
+        ]);
+        $kit = Product::query()->create([
+            'name' => 'Starter Bundle P16',
+            'slug' => 'bundle-p16',
+            'sku' => 'P16-BUN',
+            'product_type' => 'bundle',
+            'status' => 'active',
+            'price' => 499,
+            'currency' => 'INR',
+            'stock_status' => 'in_stock',
+        ]);
+        $moderate = Product::query()->create([
+            'name' => 'Moderate Plant P16',
+            'slug' => 'moderate-p16',
+            'sku' => 'P16-MOD',
+            'product_type' => 'plant',
+            'status' => 'active',
+            'price' => 299,
+            'currency' => 'INR',
+            'stock_status' => 'in_stock',
+        ]);
+        PlantProfile::query()->create([
+            'product_id' => $plant->id,
+            'common_name' => 'Alias Plant P16',
+            'indoor_outdoor' => 'indoor',
+            'sunlight' => 'bright_indirect',
+            'water_requirement' => 'medium',
+            'difficulty_level' => 'easy',
+            'pet_safety' => 'safe',
+        ]);
+        PlantProfile::query()->create([
+            'product_id' => $moderate->id,
+            'common_name' => 'Moderate Plant P16',
+            'indoor_outdoor' => 'outdoor',
+            'sunlight' => 'partial',
+            'water_requirement' => 'medium',
+            'difficulty_level' => 'moderate',
+            'pet_safety' => 'toxic',
+        ]);
+
+        $brightIds = collect(
+            $this->getJson('/api/v1/products?sunlight=bright&product_type=plant&per_page=50')
+                ->assertOk()
+                ->json('data')
+        )->pluck('id')->all();
+        $this->assertContains($plant->id, $brightIds);
+        $this->assertContains($moderate->id, $brightIds);
+
+        $petIds = collect(
+            $this->getJson('/api/v1/products?pet_safety=pet_safe&per_page=50')
+                ->assertOk()
+                ->json('data')
+        )->pluck('id')->all();
+        $this->assertContains($plant->id, $petIds);
+        $this->assertNotContains($moderate->id, $petIds);
+
+        $beginnerIds = collect(
+            $this->getJson('/api/v1/products?q=beginner&per_page=50')
+                ->assertOk()
+                ->json('data')
+        )->pluck('id')->all();
+        $this->assertContains($plant->id, $beginnerIds);
+
+        $kitIds = collect(
+            $this->getJson('/api/v1/products?product_type=kit&per_page=50')
+                ->assertOk()
+                ->json('data')
+        )->pluck('id')->all();
+        $this->assertContains($kit->id, $kitIds);
+
+        $expertIds = collect(
+            $this->getJson('/api/v1/products?difficulty_level=advanced&product_type=plant&per_page=50')
+                ->assertOk()
+                ->json('data')
+        )->pluck('id')->all();
+        $this->assertContains($moderate->id, $expertIds);
+        $this->assertNotContains($plant->id, $expertIds);
     }
 }

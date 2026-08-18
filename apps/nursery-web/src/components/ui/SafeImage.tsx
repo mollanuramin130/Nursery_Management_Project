@@ -3,6 +3,7 @@
 import Image, { type ImageProps } from "next/image";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { shouldBypassNextImageOptimizer } from "@/lib/remote-image";
 
 type Props = Omit<ImageProps, "onError" | "src"> & {
   src?: string | null;
@@ -46,6 +47,9 @@ export function SafeImage({
       src={src}
       alt={alt}
       className={className}
+      unoptimized={
+        rest.unoptimized === true || shouldBypassNextImageOptimizer(src)
+      }
       onError={() => setFailed(true)}
     />
   );

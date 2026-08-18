@@ -16,13 +16,23 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:190'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'mobile' => ['required', 'string', 'max:20', 'regex:/^\+?\d{10,15}$/'],
+            'email' => ['nullable', 'email', 'max:190'],
+            'otp_verified_token' => ['required', 'string'],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()],
             'device' => ['nullable', 'array'],
             'device.platform' => ['nullable', 'string', 'in:web,android,ios'],
             'device.device_id' => ['nullable', 'string', 'max:100'],
             'device.push_token' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'mobile.required' => 'Mobile number is required.',
+            'mobile.regex' => 'Enter a valid mobile number.',
+            'otp_verified_token.required' => 'Mobile verification is required before registration.',
         ];
     }
 }

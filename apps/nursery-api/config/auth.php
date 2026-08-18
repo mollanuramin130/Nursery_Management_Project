@@ -68,4 +68,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | OTP Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    'otp' => [
+        'ttl_minutes' => (int) env('OTP_TTL_MINUTES', 10),
+        'max_attempts' => (int) env('OTP_MAX_ATTEMPTS', 5),
+        'cooldown_seconds' => (int) env('OTP_COOLDOWN_SECONDS', 30),
+        'dev_code' => env('OTP_DEV_CODE', app()->environment('local', 'testing') ? '123456' : null),
+    ],
+
 ];

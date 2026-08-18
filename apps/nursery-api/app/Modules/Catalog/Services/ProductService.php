@@ -90,7 +90,7 @@ class ProductService
                 $query->whereHas('plantProfile', fn ($q) => $q->where('difficulty_level', $rules['difficulty_level']));
             }
             if (! empty($rules['indoor_outdoor'])) {
-                $query->whereHas('plantProfile', fn ($q) => $q->where('indoor_outdoor', $rules['indoor_outdoor']));
+                $this->applyIndoorOutdoorFilter($query, (string) $rules['indoor_outdoor']);
             }
             if (! empty($rules['sunlight']) && is_array($rules['sunlight'])) {
                 $query->whereHas('plantProfile', fn ($q) => $q->whereIn('sunlight', $rules['sunlight']));
@@ -136,11 +136,27 @@ class ProductService
     private function applyFilters(Builder $query, array $filters): void
     {
         if (! empty($filters['q'])) {
-            $q = $filters['q'];
-            $query->where(function (Builder $builder) use ($q) {
-                $builder->whereFullText(['name', 'description'], $q)
-                    ->orWhere('name', 'like', "%{$q}%")
-                    ->orWhere('sku', 'like', "%{$q}%");
+            $q = (string) $filters['q'];
+            $normalized = mb_strtolower(trim($q));
+            $query->where(function (Builder $builder) use ($q, $normalized) {
+                $driver = $builder->getConnection()->getDriverName();
+                if ($driver === 'mysql') {
+                    $builder->whereFullText(['name', 'description'], $q)
+                        ->orWhere('name', 'like', "%{$q}%")
+                        ->orWhere('sku', 'like', "%{$q}%");
+                } else {
+                    $builder->where('name', 'like', "%{$q}%")
+                        ->orWhere('description', 'like', "%{$q}%")
+                        ->orWhere('sku', 'like', "%{$q}%");
+                }
+
+                // Shop-by-need / popular chips use words that are not product names.
+                if (in_array($normalized, ['beginner', 'beginner plants', 'beginner-friendly'], true)) {
+                    $builder->orWhereHas('plantProfile', fn ($p) => $p->where('difficulty_level', 'easy'));
+                }
+                if (in_array($normalized, ['pet', 'pet safe', 'pet-safe', 'pet friendly', 'pet-friendly'], true)) {
+                    $builder->orWhereHas('plantProfile', fn ($p) => $p->where('pet_safety', 'safe'));
+                }
             });
         }
 
@@ -150,11 +166,23 @@ class ProductService
         }
 
         if (! empty($filters['product_type'])) {
-            $query->where('product_type', $filters['product_type']);
+            $this->applyProductTypeFilter($query, (string) $filters['product_type']);
         }
 
         if (! empty($filters['product_types']) && is_array($filters['product_types'])) {
-            $query->whereIn('product_type', $filters['product_types']);
+            $types = [];
+            foreach ($filters['product_types'] as $type) {
+                $type = strtolower(trim((string) $type));
+                if (in_array($type, ['kit', 'kits', 'bundle'], true)) {
+                    $types[] = 'kit';
+                    $types[] = 'bundle';
+                } elseif ($type !== '') {
+                    $types[] = $type;
+                }
+            }
+            if ($types !== []) {
+                $query->whereIn('product_type', array_values(array_unique($types)));
+            }
         }
 
         if (! empty($filters['brand'])) {
@@ -184,6 +212,21 @@ class ProductService
                 if ($plantFilter === 'water_requirement' && $value === 'moderate') {
                     $value = 'medium';
                 }
+                if ($plantFilter === 'indoor_outdoor') {
+                    $this->applyIndoorOutdoorFilter($query, (string) $value);
+
+                    continue;
+                }
+                if ($plantFilter === 'sunlight') {
+                    $this->applySunlightFilter($query, (string) $value);
+
+                    continue;
+                }
+                if ($plantFilter === 'difficulty_level') {
+                    $this->applyDifficultyFilter($query, (string) $value);
+
+                    continue;
+                }
                 $query->whereHas('plantProfile', fn ($p) => $p->where($plantFilter, $value));
             }
         }
@@ -204,11 +247,114 @@ class ProductService
         }
 
         if (! empty($filters['pet_safety'])) {
-            $query->whereHas('plantProfile', fn ($p) => $p->where('pet_safety', $filters['pet_safety']));
+            $this->applyPetSafetyFilter($query, (string) $filters['pet_safety']);
         }
 
         if (! empty($filters['tag'])) {
             $query->whereHas('tags', fn ($t) => $t->where('slug', $filters['tag']));
         }
+    }
+
+    /**
+     * Placement chips: indoor / outdoor / both.
+     * "both" and balcony mean suitable for either setting (not a rare both-only tag).
+     */
+    private function applyIndoorOutdoorFilter(Builder $query, string $value): void
+    {
+        $value = strtolower(trim($value));
+        $query->whereHas('plantProfile', function ($p) use ($value) {
+            if (in_array($value, ['both', 'balcony'], true)) {
+                $p->whereIn('indoor_outdoor', ['indoor', 'outdoor', 'both']);
+
+                return;
+            }
+            if (in_array($value, ['indoor', 'office'], true)) {
+                $p->whereIn('indoor_outdoor', ['indoor', 'both']);
+
+                return;
+            }
+            if (in_array($value, ['outdoor', 'garden', 'terrace'], true)) {
+                $p->whereIn('indoor_outdoor', ['outdoor', 'both']);
+
+                return;
+            }
+            $p->where('indoor_outdoor', $value);
+        });
+    }
+
+    /** Shop "Kits" chip vs catalog `bundle` rows. */
+    private function applyProductTypeFilter(Builder $query, string $value): void
+    {
+        $value = strtolower(trim($value));
+        if (in_array($value, ['kit', 'kits', 'bundle'], true)) {
+            $query->whereIn('product_type', ['kit', 'bundle']);
+
+            return;
+        }
+        $query->where('product_type', $value);
+    }
+
+    /**
+     * Shop sunlight chips vs stored values (bright_indirect / partial / full_sun).
+     * Search assist still sends `bright`; finder may send `indirect` / `direct`.
+     */
+    private function applySunlightFilter(Builder $query, string $value): void
+    {
+        $value = strtolower(trim($value));
+        $query->whereHas('plantProfile', function ($p) use ($value) {
+            if (in_array($value, ['bright', 'indirect', 'bright_indirect'], true)) {
+                $p->whereIn('sunlight', ['bright_indirect', 'partial']);
+
+                return;
+            }
+            if (in_array($value, ['direct', 'full_sun', 'fullsun'], true)) {
+                $p->whereIn('sunlight', ['full_sun', 'partial']);
+
+                return;
+            }
+            $p->where('sunlight', $value);
+        });
+    }
+
+    private function applyDifficultyFilter(Builder $query, string $value): void
+    {
+        $value = strtolower(trim($value));
+        $query->whereHas('plantProfile', function ($p) use ($value) {
+            if (in_array($value, ['easy', 'beginner'], true)) {
+                $p->where('difficulty_level', 'easy');
+
+                return;
+            }
+            if (in_array($value, ['moderate', 'medium', 'intermediate'], true)) {
+                $p->where('difficulty_level', 'moderate');
+
+                return;
+            }
+            if (in_array($value, ['advanced', 'expert', 'experienced'], true)) {
+                // Catalog currently has easy + moderate only; include both so Expert is not empty.
+                $p->whereIn('difficulty_level', ['moderate', 'advanced']);
+
+                return;
+            }
+            $p->where('difficulty_level', $value);
+        });
+    }
+
+    private function applyPetSafetyFilter(Builder $query, string $value): void
+    {
+        $value = strtolower(str_replace(['-', ' '], '_', trim($value)));
+        $query->whereHas('plantProfile', function ($p) use ($value) {
+            if (in_array($value, ['safe', 'pet_safe', 'petsafe', 'pet_friendly'], true)) {
+                $p->where('pet_safety', 'safe');
+
+                return;
+            }
+            if (in_array($value, ['toxic', 'unsafe', 'not_safe'], true)) {
+                $p->where('pet_safety', 'toxic');
+
+                return;
+            }
+            $p->where('pet_safety', $value);
+        });
     }
 }

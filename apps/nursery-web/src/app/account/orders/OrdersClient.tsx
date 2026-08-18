@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -13,6 +12,7 @@ import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -217,7 +217,7 @@ export function OrdersClient() {
                 <div className="mt-3 flex gap-3">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
                     {o.thumbnail ? (
-                      <Image src={o.thumbnail} alt="" fill className="object-cover" sizes="64px" />
+                      <SafeImage src={o.thumbnail} alt="" fill className="object-cover" sizes="64px" />
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">

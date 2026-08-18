@@ -7,9 +7,12 @@ void main() {
     expect(classifyHttpStatus(401).userMessage, contains('session'));
     expect(classifyHttpStatus(403).userMessage, contains('permission'));
     expect(classifyHttpStatus(429).kind, NetworkKind.rateLimited);
+    expect(classifyHttpStatus(429).kind, isNot(NetworkKind.offline));
+    expect(classifyHttpStatus(429).userMessage.toLowerCase(), isNot(contains('offline')));
     expect(classifyHttpStatus(503).kind, NetworkKind.apiUnavailable);
-    expect(classifyHttpStatus(503).userMessage, contains('temporarily unavailable'));
-    expect(classifyHttpStatus(500).userMessage, contains('our side'));
+    expect(classifyHttpStatus(503).userMessage, contains('GreenLeaf'));
+    expect(classifyHttpStatus(500).userMessage, contains('unavailable'));
+    expect(classifyHttpStatus(500).kind, NetworkKind.serverError);
   });
 
   test('QA-37 timeout Dio maps to apiTimeout', () {
@@ -35,6 +38,45 @@ void main() {
       null,
       'SocketException: Failed host lookup',
     );
-    expect(c.userMessage.toLowerCase(), contains('offline'));
+    expect(c.userMessage.toLowerCase(), contains('unavailable'));
+  });
+
+  test('real connection error is not confirmed offline', () {
+    final e = DioException(
+      requestOptions: RequestOptions(path: '/home'),
+      type: DioExceptionType.connectionError,
+      message: 'Failed host lookup: 10.0.2.2',
+    );
+    final c = classifyDioException(e);
+    expect(c.kind, NetworkKind.apiUnavailable);
+    expect(c.userMessage.toLowerCase(), isNot(contains("you're offline")));
+  });
+
+  test('DEBUG simulated offline still classifies as offline', () {
+    final e = DioException(
+      requestOptions: RequestOptions(path: '/home'),
+      type: DioExceptionType.connectionError,
+      message: 'Failed host lookup (simulated)',
+    );
+    expect(classifyDioException(e).kind, NetworkKind.offline);
+  });
+
+  test('healthy API does not keep a leftover saved-data banner', () {
+    expect(
+      shouldShowNetworkBanner(
+        kind: NetworkKind.online,
+        showBanner: false,
+        servingLocal: true,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldShowNetworkBanner(
+        kind: NetworkKind.apiUnavailable,
+        showBanner: true,
+        servingLocal: true,
+      ),
+      isTrue,
+    );
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:nursery_admin_mobile/core/api_client.dart';
+import 'package:nursery_admin_mobile/core/app_error.dart';
 import 'package:nursery_admin_mobile/core/refresh_coalescer.dart';
 import 'package:nursery_admin_mobile/models/models.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
@@ -52,7 +53,7 @@ class DashboardProvider extends ChangeNotifier {
                 recentOrders.length;
       }
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
     }
     loading = false;
     notifyListeners();
@@ -99,7 +100,7 @@ class OrdersProvider extends ChangeNotifier {
       final pag = result.meta?['pagination'] as Map?;
       lastPage = (pag?['last_page'] as num?)?.toInt() ?? 1;
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
       if (!keepList) orders = [];
     }
     loading = false;
@@ -117,7 +118,7 @@ class OrdersProvider extends ChangeNotifier {
         map: (d) => Map<String, dynamic>.from(d as Map),
       );
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
       if (!soft) detail = null;
     }
     loading = false;
@@ -139,7 +140,7 @@ class OrdersProvider extends ChangeNotifier {
       await loadDetail(id);
       return null;
     } catch (e) {
-      return e is ApiException ? e.userMessage : e.toString();
+      return sanitizeCaughtError(e);
     }
   }
 }
@@ -177,7 +178,7 @@ class InventoryProvider extends ChangeNotifier {
       );
       rows = result.data;
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
     }
     loading = false;
     notifyListeners();
@@ -195,7 +196,7 @@ class InventoryProvider extends ChangeNotifier {
       );
       selected = InventoryRow.fromJson(selectedDetail!);
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
     }
     loading = false;
     notifyListeners();
@@ -219,7 +220,7 @@ class InventoryProvider extends ChangeNotifier {
       );
       movements = result.data;
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
     }
     loading = false;
     notifyListeners();
@@ -250,7 +251,7 @@ class InventoryProvider extends ChangeNotifier {
       );
       return null;
     } catch (e) {
-      return e is ApiException ? e.userMessage : e.toString();
+      return sanitizeCaughtError(e);
     }
   }
 
@@ -301,7 +302,7 @@ class PurchasingProvider extends ChangeNotifier {
       );
       orders = result.data;
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
     }
     loading = false;
     notifyListeners();
@@ -318,7 +319,7 @@ class PurchasingProvider extends ChangeNotifier {
         map: (d) => Map<String, dynamic>.from(d as Map),
       );
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
       if (!soft) detail = null;
     }
     loading = false;
@@ -336,7 +337,7 @@ class PurchasingProvider extends ChangeNotifier {
       notifyListeners();
       return null;
     } catch (e) {
-      return e is ApiException ? e.userMessage : e.toString();
+      return sanitizeCaughtError(e);
     }
   }
 
@@ -353,7 +354,7 @@ class PurchasingProvider extends ChangeNotifier {
             .toList(),
       );
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
     }
     loading = false;
     notifyListeners();
@@ -372,7 +373,7 @@ class PurchasingProvider extends ChangeNotifier {
             .toList(),
       );
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
     }
     loading = false;
     notifyListeners();

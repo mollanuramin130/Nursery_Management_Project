@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:nursery_app/core/app_error.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_button.dart';
+import 'package:nursery_app/widgets/retry_button.dart';
+import 'package:nursery_app/widgets/support_contact_sheet.dart';
 
 class AppBadge extends StatelessWidget {
   const AppBadge({
@@ -231,11 +234,17 @@ class ErrorStateView extends StatelessWidget {
     this.message =
         'Something went wrong while connecting to the nursery. Please try again.',
     this.onRetry,
+    this.category,
+    this.retryCount = 0,
+    this.orderNumber,
   });
 
   final String title;
   final String message;
   final VoidCallback? onRetry;
+  final ErrorCategory? category;
+  final int retryCount;
+  final String? orderNumber;
 
   static String sanitize(String? raw) {
     if (raw == null || raw.trim().isEmpty) {
@@ -246,7 +255,7 @@ class ErrorStateView extends StatelessWidget {
         lower.contains('too many requests') ||
         lower.contains('rate_limited') ||
         lower.contains('rate limit')) {
-      return 'You tried too many times. Please wait about a minute, then try again.';
+      return 'Please wait a moment, then try again.';
     }
     if (lower.contains('exception') ||
         lower.contains('dio') ||
@@ -254,6 +263,10 @@ class ErrorStateView extends StatelessWidget {
         lower.contains('http') ||
         lower.contains('status code') ||
         lower.contains('stack') ||
+        lower.contains('sql') ||
+        lower.contains('password') ||
+        lower.contains('jwt') ||
+        lower.contains('rzp_') ||
         raw.length > 140) {
       return 'Something went wrong while connecting to the nursery. Please try again.';
     }
@@ -263,6 +276,9 @@ class ErrorStateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeMessage = sanitize(message);
+    final cat = category ?? ErrorCategory.temporaryNetwork;
+    final offerHelp = shouldOfferSupport(cat, retryCount: retryCount);
+    final unexpected = cat == ErrorCategory.unexpected;
 
     return Center(
       child: Padding(
@@ -275,13 +291,17 @@ class ErrorStateView extends StatelessWidget {
               Container(
                 width: 80,
                 height: 80,
-                decoration: const BoxDecoration(
-                  color: AppColors.errorSoft,
+                decoration: BoxDecoration(
+                  color: unexpected
+                      ? AppColors.primarySoft
+                      : AppColors.primarySoft,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.cloud_off_rounded,
-                  color: AppColors.error,
+                child: Icon(
+                  unexpected
+                      ? Icons.spa_rounded
+                      : Icons.cloud_off_rounded,
+                  color: AppColors.primary,
                   size: 36,
                 ),
               ),
@@ -299,10 +319,22 @@ class ErrorStateView extends StatelessWidget {
               ),
               if (onRetry != null) ...[
                 const SizedBox(height: AppSpace.xl),
-                AppButton(
+                RetryButton(
                   label: 'Try again',
                   onPressed: onRetry,
                   icon: Icons.refresh_rounded,
+                ),
+              ],
+              if (offerHelp) ...[
+                const SizedBox(height: AppSpace.sm),
+                AppButton(
+                  label: 'Need Help?',
+                  onPressed: () => showSupportContactSheet(
+                    context,
+                    orderNumber: orderNumber,
+                    payment: cat == ErrorCategory.payment,
+                  ),
+                  variant: AppButtonVariant.tertiary,
                 ),
               ],
             ],

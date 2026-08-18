@@ -2,25 +2,27 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- Two-leaf sprout, drawn inside the adaptive ~66dp safe zone. -->
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Customer seedling: botanical leaf in the adaptive safe zone. -->
     <path
-        android:fillColor="#C5DCCB"
-        android:pathData="M50,42
-            C36,38 28,52 38,66
-            C44,74 52,70 54,60
-            C56,50 56,44 50,42 Z" />
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M50,76 L50,46" />
     <path
-        android:fillColor="#E8F2EB"
-        android:pathData="M58,34
-            C76,38 82,56 66,72
-            C56,80 46,72 46,58
-            C46,44 50,34 58,34 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,48
+            C62,40 74,42 76,54
+            C78,66 66,74 50,78
+            C34,74 22,66 24,54
+            C26,42 38,40 50,48 Z" />
     <path
-        android:fillColor="#B7D0BE"
-        android:pathData="M52.4,70
-            C52.4,70 53,82 54,84
-            C55,82 55.6,70 55.6,70
-            C55.6,68.4 52.4,68.4 52.4,70 Z" />
+        android:strokeColor="#0C2417"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeAlpha="0.35"
+        android:fillColor="#00000000"
+        android:pathData="M50,50 Q50,62 50,74" />
 </vector>

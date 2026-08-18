@@ -314,8 +314,9 @@ class ApiClient {
     }
     if (e.type == DioExceptionType.connectionError ||
         (e.type == DioExceptionType.unknown && e.response == null)) {
+      final classified = classifyDioException(e);
       return ApiException(
-        "You're offline. Check your internet connection.",
+        classified.userMessage,
         statusCode: status,
       );
     }

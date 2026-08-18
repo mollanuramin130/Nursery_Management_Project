@@ -83,7 +83,7 @@ export function classifyHttpStatus(
     case 500:
       return {
         kind: "serverError",
-        userMessage: "Something went wrong on our side. Please try again.",
+        userMessage: "GreenLeaf server is temporarily unavailable. Please try again.",
         statusCode: status,
         retryable: true,
       };
@@ -92,7 +92,7 @@ export function classifyHttpStatus(
     case 504:
       return {
         kind: "apiUnavailable",
-        userMessage: "GreenLeaf is temporarily unavailable. Please try again.",
+        userMessage: "Unable to connect to GreenLeaf right now.",
         statusCode: status,
         retryable: true,
       };
@@ -110,14 +110,18 @@ export function sanitizeTechnical(raw?: string | null): string {
   if (!raw) return "";
   const lower = raw.toLowerCase();
   if (
-    lower.includes("socketexception") ||
-    lower.includes("failed host lookup") ||
-    lower.includes("network error") ||
-    lower.includes("econnrefused") ||
     lower.includes("php artisan") ||
     lower.includes("api_proxy_target")
   ) {
-    return "You're offline. Check your internet connection.";
+    return "Unable to connect to GreenLeaf right now.";
+  }
+  if (
+    lower.includes("socketexception") ||
+    lower.includes("failed host lookup") ||
+    lower.includes("network error") ||
+    lower.includes("econnrefused")
+  ) {
+    return "Connection temporarily unavailable.";
   }
   if (raw.length > 180) return "Something went wrong. Please try again.";
   return raw.trim();
@@ -126,21 +130,22 @@ export function sanitizeTechnical(raw?: string | null): string {
 export function bannerCopy(kind: NetworkKind): string {
   switch (kind) {
     case "offline":
-      return "You're offline · Reconnecting when possible";
+      return "You're offline";
     case "reconnecting":
     case "connecting":
-      return "Connection interrupted · Reconnecting…";
+      return "Checking connection…";
     case "apiUnavailable":
+      return "Unable to connect to GreenLeaf right now.";
     case "serverError":
-      return "GreenLeaf is temporarily unavailable · Retrying…";
+      return "GreenLeaf server is temporarily unavailable.";
     case "apiTimeout":
-      return "Connection is slow · Still trying…";
+      return "Connection is taking too long.";
     case "rateLimited":
       return "Too many requests · Please wait a moment";
     case "authExpired":
       return "Your session has expired";
     default:
-      return "Connection interrupted · Reconnecting…";
+      return "Unable to refresh.";
   }
 }
 
@@ -165,7 +170,7 @@ export function classifyTransport(opts: {
   }
   return {
     kind: "apiUnavailable",
-    userMessage: "GreenLeaf is temporarily unavailable. Please try again.",
+    userMessage: "Unable to connect to GreenLeaf right now.",
     retryable: true,
   };
 }

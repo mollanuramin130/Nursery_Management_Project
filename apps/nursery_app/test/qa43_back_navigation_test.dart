@@ -16,8 +16,8 @@ import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/providers/network_status_provider.dart';
 import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/providers/wishlist_provider.dart';
+import 'package:lottie/lottie.dart';
 import 'package:nursery_app/screens/splash_screen.dart';
-import 'package:nursery_app/widgets/brand_mark.dart';
 import 'package:provider/provider.dart';
 
 /// QA-43 — navigation / splash / icon configuration regressions.
@@ -149,9 +149,8 @@ void main() {
       final router = await pumpRouter(tester);
       router.go('/account');
       await tester.pump();
-      router.push('/account/profile');
+      router.push('/account/reviews');
       await tester.pump();
-
       expect(router.canPop(), isTrue);
       router.pop();
       await tester.pump();
@@ -219,9 +218,10 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(GreenLeafBrandMark), findsOneWidget);
+      expect(find.byType(Lottie), findsOneWidget);
       expect(find.text('GreenLeaf'), findsOneWidget);
-      expect(find.text('Nursery'), findsOneWidget);
+      expect(find.text('Grow Better. Live Greener.'), findsOneWidget);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
       expect(finished, isTrue);
     });
@@ -236,6 +236,7 @@ void main() {
           ),
         ),
       );
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
       expect(finished, isTrue);
     });
@@ -243,8 +244,45 @@ void main() {
     test('QA-43-011 splash is not an API gate (policy)', () {
       final src = File('lib/screens/splash_screen.dart').readAsStringSync();
       expect(src.contains('ApiClient'), isFalse);
+      expect(src.contains('CatalogRepository'), isFalse);
       expect(src.contains('minDisplay'), isTrue);
+      expect(src.contains('maxDisplay'), isTrue);
       expect(src.contains('must not wait for API'), isTrue);
+    });
+
+    testWidgets('QA-43-015 splash respects maxDisplay even if minDisplay is long',
+        (tester) async {
+      var finished = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GreenLeafSplashScreen(
+            minDisplay: const Duration(seconds: 30),
+            maxDisplay: const Duration(milliseconds: 40),
+            onFinished: () => finished = true,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      expect(finished, isTrue);
+    });
+
+    testWidgets('QA-43-016 reduced motion still reveals the wordmark',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: GreenLeafSplashScreen(
+              minDisplay: const Duration(milliseconds: 20),
+              onFinished: () {},
+            ),
+          ),
+        ),
+      );
+      expect(find.text('GreenLeaf'), findsOneWidget);
+      expect(find.text('Grow Better. Live Greener.'), findsOneWidget);
+      expect(find.byType(Lottie), findsOneWidget);
     });
   });
 
@@ -269,6 +307,14 @@ void main() {
         expect(f.existsSync(), isTrue, reason: d);
         expect(f.lengthSync(), greaterThan(200));
       }
+    });
+
+    test('QA-43-017 customer adaptive mark is a seedling, not a shield', () {
+      final xml = File(
+        'android/app/src/main/res/drawable/ic_launcher_foreground.xml',
+      ).readAsStringSync();
+      expect(xml.contains('seedling'), isTrue);
+      expect(xml.contains('shield'), isFalse);
     });
   });
 }

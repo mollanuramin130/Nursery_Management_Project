@@ -7,6 +7,7 @@ import 'package:nursery_admin_mobile/core/api_client.dart';
 import 'package:nursery_admin_mobile/core/back_navigation.dart';
 import 'package:nursery_admin_mobile/core/session_storage.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
+import 'package:lottie/lottie.dart';
 import 'package:nursery_admin_mobile/screens/splash_screen.dart';
 
 void main() {
@@ -44,10 +45,35 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(GreenLeafOpsMark), findsOneWidget);
+      expect(find.byType(Lottie), findsOneWidget);
       expect(find.text('GreenLeaf'), findsOneWidget);
-      expect(find.text('Operations'), findsOneWidget);
+      expect(find.text('Admin'), findsOneWidget);
+      expect(find.text('Manage. Monitor. Grow.'), findsOneWidget);
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
+      expect(finished, isTrue);
+    });
+
+    test('splash is not an API gate (policy)', () {
+      final src = File('lib/screens/splash_screen.dart').readAsStringSync();
+      expect(src.contains('ApiClient'), isFalse);
+      expect(src.contains('never waits on API'), isTrue);
+      expect(src.contains('maxDisplay'), isTrue);
+    });
+
+    testWidgets('maxDisplay prevents an indefinite hang', (tester) async {
+      var finished = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GreenLeafOpsSplashScreen(
+            minDisplay: const Duration(seconds: 30),
+            maxDisplay: const Duration(milliseconds: 40),
+            onFinished: () => finished = true,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
       expect(finished, isTrue);
     });
 
@@ -71,6 +97,14 @@ void main() {
         expect(f.existsSync(), isTrue, reason: d);
         expect(f.lengthSync(), greaterThan(200));
       }
+    });
+
+    test('admin adaptive mark is a shield, not the customer seedling', () {
+      final xml = File(
+        'android/app/src/main/res/drawable/ic_launcher_foreground.xml',
+      ).readAsStringSync();
+      expect(xml.contains('shield'), isTrue);
+      expect(xml.contains('seedling'), isFalse);
     });
   });
 }

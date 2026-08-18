@@ -25,6 +25,10 @@ void main() {
       offline.localBannerSuffix(NetworkKind.apiUnavailable),
       contains('saved data'),
     );
+    expect(
+      offline.localBannerSuffix(NetworkKind.apiUnavailable)!.toLowerCase(),
+      isNot(contains("you're offline")),
+    );
   });
 
   test('QA-42A quiet syncing alone does not imply offline banner text', () {
@@ -35,13 +39,13 @@ void main() {
     expect(offline.localBannerSuffix(NetworkKind.online), isNull);
   });
 
-  test('QA-42A remote success clears degraded and may show back online', () {
+  test('QA-42A remote success clears degraded without a back-online flash', () {
     final offline = OfflineController();
     offline.markDegraded(DataSourceKind.cache);
     offline.markRemoteOk();
     expect(offline.servingLocal, isFalse);
-    expect(offline.showBackOnline, isTrue);
-    expect(offline.localBannerSuffix(NetworkKind.online), 'Back online');
+    expect(offline.showBackOnline, isFalse);
+    expect(offline.localBannerSuffix(NetworkKind.online), isNull);
   });
 
   test('QA-42A mock-only marks degraded', () {

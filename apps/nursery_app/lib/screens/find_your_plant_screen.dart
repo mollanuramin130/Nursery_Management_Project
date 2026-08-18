@@ -195,7 +195,41 @@ class _FindYourPlantScreenState extends State<FindYourPlantScreen> {
                   results: _results!,
                   approximate: _approximate,
                   onAgain: _reset,
-                  onCatalog: () => context.push('/catalog?product_type=plant'),
+                  onCatalog: () {
+                    final loc = (_answers['location'] as String?) ?? '';
+                    final sun = (_answers['sunlight'] as String?) ?? '';
+                    final water = (_answers['watering'] as String?) ?? '';
+                    final exp = (_answers['experience'] as String?) ?? '';
+                    final params = <String, String>{'product_type': 'plant'};
+                    if (loc == 'indoor' || loc == 'office') {
+                      params['indoor_outdoor'] = 'indoor';
+                    } else if (loc == 'garden' || loc == 'terrace') {
+                      params['indoor_outdoor'] = 'outdoor';
+                    } else if (loc == 'balcony') {
+                      params['indoor_outdoor'] = 'both';
+                    }
+                    if (sun.isNotEmpty) params['sunlight'] = sun;
+                    if (water == 'rarely') {
+                      params['water_requirement'] = 'low';
+                    } else if (water == 'weekly') {
+                      params['water_requirement'] = 'medium';
+                    } else if (water == 'often') {
+                      params['water_requirement'] = 'high';
+                    }
+                    if (exp == 'beginner') {
+                      params['difficulty_level'] = 'easy';
+                    } else if (exp == 'intermediate') {
+                      params['difficulty_level'] = 'moderate';
+                    } else if (exp == 'experienced') {
+                      params['difficulty_level'] = 'advanced';
+                    }
+                    params['sort'] = 'popular';
+                    final qs = params.entries
+                        .map((e) =>
+                            '${e.key}=${Uri.encodeQueryComponent(e.value)}')
+                        .join('&');
+                    context.push('/catalog?$qs');
+                  },
                 )
               : _Question(
                   stepIndex: _step,

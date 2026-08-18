@@ -48,7 +48,7 @@ abstract final class AuthMessages {
         lower.contains('too many attempts') ||
         lower.contains('too many requests') ||
         lower.contains('rate_limited')) {
-      return 'You tried too many times. Please wait about a minute, then try again.';
+      return 'Please wait a moment, then try again.';
     }
 
     if (statusCode == 409 || lower.contains('already registered')) {

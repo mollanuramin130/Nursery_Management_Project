@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ('Beginner plants', '/catalog?difficulty_level=easy&product_type=plant'),
     ('Low light', '/catalog?sunlight=low&product_type=plant'),
     ('Air purifying', '/catalog?q=air%20purifying'),
-    ('Balcony', '/catalog?indoor_outdoor=outdoor&product_type=plant'),
+    ('Balcony', '/catalog?indoor_outdoor=both&product_type=plant'),
   ];
 
   @override

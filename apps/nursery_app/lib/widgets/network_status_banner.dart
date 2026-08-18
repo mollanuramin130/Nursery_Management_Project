@@ -14,14 +14,21 @@ class NetworkStatusBanner extends StatelessWidget {
     final net = context.watch<NetworkStatusProvider>();
     final offlineCtrl = context.watch<OfflineController>();
 
-    // QA-43: one compact degraded banner. Never "online" / "back online" /
-    // quiet cache peeks / reconnecting probes.
-    final show = net.showBanner || offlineCtrl.servingLocal;
+    final show = shouldShowNetworkBanner(
+      kind: net.kind,
+      showBanner: net.showBanner,
+      servingLocal: offlineCtrl.servingLocal,
+    );
     if (!show) return const SizedBox.shrink();
 
-    const text = "You're offline · Showing saved data";
-    final bg = AppColors.warningSoft;
-    final fg = AppColors.warning;
+    final text = statusBannerText(
+      kind: net.kind,
+      servingLocal: offlineCtrl.servingLocal,
+      message: net.message,
+    );
+    final confirmedOffline = net.kind == NetworkKind.offline;
+    final bg = confirmedOffline ? AppColors.warningSoft : AppColors.primarySoft;
+    final fg = confirmedOffline ? AppColors.warning : AppColors.primaryDeep;
 
     return Semantics(
       liveRegion: true,
@@ -42,18 +49,18 @@ class NetworkStatusBanner extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    net.kind == NetworkKind.offline
+                    confirmedOffline
                         ? Icons.wifi_off_rounded
                         : Icons.cloud_off_outlined,
                     size: 18,
                     color: fg,
                   ),
                   const SizedBox(width: AppSpace.sm),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       text,
                       style: TextStyle(
-                        color: AppColors.warning,
+                        color: fg,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),

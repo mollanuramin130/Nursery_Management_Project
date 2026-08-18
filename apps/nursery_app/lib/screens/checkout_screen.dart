@@ -520,9 +520,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           if (!mounted) return;
           AppFeedback.error(
             context,
-            e is RazorpayCheckoutFailed
-                ? e.message
-                : (e is ApiException ? e.message : 'Payment could not be completed'),
+            'Payment could not be completed.',
           );
           setState(() => phase = _CheckoutPhase.finishing);
           context.go(

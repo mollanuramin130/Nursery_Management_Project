@@ -128,7 +128,7 @@ class ApiResponse
             404 => 'Not found',
             409 => 'Conflict',
             422 => 'Validation failed',
-            429 => 'Please wait about a minute, then try again.',
+            429 => 'Please wait a moment, then try again.',
             default => 'Request failed',
         };
     }
@@ -138,17 +138,17 @@ class ApiResponse
         $path = (string) request()->path();
 
         if (request()->isMethod('POST') && preg_match('#(^|/)orders$#', $path) === 1) {
-            return 'You tried to place an order too many times. Please wait about a minute, then try again.';
+            return 'You tried to place an order too many times. Please wait a moment, then try again.';
         }
 
         if (str_contains($path, 'auth/login') || str_contains($path, 'auth/register')) {
-            return 'Too many sign-in attempts. Please wait about a minute, then try again.';
+            return 'Please wait a moment, then try signing in again.';
         }
 
         if (str_contains($path, 'checkout')) {
-            return 'Checkout is temporarily limited. Please wait about a minute, then try again.';
+            return 'Checkout is temporarily limited. Please wait a moment, then try again.';
         }
 
-        return 'You\'re doing that too quickly. Please wait about a minute, then try again.';
+        return 'You\'re doing that too quickly. Please wait a moment, then try again.';
     }
 }

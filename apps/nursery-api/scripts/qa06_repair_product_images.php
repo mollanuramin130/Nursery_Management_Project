@@ -14,10 +14,12 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 use Illuminate\Support\Facades\DB;
 
 $replacements = [
-    // QA-30: do not map Tulsi's dead URL onto the shared Aloe/succulent asset.
-    '1466692476866-aef1dfb1e735' => 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=1000',
-    '1593482892290-f54927ae2b7a' => 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1000',
-    '1463936575829-25148e1670d9' => 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1000',
+    '1466692476866-aef1dfb1e735' => 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1000',
+    '1593482892290-f54927ae2b7a' => 'https://images.unsplash.com/photo-1565626929866-e11c64e607cf?w=1000',
+    '1593691509543-c55fb32e7356' => 'https://images.unsplash.com/photo-1466781783364-36c955e42a7f?w=1000',
+    '1463936575829-25148e1670d9' => 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000',
+    '1470058869958-2a77ade41aa8' => 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?w=1000',
+    '1512428813834-c702c6dc18c9' => 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1000',
 ];
 
 $updated = 0;

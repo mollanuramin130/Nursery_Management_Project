@@ -8,17 +8,30 @@ import {
   authRateLimitMessage,
   authUserMessage,
   formatAuthCountdown,
-  getAuthRetryAfterSeconds,
   isAuthRateLimited,
+  resolveAuthLockSeconds,
 } from "@/lib/auth-messages";
+import { isPasswordValid, PASSWORD_HINT } from "@/lib/password-rules";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
 export default function ForgotPasswordPage() {
   const forgotPassword = useAuthStore((s) => s.forgotPassword);
+  const sendOtp = useAuthStore((s) => s.sendOtp);
+  const verifyOtp = useAuthStore((s) => s.verifyOtp);
+  const resetPasswordViaMobile = useAuthStore((s) => s.resetPasswordViaMobile);
   const loading = useAuthStore((s) => s.loading);
   const toast = useToastStore((s) => s.push);
+  const [mode, setMode] = useState<"email" | "mobile">("mobile");
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [mobileStep, setMobileStep] = useState<"input" | "otp" | "newpw" | "done">("input");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpVerifiedToken, setOtpVerifiedToken] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
   const [sent, setSent] = useState(false);
   const [unlockAt, setUnlockAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -38,10 +51,76 @@ export default function ForgotPasswordPage() {
     return () => window.clearInterval(id);
   }, [unlockAt]);
 
+  async function handleMobileSendOtp() {
+    if (otpSending) return;
+    const m = mobile.trim();
+    if (!/^\+?\d{10,15}$/.test(m.replace(/\s/g, ""))) {
+      toast("Enter a valid mobile number", "error");
+      return;
+    }
+    setOtpSending(true);
+    try {
+      await sendOtp(m, "reset");
+      setMobileStep("otp");
+      toast("OTP sent to your mobile");
+    } catch (err) {
+      if (isAuthRateLimited(err)) {
+        const seconds = resolveAuthLockSeconds(err);
+        setUnlockAt(Date.now() + seconds * 1000);
+        toast(authRateLimitMessage(seconds), "error");
+        return;
+      }
+      toast(authUserMessage(err, "Could not send OTP"), "error");
+    } finally {
+      setOtpSending(false);
+    }
+  }
+
+  async function handleMobileVerifyOtp() {
+    if (otpVerifying) return;
+    setOtpVerifying(true);
+    try {
+      const res = await verifyOtp(mobile.trim(), otpCode.trim(), "reset");
+      setOtpVerifiedToken(res.otp_verified_token);
+      setMobileStep("newpw");
+      toast("Mobile verified");
+    } catch (err) {
+      toast(authUserMessage(err, "Verification failed"), "error");
+    } finally {
+      setOtpVerifying(false);
+    }
+  }
+
+  async function handleMobileResetPassword(e: FormEvent) {
+    e.preventDefault();
+    if (loading || isLocked) return;
+    if (!isPasswordValid(newPw)) { toast(PASSWORD_HINT, "error"); return; }
+    if (newPw !== confirmPw) { toast("Passwords do not match", "error"); return; }
+    try {
+      await resetPasswordViaMobile(mobile.trim(), otpVerifiedToken, newPw, confirmPw);
+      setMobileStep("done");
+      toast("Password reset successful");
+    } catch (err) {
+      if (isAuthRateLimited(err)) {
+        const seconds = resolveAuthLockSeconds(err);
+        setUnlockAt(Date.now() + seconds * 1000);
+        toast(authRateLimitMessage(seconds), "error");
+        return;
+      }
+      toast(authUserMessage(err, "Reset failed"), "error");
+    }
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (isLocked) {
-      toast(authRateLimitMessage(lockSeconds), "error");
+    if (mode === "mobile") {
+      if (mobileStep === "input") { handleMobileSendOtp(); return; }
+      if (mobileStep === "otp") { handleMobileVerifyOtp(); return; }
+      if (mobileStep === "newpw") { handleMobileResetPassword(e); return; }
+      return;
+    }
+    if (loading || isLocked) {
+      if (isLocked) toast(authRateLimitMessage(lockSeconds), "error");
       return;
     }
     try {
@@ -50,7 +129,7 @@ export default function ForgotPasswordPage() {
       toast("If that email exists, a reset link was sent.");
     } catch (err) {
       if (isAuthRateLimited(err)) {
-        const seconds = getAuthRetryAfterSeconds(err) ?? 60;
+        const seconds = resolveAuthLockSeconds(err);
         setUnlockAt(Date.now() + seconds * 1000);
         toast(authRateLimitMessage(seconds), "error");
         return;

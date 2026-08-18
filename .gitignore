@@ -2,3 +2,7 @@
 api_kay/
 *.pem
 .DS_Store
+
+# QA-43 binary evidence
+docs/qa43-vivo/
+docs/qa43-evidence/

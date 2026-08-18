@@ -1,0 +1,55 @@
+-- Direct upload.wikimedia.org URLs (no Special:FilePath redirect).
+-- Wikimedia FilePath 403/429s Dart/Flutter; these originals/thumbs are species-correct.
+SET NAMES utf8mb4;
+
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Spathiphyllum_cochlearispathum_RTBG.jpg/960px-Spathiphyllum_cochlearispathum_RTBG.jpg', alt='Peace lily', updated_at=NOW() WHERE product_id=103 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/5/5b/Dypsis_lutescens.jpg', alt='Areca palm', updated_at=NOW() WHERE product_id=104 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/5/5a/Crassula_ovata_700.jpg', alt='Jade plant', updated_at=NOW() WHERE product_id=105 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Rosa_chinensis.jpg/960px-Rosa_chinensis.jpg', alt='China rose', updated_at=NOW() WHERE product_id=106 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Tulsi_or_Tulasi_Holy_basil.jpg/960px-Tulsi_or_Tulasi_Holy_basil.jpg', alt='Tulsi', updated_at=NOW() WHERE product_id=107 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Mangoes_%28Magnifera_indica%29_from_India.jpg/960px-Mangoes_%28Magnifera_indica%29_from_India.jpg', alt='Mango', updated_at=NOW() WHERE product_id=109 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/2/2f/Tagetes_x_erecta1.jpg', alt='Marigold', updated_at=NOW() WHERE product_id=110 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Zamioculcas_zamiifolia_1.jpg/960px-Zamioculcas_zamiifolia_1.jpg', alt='ZZ plant', updated_at=NOW() WHERE product_id=111 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Aloe_vera.jpg/960px-Aloe_vera.jpg', alt='Aloe vera', updated_at=NOW() WHERE product_id=112 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/f/f2/Chlorophytum_comosum.jpg', alt='Spider plant', updated_at=NOW() WHERE product_id=113 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Ficus_elastica_leaves_02.JPG/960px-Ficus_elastica_leaves_02.JPG', alt='Rubber plant', updated_at=NOW() WHERE product_id=114 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/3/30/Boston_Fern_%282873392811%29.png', alt='Boston fern', updated_at=NOW() WHERE product_id=115 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/6/6e/Lavandula_angustifolia.jpg', alt='Lavender', updated_at=NOW() WHERE product_id=116 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/0/05/Minze.jpg', alt='Mint leaves', updated_at=NOW() WHERE product_id=117 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Cymbopogon_citratus.jpg/960px-Cymbopogon_citratus.jpg', alt='Lemongrass', updated_at=NOW() WHERE product_id=118 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Hibiscus_Brilliant.jpg/960px-Hibiscus_Brilliant.jpg', alt='Hibiscus', updated_at=NOW() WHERE product_id=119 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Bougainvillea_closeup.jpg/960px-Bougainvillea_closeup.jpg', alt='Bougainvillea', updated_at=NOW() WHERE product_id=120 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/e/e4/Lemon.jpg', alt='Lemon', updated_at=NOW() WHERE product_id=123 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/3/3a/Psidium_guajava_fruit.jpg', alt='Guava', updated_at=NOW() WHERE product_id=124 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/0/01/Coriandrum_sativum.jpg', alt='Coriander', updated_at=NOW() WHERE product_id=125 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/b/bf/Colpfl05.jpg', alt='Croton', updated_at=NOW() WHERE product_id=128 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Syngonium_podophyllum.jpg/960px-Syngonium_podophyllum.jpg', alt='Arrowhead plant', updated_at=NOW() WHERE product_id=130 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/0/07/Aglaonema_commutatum2.jpg', alt='Chinese evergreen', updated_at=NOW() WHERE product_id=131 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/d/d9/Ficus_lyrata.jpg', alt='Fiddle leaf fig', updated_at=NOW() WHERE product_id=132 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Dracaena_sanderiana_2.jpg/960px-Dracaena_sanderiana_2.jpg', alt='Lucky bamboo', updated_at=NOW() WHERE product_id=133 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/6/64/Adenium_obesum.jpg', alt='Desert rose', updated_at=NOW() WHERE product_id=134 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/e/ec/Jasminum_sambac.jpg', alt='Mogra jasmine', updated_at=NOW() WHERE product_id=135 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/7/77/Ixora_coccinea.jpg', alt='Ixora', updated_at=NOW() WHERE product_id=136 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Curry_Trees.jpg/960px-Curry_Trees.jpg', alt='Curry leaf', updated_at=NOW() WHERE product_id=137 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Neem_Tree_in_Rajasthan%2C_India.jpg/960px-Neem_Tree_in_Rajasthan%2C_India.jpg', alt='Neem', updated_at=NOW() WHERE product_id=138 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/2/2e/DrumstickFlower.jpg', alt='Moringa / drumstick', updated_at=NOW() WHERE product_id=139 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/5/5d/Pomegranate.jpg', alt='Pomegranate', updated_at=NOW() WHERE product_id=140 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Carica_papaya.jpg/960px-Carica_papaya.jpg', alt='Papaya', updated_at=NOW() WHERE product_id=141 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/PortulacaGrandiflora.jpg/960px-PortulacaGrandiflora.jpg', alt='Moss rose', updated_at=NOW() WHERE product_id=142 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Coleus_scutellarioides.jpg/960px-Coleus_scutellarioides.jpg', alt='Coleus', updated_at=NOW() WHERE product_id=143 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/a/a8/Anthurium_andraeanum.jpg', alt='Anthurium flamingo flower', updated_at=NOW() WHERE product_id=144 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Kalanchoe_blossfeldiana.jpg/960px-Kalanchoe_blossfeldiana.jpg', alt='Kalanchoe', updated_at=NOW() WHERE product_id=145 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/f/f5/Compost.jpg', alt='Vermicompost / compost', updated_at=NOW() WHERE product_id=301 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/2/2b/Fertilizer.jpg', alt='NPK fertilizer', updated_at=NOW() WHERE product_id=302 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Seaweed.jpg/960px-Seaweed.jpg', alt='Seaweed extract', updated_at=NOW() WHERE product_id=304 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/c/cd/Cocos_nucifera.jpg', alt='Cocopeat from coconut fibre', updated_at=NOW() WHERE product_id=401 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/0/03/Potting_soil.jpg', alt='Potting mix', updated_at=NOW() WHERE product_id=402 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/5/5a/Perlite.jpg', alt='Cactus succulent mix', updated_at=NOW() WHERE product_id=403 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/1/15/Pruning_shears.jpg', alt='Garden pruner', updated_at=NOW() WHERE product_id=501 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Gloves.jpg/960px-Gloves.jpg', alt='Garden gloves', updated_at=NOW() WHERE product_id=504 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/9/9e/Bamboo.jpg', alt='Plant support sticks', updated_at=NOW() WHERE product_id=601 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Sphagnum_moss.jpg/960px-Sphagnum_moss.jpg', alt='Moss stick', updated_at=NOW() WHERE product_id=602 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/f/f1/Spray_bottle.jpg', alt='Plant mister', updated_at=NOW() WHERE product_id=603 AND is_primary=1;
+UPDATE product_images SET url='https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Echeveria_elegans_-_1.png/960px-Echeveria_elegans_-_1.png', alt='Succulent desk kit', updated_at=NOW() WHERE product_id=703 AND is_primary=1;
+
+UPDATE products SET name='Tulsi Holy Basil', updated_at=NOW() WHERE id=107 AND name='Tulsi (Holy Basil)';

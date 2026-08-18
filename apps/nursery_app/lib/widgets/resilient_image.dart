@@ -54,6 +54,13 @@ class ResilientNetworkImage extends StatelessWidget {
       height: height,
       fit: fit,
       memCacheWidth: memCacheWidth,
+      // Wikimedia blocks the default Dart User-Agent (403/429) and FilePath
+      // redirects. Browser-like headers let upload.wikimedia.org images load.
+      httpHeaders: const {
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 12; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+      },
       placeholder: (_, __) => _Placeholder(width: width, height: height),
       errorWidget: (_, __, ___) => _Fallback(width: width, height: height),
     );

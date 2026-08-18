@@ -41,12 +41,13 @@ export default function LoginClient() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (apiHealth.status === "down") {
-      setError(apiHealth.detail);
+    if (loading || apiHealth.status === "down") {
+      if (apiHealth.status === "down") setError(apiHealth.detail);
       return;
     }
     try {
-      await login(email.trim(), password);
+      const ok = await login(email.trim(), password);
+      if (!ok) return;
       push("Signed in", "success");
       router.replace(safeNext);
     } catch (err) {

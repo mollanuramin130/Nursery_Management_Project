@@ -11,6 +11,7 @@ import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/app_feedback.dart';
 import 'package:nursery_app/widgets/resilient_image.dart';
 import 'package:nursery_app/widgets/skeletons.dart';
+import 'package:nursery_app/widgets/support_contact_sheet.dart';
 import 'package:nursery_app/widgets/ui_kit.dart';
 import 'package:provider/provider.dart';
 
@@ -135,14 +136,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       AppFeedback.info(context, 'Payment cancelled');
     } catch (e) {
       if (!mounted) return;
-      AppFeedback.error(
-        context,
-        e is ApiException
-            ? e.message
-            : (e is RazorpayCheckoutFailed
-                  ? e.message
-                  : 'Unable to retry payment'),
-      );
+      AppFeedback.error(context, 'Payment could not be confirmed');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -661,7 +655,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                   widget.paymentPending
                               ? 'Complete payment to confirm. Your cart remains available if you cancel this unpaid order.'
                               : order.status == 'PAYMENT_FAILED'
-                              ? 'Retry payment or return to cart. No charge was confirmed.'
+                              ? 'Payment could not be completed. No charge is confirmed until GreenLeaf verifies it.'
                               : order.status == 'CONFIRMED'
                               ? 'Thank you for your purchase! ${order.orderNumber} · ${money(order.grandTotal)}'
                               : 'Order ${order.orderNumber} · ${money(order.grandTotal)}',
@@ -677,9 +671,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                             child: Text(
                               _busy
                                   ? 'Opening…'
-                                  : 'Pay ${money(order.grandTotal)}',
+                                  : order.status == 'PAYMENT_FAILED'
+                                      ? 'Try Again'
+                                      : 'Pay ${money(order.grandTotal)}',
                             ),
                           ),
+                          if (order.status == 'PAYMENT_FAILED') ...[
+                            const SizedBox(height: AppSpace.sm),
+                            TextButton(
+                              onPressed: () => showSupportContactSheet(
+                                context,
+                                orderNumber: order.orderNumber,
+                                payment: true,
+                              ),
+                              child: const Text('Contact Support'),
+                            ),
+                          ],
                         ],
                       ],
                     ),

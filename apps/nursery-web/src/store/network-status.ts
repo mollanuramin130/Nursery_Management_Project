@@ -19,9 +19,7 @@ function computeShow(kind: NetworkKind) {
     kind === "offline" ||
     kind === "apiUnavailable" ||
     kind === "apiTimeout" ||
-    kind === "serverError" ||
-    kind === "reconnecting" ||
-    kind === "connecting"
+    kind === "serverError"
   );
 }
 
@@ -66,7 +64,7 @@ export const useNetworkStatusStore = create<NetworkState>((set, get) => ({
       set({
         kind: "reconnecting",
         message: bannerCopy("reconnecting"),
-        showBanner: true,
+        showBanner: false,
       });
     }
   },
@@ -75,6 +73,6 @@ export const useNetworkStatusStore = create<NetworkState>((set, get) => ({
     set({
       kind: "reconnecting",
       message: bannerCopy("reconnecting"),
-      showBanner: true,
+      showBanner: false,
     }),
 }));

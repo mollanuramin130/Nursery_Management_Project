@@ -70,6 +70,11 @@ class CartProvider extends ChangeNotifier {
         notifyListeners();
         return;
       } catch (e) {
+        if (_isRateLimited(e)) {
+          loading = false;
+          notifyListeners();
+          return;
+        }
         if (!_isTransportOrServer(e)) {
           error = e is ApiException
               ? e.message
@@ -132,6 +137,11 @@ class CartProvider extends ChangeNotifier {
       await _persistCart();
       notifyListeners();
     } on ApiException catch (e) {
+      if (_isRateLimited(e)) {
+        message = 'Please wait a moment, then try again.';
+        notifyListeners();
+        return;
+      }
       if (_isTransportOrServer(e)) {
         await _localAdd(productId, quantity: quantity);
         return;
@@ -472,6 +482,14 @@ class CartProvider extends ChangeNotifier {
     });
   }
 
+  bool _isRateLimited(Object e) {
+    if (e is ApiException) return e.statusCode == 429;
+    if (e is DioException) {
+      return classifyDioException(e).kind == NetworkKind.rateLimited;
+    }
+    return false;
+  }
+
   bool _isTransportOrServer(Object e) {
     if (e is DioException) {
       final c = classifyDioException(e);
@@ -483,7 +501,7 @@ class CartProvider extends ChangeNotifier {
     if (e is ApiException) {
       final code = e.statusCode;
       if (code == null) return true;
-      return code >= 500 || code == 408 || code == 429;
+      return code >= 500 || code == 408;
     }
     return true;
   }

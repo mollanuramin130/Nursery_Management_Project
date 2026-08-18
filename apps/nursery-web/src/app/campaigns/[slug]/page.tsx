@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Badge } from "@/components/ui/Badge";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { serverGet } from "@/lib/server-api";
 import type { CampaignSummary, ProductSummary } from "@/lib/types";
 
@@ -57,7 +57,7 @@ export default async function CampaignPage({
     <>
       <section className="relative min-h-[46vh] overflow-hidden text-white">
         {hero ? (
-          <Image src={hero} alt="" fill priority className="object-cover" sizes="100vw" />
+          <SafeImage src={hero} alt="" fill priority className="object-cover" sizes="100vw" />
         ) : (
           <div className="absolute inset-0 bg-[var(--color-primary-deep)]" />
         )}

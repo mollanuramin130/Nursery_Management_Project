@@ -25,8 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
         ]);
 
-        // Baseline DoS protection for all API routes (auth/payment keep stricter route throttles).
-        $middleware->throttleApi('120,1');
+        // Named limiter `api` — env-aware ceilings in config/throttling.php (local/testing relaxed).
+        $middleware->throttleApi();
 
         $middleware->alias([
             'optional.jwt' => \App\Shared\Http\Middleware\OptionalJwtAuth::class,

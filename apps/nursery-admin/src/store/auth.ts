@@ -14,10 +14,12 @@ type AuthState = {
   bootstrapped: boolean;
   loading: boolean;
   bootstrap: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearSession: () => void;
 };
+
+let loginInFlight = false;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -53,8 +55,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (email, password) => {
+    if (loginInFlight || get().loading) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[AUTH] duplicate login prevented");
+      }
+      return false;
+    }
+    loginInFlight = true;
     set({ loading: true });
     try {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[AUTH] login request started");
+      }
       await loginRequest(email, password);
       storage.clearLegacyAuthTokens();
 
@@ -65,7 +77,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       set({ user: me.data });
       void registerAdminPushDevice();
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[AUTH] login request completed");
+      }
+      return true;
     } finally {
+      loginInFlight = false;
       set({ loading: false });
     }
   },

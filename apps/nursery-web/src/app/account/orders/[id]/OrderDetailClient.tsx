@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -13,11 +12,13 @@ import { useCartStore } from "@/store/cart";
 import { useToastStore } from "@/store/toast";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { cn } from "@/lib/cn";
 import { ORDER_STATUS_LABELS, orderStatusLabel, orderStatusTone } from "@/lib/order-status";
 import { paymentStatusLabel } from "@/lib/payment-status";
+import { SupportContactDialog } from "@/components/error/SupportContactDialog";
 
 const CANCEL_REASONS = [
   { code: "changed_mind", label: "Changed my mind" },
@@ -301,6 +302,7 @@ export function OrderDetailClient() {
               <Button size="sm" disabled={busy} onClick={() => void retryPayment()}>
                 {busy ? "Opening…" : "Try again"}
               </Button>
+              <PaymentSupportButton orderNumber={order.order_number} />
               <Link
                 href="/cart"
                 className="inline-flex min-h-10 items-center rounded-[var(--radius-full)] bg-[var(--color-secondary-soft)] px-3.5 text-sm font-semibold"
@@ -519,7 +521,7 @@ export function OrderDetailClient() {
               <li key={item.id} className="flex gap-3">
                 <div className="relative h-16 w-16 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
                   {item.thumbnail_url ? (
-                    <Image src={item.thumbnail_url} alt="" fill className="object-cover" sizes="64px" />
+                    <SafeImage src={item.thumbnail_url} alt="" fill className="object-cover" sizes="64px" />
                   ) : null}
                 </div>
                 <div className="flex-1">
@@ -786,5 +788,22 @@ function Row({
         {value}
       </dd>
     </div>
+  );
+}
+
+function PaymentSupportButton({ orderNumber }: { orderNumber?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+        Contact Support
+      </Button>
+      <SupportContactDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        orderNumber={orderNumber}
+        payment
+      />
+    </>
   );
 }

@@ -46,7 +46,7 @@ export function authUserMessage(error: unknown, fallback = "Something went wrong
     lower.includes("rate_limited") ||
     lower.includes("wait about a minute")
   ) {
-    return "Too many attempts. Please wait about a minute, then try again.";
+    return "Please wait a moment, then try again.";
   }
 
   if (lower.includes("does not have admin") || lower.includes("staff")) {

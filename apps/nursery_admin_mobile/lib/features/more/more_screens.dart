@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:nursery_admin_mobile/core/api_client.dart';
+import 'package:nursery_admin_mobile/core/app_error.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 import 'package:nursery_admin_mobile/shared/widgets.dart';
@@ -166,7 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ..clear()
         ..addAll(data);
     } catch (e) {
-      _error = e is ApiException ? e.userMessage : e.toString();
+      _error = sanitizeCaughtError(e);
     }
     if (mounted) setState(() => _loading = false);
   }

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
+import { AppErrorBoundary } from "@/components/error/AppErrorBoundary";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const bootstrap = useAuthStore((s) => s.bootstrap);
@@ -10,5 +11,5 @@ export function Providers({ children }: { children: React.ReactNode }) {
     void bootstrap();
   }, [bootstrap]);
 
-  return children;
+  return <AppErrorBoundary>{children}</AppErrorBoundary>;
 }

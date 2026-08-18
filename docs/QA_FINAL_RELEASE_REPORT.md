@@ -1,7 +1,7 @@
 # QA FINAL RELEASE REPORT — GreenLeaf Nursery Platform
 
-**Date:** 2026-08-15  
-**Updated under:** QA-42A refresh UX + QA-42 matrix
+**Date:** 2026-08-18  
+**Updated under:** QA-43 splash/icons + error handling + auth/throttle friction (preserves QA-42A)
 
 ---
 
@@ -24,8 +24,11 @@
 
 ## Latest evidence
 
+- QA-43 Track 3: global 120/min IP limiter was 429-ing valid logins after shop browsing — env-aware named limiters; production protection kept — `docs/QA-43-REPORT.md`
+- QA-43 branding: customer seed→sprout splash; admin leaf+shield+grid — `docs/QA-43-REPORT.md` (Vivo **UNVERIFIED**)
+- QA-43: centralized error categories + branded unknown-error UI + helpline `8926627220` — `docs/QA-43-ERROR-HANDLING-REPORT.md`  
 - QA-42A: normal PTR no longer shows saved-data banner; true offline banner only when degraded — `docs/qa42a-mobile/`  
-- PHPUnit **253 / 1209** · Customer Flutter **73** · Admin Flutter **29** · Web unit **PASS**  
+- PHPUnit **not re-run this pass** · Customer splash unit **PASS** · Admin splash unit **PASS**  
 
 ---
 

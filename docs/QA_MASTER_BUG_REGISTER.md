@@ -1,6 +1,6 @@
 # QA Master Bug Register
 
-**Date:** 2026-08-13 · **Through QA-42A** · Release: **YELLOW** (GREEN blocked — LIVE Razorpay / prod `--strict` / Firebase / ops). **QA-42A refresh UX PARTIAL** — see `docs/QA-42A-REFRESH-UX-REPORT.md`. QA-27 LIVE readiness unchanged (**NOT READY**).
+**Date:** 2026-08-18 · **Through QA-43 branding + error-handling + auth/throttle friction** · Release: **YELLOW** (GREEN blocked — LIVE Razorpay / prod `--strict` / Firebase / ops). **QA-43 splash/icons PARTIAL** — `docs/QA-43-REPORT.md`. **QA-43 error-handling PARTIAL** — `docs/QA-43-ERROR-HANDLING-REPORT.md`. **QA-43 throttle friction PARTIAL** — Track 3 in `docs/QA-43-REPORT.md`. **QA-42A refresh UX PARTIAL** — `docs/QA-42A-REFRESH-UX-REPORT.md`. QA-27 LIVE readiness unchanged (**NOT READY**).
 
 Severity: CRITICAL / HIGH / MEDIUM / LOW  
 Classification tags: API · BACKEND · FRONTEND · MOBILE · ADMIN · CONFIGURATION · AUTHENTICATION · PAYMENT · SECURITY · PARITY · UX
@@ -256,6 +256,14 @@ Classification tags: API · BACKEND · FRONTEND · MOBILE · ADMIN · CONFIGURAT
 ---
 
 ## MEDIUM
+
+### QA-43-200 — Valid login 429 after rapid shop browsing (shared IP throttle)
+- **Area:** Auth / Rate limit · **Apps:** All clients → API  
+- **Severity:** HIGH (UX) · **Priority:** P1  
+- **Root cause:** CONFIGURATION — global `throttleApi(120,1)` per IP stacked with login `10,1`; laptop + `adb reverse` share `127.0.0.1`; 429 on login path shown as brute-force  
+- **Fix (QA-43 Track 3):** Env-aware named limiters; local/testing relaxed; production retained; health/webhooks skip global bucket; Web login single-flight; 429 ≠ offline  
+- **Preserved:** CSRF, BFF HttpOnly, Razorpay HMAC, order/payment idempotency  
+- **Status:** **FIXED** (PHPUnit) · device rapid-flow **UNVERIFIED**  
 
 ### QA-CART-002 — Cart item `variant_id` vs Web type `product_variant_id`
 - **Evidence:** API response `variant_id`; `types.ts` CartItem historically `product_variant_id`  
@@ -682,6 +690,21 @@ Classification tags: API · BACKEND · FRONTEND · MOBILE · ADMIN · CONFIGURAT
 - **Evidence:** Phase5 expected `supported=false`; Phase17+ returns `supported=true` when `orders.campaign_id` exists  
 - **Fix:** Update Phase5 + Qa13 structure assert  
 - **Status:** **FIXED** / **CLOSED**
+
+---
+
+### QA-43-040 — Offline banner copy used for every degraded state
+- **Area:** UX · Network · **Apps:** Customer Mobile (banner also aligned on Web)  
+- **Severity:** HIGH · **Priority:** P1  
+- **Fix (QA-43):** `statusBannerText` / web `bannerCopy`; HTTP 500 → server unavailable; 502/503 → unable to connect; confirmed offline only after streak or `navigator.onLine === false`  
+- **Test:** `qa43_error_handling_test.dart`, `qa42a_refresh_banner_test.dart`, web `qa-unit-checks`  
+- **Status:** **FIXED** (unit) / device E2E **UNVERIFIED**
+
+### QA-43-041 — Unknown errors had no branded recovery / helpline
+- **Area:** UX · Support · **Apps:** all four clients  
+- **Severity:** HIGH · **Priority:** P1  
+- **Fix (QA-43):** `GreenLeafErrorView` + confirmation sheet; `tel:8926627220`; `GL-xxxxx` reference; no stack traces  
+- **Status:** **FIXED** (unit/code) / Vivo dialer **UNVERIFIED**
 
 ---
 

@@ -9,6 +9,7 @@ import 'package:nursery_admin_mobile/providers/auth_provider.dart';
 import 'package:nursery_admin_mobile/providers/ops_providers.dart';
 import 'package:nursery_admin_mobile/shared/widgets.dart';
 import 'package:nursery_admin_mobile/theme/app_theme.dart';
+import 'package:nursery_admin_mobile/core/app_error.dart';
 
 class InventoryListScreen extends StatefulWidget {
   const InventoryListScreen({super.key, this.lowOnly = false});
@@ -442,7 +443,7 @@ class _ScanSkuScreenState extends State<ScanSkuScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text(sanitizeCaughtError(e))),
         );
       }
     } finally {

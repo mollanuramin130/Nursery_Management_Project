@@ -197,18 +197,18 @@ INSERT IGNORE INTO `suppliers` (`id`,`code`,`name`,`email`,`phone`,`city`,`state
 -- =============================================================================
 INSERT IGNORE INTO `categories` (`id`,`parent_id`,`name`,`slug`,`image_url`,`sort_order`,`status`,`meta`,`created_at`,`updated_at`,`deleted_at`,`description`) VALUES
 (1,NULL,'Indoor Plants','indoor-plants','https://images.unsplash.com/photo-1466781783364-36c955e42a7f?w=800',1,'active',NULL,NOW(),NOW(),NULL,'Best plants for homes and offices'),
-(2,NULL,'Outdoor Plants','outdoor-plants','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',2,'active',NULL,NOW(),NOW(),NULL,'Garden and balcony plants'),
+(2,NULL,'Outdoor Plants','outdoor-plants','https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?w=800',2,'active',NULL,NOW(),NOW(),NULL,'Garden and balcony plants'),
 (3,NULL,'Flowering Plants','flowering-plants','https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800',3,'active',NULL,NOW(),NOW(),NULL,'Seasonal blooms'),
 (4,NULL,'Fruit Plants','fruit-plants','https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=800',4,'active',NULL,NOW(),NOW(),NULL,'Fruit-bearing plants & trees'),
-(5,NULL,'Vegetable Plants','vegetable-plants','https://images.unsplash.com/photo-1592419044706-39796d40f98c?w=800',5,'active',NULL,NOW(),NOW(),NULL,'Kitchen garden starters'),
-(6,NULL,'Seeds','seeds','https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?w=800',6,'active',NULL,NOW(),NOW(),NULL,'Vegetable and flower seeds'),
+(5,NULL,'Vegetable Plants','vegetable-plants','https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800',5,'active',NULL,NOW(),NOW(),NULL,'Kitchen garden starters'),
+(6,NULL,'Seeds','seeds','https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800',6,'active',NULL,NOW(),NOW(),NULL,'Vegetable and flower seeds'),
 (7,NULL,'Pots & Planters','pots-planters','https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=800',7,'active',NULL,NOW(),NOW(),NULL,'Ceramic, plastic and terracotta'),
-(8,NULL,'Soil & Fertilizers','soil-fertilizers','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',8,'active',NULL,NOW(),NOW(),NULL,'Potting mix and plant food'),
+(8,NULL,'Soil & Fertilizers','soil-fertilizers','https://images.unsplash.com/photo-1492496913980-501348b61469?w=800',8,'active',NULL,NOW(),NOW(),NULL,'Potting mix and plant food'),
 (9,NULL,'Gardening Tools','gardening-tools','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',9,'active',NULL,NOW(),NOW(),NULL,'Essential tools'),
-(10,NULL,'Plant Care','plant-care','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',10,'active',NULL,NOW(),NOW(),NULL,'Care products'),
-(11,1,'Low Maintenance','low-maintenance','https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=800',1,'active',NULL,NOW(),NOW(),NULL,'Beginner friendly indoor plants'),
-(12,1,'Air Purifying','air-purifying','https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800',2,'active',NULL,NOW(),NOW(),NULL,'Cleaner indoor air'),
-(13,2,'Balcony Specials','balcony-specials','https://images.unsplash.com/photo-1463936575829-25148e1670d9?w=800',1,'active',NULL,NOW(),NOW(),NULL,'Compact outdoor plants');
+(10,NULL,'Plant Care','plant-care','https://images.unsplash.com/photo-1719871766569-622dabd367e0?w=800',10,'active',NULL,NOW(),NOW(),NULL,'Care products'),
+(11,1,'Low Maintenance','low-maintenance','https://images.unsplash.com/photo-1565626929866-e11c64e607cf?w=800',1,'active',NULL,NOW(),NOW(),NULL,'Beginner friendly indoor plants'),
+(12,1,'Air Purifying','air-purifying','https://images.unsplash.com/photo-1773431456773-50853cea57cf?w=800',2,'active',NULL,NOW(),NOW(),NULL,'Cleaner indoor air'),
+(13,2,'Balcony Specials','balcony-specials','https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=800',1,'active',NULL,NOW(),NOW(),NULL,'Compact outdoor plants');
 
 INSERT IGNORE INTO `brands` (`id`,`name`,`slug`,`logo_url`,`status`,`meta`,`created_at`,`updated_at`,`deleted_at`,`description`) VALUES
 (1,'GreenLeaf','greenleaf','https://placehold.co/200x80/2d6a4f/ffffff?text=GreenLeaf','active',NULL,NOW(),NOW(),NULL,'House brand plants and care'),
@@ -238,7 +238,7 @@ VALUES
 (104,1,'plant','Areca Palm','areca-palm','PLT-ARECA-001','Graceful indoor palm that adds tropical vibes and helps purify air.',799.00,899.00,'INR','active','in_stock',1,0,4.40,64,NOW(),NULL,NOW(),NOW(),NULL,'gst5'),
 (105,1,'plant','Jade Plant','jade-plant','PLT-JADE-001','Lucky succulent, perfect for desks and bright windowsills.',349.00,399.00,'INR','active','in_stock',0,0,4.55,92,NOW(),JSON_OBJECT('badges',JSON_ARRAY('beginner')),NOW(),NOW(),NULL,'gst5'),
 (106,1,'plant','Rose Plant (Red)','rose-plant-red','PLT-ROSE-RED-001','Classic red rose for balconies and gardens. Seasonal flowering beauty.',449.00,499.00,'INR','active','in_stock',1,0,4.30,140,NOW(),JSON_OBJECT('badges',JSON_ARRAY('monsoon','balcony')),NOW(),NOW(),NULL,'gst5'),
-(107,1,'plant','Tulsi (Holy Basil)','tulsi-holy-basil','PLT-TULSI-001','Sacred medicinal herb for home gardens. Aromatic and useful daily.',199.00,249.00,'INR','active','in_stock',1,0,4.80,320,NOW(),JSON_OBJECT('badges',JSON_ARRAY('bestseller')),NOW(),NOW(),NULL,'gst5'),
+(107,1,'plant','Tulsi Holy Basil','tulsi-holy-basil','PLT-TULSI-001','Sacred medicinal herb for home gardens. Aromatic and useful daily.',199.00,249.00,'INR','active','in_stock',1,0,4.80,320,NOW(),JSON_OBJECT('badges',JSON_ARRAY('bestseller')),NOW(),NOW(),NULL,'gst5'),
 (108,1,'plant','Tomato Plant','tomato-plant','PLT-TOMATO-001','Kitchen-garden tomato starter plant for balconies and terraces.',149.00,179.00,'INR','active','in_stock',0,1,4.20,45,NOW(),JSON_OBJECT('badges',JSON_ARRAY('new-arrival','balcony')),NOW(),NOW(),NULL,'gst5'),
 (109,1,'tree','Mango Sapling','mango-sapling','TRE-MANGO-001','Grafted mango sapling for home gardens. Fruiting in future seasons.',899.00,999.00,'INR','active','in_stock',1,0,4.10,38,NOW(),NULL,NOW(),NOW(),NULL,'gst5'),
 (110,1,'seed','Marigold Seeds Pack','marigold-seeds-pack','SED-MARI-001','Bright marigold seeds for borders and festive gardens.',79.00,99.00,'INR','active','in_stock',0,1,4.25,55,NOW(),JSON_OBJECT('badges',JSON_ARRAY('new-arrival','monsoon')),NOW(),NOW(),NULL,'gst5'),
@@ -267,7 +267,7 @@ VALUES
  'easy','low','cutting','Mildly toxic if ingested','toxic',JSON_ARRAY('Air purifying','Easy propagation'),JSON_ARRAY('ornamental'),
  'Place in bright indirect light. Avoid harsh afternoon sun.','Use well-draining potting mix and a pot with drainage holes.','Trim long vines to encourage bushier growth.','Feed monthly in growing season with mild fertilizer.','Watch for mealybugs and spider mites; wipe leaves regularly.',NULL,
  NULL,NOW(),NOW()),
-(2,102,'Snake Plant','Sansevieria trifasciata',JSON_OBJECT('hi','सेंसेविरिया'),'succulent','indoor','low','low','well_draining',
+(2,102,'Snake Plant','Dracaena trifasciata',JSON_OBJECT('hi','सांप का पौधा','en_synonym','Sansevieria trifasciata'),'foliage','indoor','low','low','well_draining',
  15.00,32.00,'low','slow',120,40,
  JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY('year_round'),NULL,NULL,'perennial',
  'easy','low','division','Mildly toxic if ingested','toxic',JSON_ARRAY('Air purifying','Low water needs'),JSON_ARRAY('ornamental'),
@@ -291,7 +291,7 @@ VALUES
  'easy','low','cutting','Mildly toxic','toxic',JSON_ARRAY('Lucky plant','Drought tolerant'),JSON_ARRAY('ornamental'),
  'Needs bright light; water only when soil is dry.','Use cactus/succulent mix.','Pinch tips to shape.','Fertilize sparingly in growing season.','Overwatering causes stem rot.',NULL,
  NULL,NOW(),NOW()),
-(6,106,'Rose','Rosa indica',JSON_OBJECT('hi','गुलाब'),'shrub','outdoor','full_sun','medium','loamy',
+(6,106,'China Rose','Rosa chinensis',JSON_OBJECT('hi','गुलाब'),'shrub','outdoor','full_sun','medium','loamy',
  10.00,35.00,'medium','medium',120,90,
  JSON_ARRAY('winter','spring'),JSON_ARRAY(),JSON_ARRAY('monsoon','winter'),'red','seasonal','perennial',
  'moderate','medium','cutting','Thorns; petals edible varieties vary','unknown',JSON_ARRAY('Fragrance','Cut flowers'),JSON_ARRAY('ornamental'),
@@ -344,8 +344,8 @@ INSERT IGNORE INTO `accessory_profiles` (`id`,`product_id`,`material`,`usage`,`i
 INSERT IGNORE INTO `product_images` (`id`,`product_id`,`url`,`alt`,`is_primary`,`sort_order`,`meta`,`created_at`,`updated_at`,`deleted_at`) VALUES
 (1,101,'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1000','Money Plant',1,1,NULL,NOW(),NOW(),NULL),
 (2,101,'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=1000','Money Plant trailing',0,2,NULL,NOW(),NOW(),NULL),
-(3,102,'https://images.unsplash.com/photo-1593482892290-f54927ae2b7a?w=1000','Snake Plant',1,1,NULL,NOW(),NOW(),NULL),
-(4,103,'https://images.unsplash.com/photo-1593691509543-c55fb32e7356?w=1000','Peace Lily',1,1,NULL,NOW(),NOW(),NULL),
+(3,102,'https://images.unsplash.com/photo-1565626929866-e11c64e607cf?w=1000','Snake Plant',1,1,NULL,NOW(),NOW(),NULL),
+(4,103,'https://images.unsplash.com/photo-1466781783364-36c955e42a7f?w=1000','Peace Lily',1,1,NULL,NOW(),NOW(),NULL),
 (5,104,'https://images.unsplash.com/photo-1466781783364-36c955e42a7f?w=1000','Areca Palm',1,1,NULL,NOW(),NOW(),NULL),
 (6,105,'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1000','Jade Plant',1,1,NULL,NOW(),NOW(),NULL),
 (7,106,'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000','Red Rose',1,1,NULL,NOW(),NOW(),NULL),
@@ -509,7 +509,7 @@ INSERT IGNORE INTO `cart_items` (`id`,`cart_id`,`product_id`,`product_variant_id
 (3,2,102,NULL,1,399.00,NULL,NOW(),NOW(),NULL);
 
 -- Reserve sample qty already reflected in inventory for demo order below
-UPDATE `inventory_items` SET `qty_reserved` = 2 WHERE `id` = 1 AND EXISTS (SELECT 1 FROM `inventory_items` i WHERE i.id = 1);
+UPDATE `inventory_items` SET `qty_reserved` = 2 WHERE `id` = 1;
 
 -- =============================================================================
 -- 9) SAMPLE ORDERS / PAYMENTS / SHIPMENTS / REVIEWS
@@ -540,7 +540,7 @@ INSERT IGNORE INTO `order_items`
 VALUES
 (1,9001,101,NULL,'PLT-MONEY-001','Money Plant',299.00,2,598.00,'plant','https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400',NULL,'2026-08-01 10:15:00','2026-08-01 10:15:00',0.00,59.80),
 (2,9002,104,NULL,'PLT-ARECA-001','Areca Palm',799.00,1,798.00,'plant','https://images.unsplash.com/photo-1466781783364-36c955e42a7f?w=400',NULL,'2026-08-08 14:20:00','2026-08-08 14:20:00',0.00,0.00),
-(3,9003,102,NULL,'PLT-SNAKE-001','Snake Plant',399.00,1,399.00,'plant','https://images.unsplash.com/photo-1593482892290-f54927ae2b7a?w=400',NULL,'2026-08-10 01:10:00','2026-08-10 01:10:00',0.00,0.00),
+(3,9003,102,NULL,'PLT-SNAKE-001','Snake Plant',399.00,1,399.00,'plant','https://images.unsplash.com/photo-1565626929866-e11c64e607cf?w=400',NULL,'2026-08-10 01:10:00','2026-08-10 01:10:00',0.00,0.00),
 (4,9003,201,NULL,'POT-CER-6','Ceramic Pot 6 inch',249.00,1,249.00,'pot','https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400',NULL,'2026-08-10 01:10:00','2026-08-10 01:10:00',0.00,0.00);
 
 INSERT IGNORE INTO `order_status_histories` (`order_id`,`from_status`,`to_status`,`actor_user_id`,`note`,`meta`,`created_at`,`request_id`) VALUES
@@ -693,11 +693,11 @@ INSERT IGNORE INTO `user_devices` (`id`,`user_id`,`platform`,`device_id`,`push_t
 
 -- Extra categories / brands / tags
 INSERT IGNORE INTO `categories` (`id`,`parent_id`,`name`,`slug`,`image_url`,`sort_order`,`status`,`meta`,`created_at`,`updated_at`,`deleted_at`,`description`) VALUES
-(14,NULL,'Medicinal Plants','medicinal-plants','https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?w=800',11,'active',NULL,NOW(),NOW(),NULL,'Ayurvedic and home remedies'),
+(14,NULL,'Medicinal Plants','medicinal-plants','https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=800',11,'active',NULL,NOW(),NOW(),NULL,'Ayurvedic and home remedies'),
 (15,NULL,'Succulents','succulents','https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800',12,'active',NULL,NOW(),NOW(),NULL,'Low-water stylish plants'),
 (16,NULL,'Hanging Plants','hanging-plants','https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=800',13,'active',NULL,NOW(),NOW(),NULL,'Trailing plants for shelves & baskets'),
-(17,1,'Office Plants','office-plants','https://images.unsplash.com/photo-1466781783364-36c955e42a7f?w=800',3,'active',NULL,NOW(),NOW(),NULL,'Desk and cabin friendly'),
-(18,3,'Seasonal Flowers','seasonal-flowers','https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800',1,'active',NULL,NOW(),NOW(),NULL,'Festival and season blooms');
+(17,1,'Office Plants','office-plants','https://images.unsplash.com/photo-1545243424-0ce743321e11?w=800',3,'active',NULL,NOW(),NOW(),NULL,'Desk and cabin friendly'),
+(18,3,'Seasonal Flowers','seasonal-flowers','https://images.unsplash.com/photo-1754994641900-f5bfbdb88e63?w=800',1,'active',NULL,NOW(),NOW(),NULL,'Festival and season blooms');
 
 INSERT IGNORE INTO `brands` (`id`,`name`,`slug`,`logo_url`,`status`,`meta`,`created_at`,`updated_at`,`deleted_at`,`description`) VALUES
 (5,'HerbHouse','herbhouse','https://placehold.co/200x80/52796f/ffffff?text=HerbHouse','active',NULL,NOW(),NOW(),NULL,'Herbs and medicinal plants'),
@@ -759,7 +759,7 @@ INSERT IGNORE INTO `plant_profiles`
  `meta`,`created_at`,`updated_at`)
 VALUES
 (11,111,'ZZ Plant','Zamioculcas zamiifolia',JSON_OBJECT('hi','जेड जेड प्लांट'),'foliage','indoor','low','low','well_draining',16,32,'low','slow',90,60,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY('year_round'),NULL,NULL,'perennial','easy','low','division','Toxic if ingested','toxic',JSON_ARRAY('Low maintenance','Office friendly'),JSON_ARRAY('ornamental'),'Allow soil to dry between waterings. Tolerates low light.','Use well-draining mix; avoid oversized pots.','Remove yellow leaflets.','Feed 2–3 times a year.','Overwatering causes rhizome rot.',NULL,NULL,NOW(),NOW()),
-(12,112,'Aloe Vera','Aloe barbadensis miller',JSON_OBJECT('hi','एलोवेरा'),'succulent','indoor','full_sun','low','sandy',12,35,'low','medium',60,50,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY('year_round'),NULL,NULL,'perennial','easy','low','offset','Sap can irritate','toxic',JSON_ARRAY('Medicinal gel','Air purifying'),JSON_ARRAY('medicinal'),'Bright light; water deeply but infrequently.','Cactus/succulent mix with drainage.','Remove dried outer leaves.','Light feeding in growing season.','Mealybugs; avoid wet crowns.',NULL,NULL,NOW(),NOW()),
+(12,112,'Aloe Vera','Aloe vera',JSON_OBJECT('hi','एलोवेरा','ta','கற்றாழை'),'succulent','indoor','full_sun','low','sandy',12,35,'low','medium',60,50,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY('year_round'),NULL,NULL,'perennial','easy','low','offset','Sap can irritate','toxic',JSON_ARRAY('Medicinal gel','Air purifying'),JSON_ARRAY('medicinal'),'Bright light; water deeply but infrequently.','Cactus/succulent mix with drainage.','Remove dried outer leaves.','Light feeding in growing season.','Mealybugs; avoid wet crowns.',NULL,NULL,NOW(),NOW()),
 (13,113,'Spider Plant','Chlorophytum comosum',JSON_OBJECT('hi','स्पाइडर प्लांट'),'hanging','indoor','bright_indirect','medium','well_draining',15,30,'medium','fast',40,50,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY('year_round'),NULL,NULL,'perennial','easy','low','plantlets','Generally safe','safe',JSON_ARRAY('Air purifying','Pet safer choice'),JSON_ARRAY('ornamental'),'Bright indirect light; keep soil lightly moist.','Standard potting mix.','Trim brown tips; pot up babies.','Feed monthly in growing season.','Tip burn from fluoride.',NULL,NULL,NOW(),NOW()),
 (14,114,'Rubber Plant','Ficus elastica',JSON_OBJECT('hi','रबर प्लांट'),'foliage','indoor','bright_indirect','medium','well_draining',16,30,'medium','medium',200,90,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY('year_round'),NULL,NULL,'perennial','easy','medium','cutting','Sap irritant','toxic',JSON_ARRAY('Statement foliage'),JSON_ARRAY('ornamental'),'Bright light; wipe leaves to remove dust.','Rich well-draining mix.','Prune to control height.','Feed monthly in summer.','Scale insects possible.',NULL,NULL,NOW(),NOW()),
 (15,115,'Boston Fern','Nephrolepis exaltata',JSON_OBJECT('hi','फर्न'),'fern','indoor','bright_indirect','high','well_draining',15,28,'high','medium',70,70,JSON_ARRAY(),JSON_ARRAY(),JSON_ARRAY('monsoon','year_round'),NULL,NULL,'perennial','moderate','medium','division','Generally safe','safe',JSON_ARRAY('Humidity lover','Hanging beauty'),JSON_ARRAY('ornamental'),'Keep moist; mist often in dry rooms.','Peaty mix; hanging basket ideal.','Trim brown fronds.','Mild feed monthly.','Frond browning from dry air.',NULL,NULL,NOW(),NOW()),
@@ -814,18 +814,18 @@ INSERT IGNORE INTO `product_images` (`id`,`product_id`,`url`,`alt`,`is_primary`,
 (24,114,'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=1000','Rubber Plant',1,1,NULL,NOW(),NOW(),NULL),
 (25,115,'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1000','Boston Fern',1,1,NULL,NOW(),NOW(),NULL),
 (26,116,'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000','Lavender',1,1,NULL,NOW(),NOW(),NULL),
-(27,117,'https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?w=1000','Mint',1,1,NULL,NOW(),NOW(),NULL),
-(28,118,'https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?w=1000','Lemongrass',1,1,NULL,NOW(),NOW(),NULL),
+(27,117,'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1000','Mint',1,1,NULL,NOW(),NOW(),NULL),
+(28,118,'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1000','Lemongrass',1,1,NULL,NOW(),NOW(),NULL),
 (29,119,'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000','Hibiscus',1,1,NULL,NOW(),NOW(),NULL),
-(30,120,'https://images.unsplash.com/photo-1463936575829-25148e1670d9?w=1000','Bougainvillea',1,1,NULL,NOW(),NOW(),NULL),
+(30,120,'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000','Bougainvillea',1,1,NULL,NOW(),NOW(),NULL),
 (31,121,'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=1000','Echeveria',1,1,NULL,NOW(),NOW(),NULL),
 (32,122,'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=1000','Golden Pothos',1,1,NULL,NOW(),NOW(),NULL),
 (33,123,'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1000','Lemon sapling',1,1,NULL,NOW(),NOW(),NULL),
 (34,124,'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=1000','Guava sapling',1,1,NULL,NOW(),NOW(),NULL),
-(35,125,'https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?w=1000','Coriander seeds',1,1,NULL,NOW(),NOW(),NULL),
+(35,125,'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1000','Coriander seeds',1,1,NULL,NOW(),NOW(),NULL),
 (36,126,'https://images.unsplash.com/photo-1592419044706-39796d40f98c?w=1000','Chili seeds',1,1,NULL,NOW(),NOW(),NULL),
 (37,127,'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000','Chrysanthemum',1,1,NULL,NOW(),NOW(),NULL),
-(38,128,'https://images.unsplash.com/photo-1463936575829-25148e1670d9?w=1000','Croton',1,1,NULL,NOW(),NOW(),NULL),
+(38,128,'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000','Croton',1,1,NULL,NOW(),NOW(),NULL),
 (39,203,'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1000','Self watering pot',1,1,NULL,NOW(),NOW(),NULL),
 (40,204,'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1000','Hanging basket',1,1,NULL,NOW(),NOW(),NULL),
 (41,205,'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1000','Ceramic pot 10 inch',1,1,NULL,NOW(),NOW(),NULL),
@@ -945,7 +945,7 @@ VALUES
 INSERT IGNORE INTO `campaigns`
 (`id`,`slug`,`title`,`subtitle`,`description`,`type`,`season_code`,`image_url`,`starts_at`,`ends_at`,`status`,`priority`,`rules_json`,`meta`,`created_at`,`updated_at`,`deleted_at`)
 VALUES
-(4,'summer-balcony-2026','Summer Balcony Specials','Sun-loving color','Bougainvillea, hibiscus, lavender and pots for sunny balconies.','seasonal','summer','https://images.unsplash.com/photo-1463936575829-25148e1670d9?w=1200','2026-03-01 00:00:00','2026-06-30 23:59:59','active',85,NULL,NULL,NOW(),NOW(),NULL),
+(4,'summer-balcony-2026','Summer Balcony Specials','Sun-loving color','Bougainvillea, hibiscus, lavender and pots for sunny balconies.','seasonal','summer','https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1200','2026-03-01 00:00:00','2026-06-30 23:59:59','active',85,NULL,NULL,NOW(),NOW(),NULL),
 (5,'gift-plants','Gift a Plant','Thoughtful green gifts','Kits and easy plants perfect for gifting.','evergreen','all','https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1200','2026-01-01 00:00:00','2026-12-31 23:59:59','active',70,NULL,NULL,NOW(),NOW(),NULL),
 (6,'winter-flowers-2026','Winter Flowering Plants','Seasonal blooms','Chrysanthemum and winter favorites.','seasonal','winter','https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1200','2026-11-01 00:00:00','2027-02-28 23:59:59','scheduled',75,NULL,NULL,NOW(),NOW(),NULL);
 
@@ -960,7 +960,7 @@ INSERT IGNORE INTO `banners`
 (`id`,`title`,`image_url`,`placement`,`link_type`,`link_value`,`sort_order`,`starts_at`,`ends_at`,`status`,`meta`,`created_at`,`updated_at`,`deleted_at`)
 VALUES
 (4,'Gift Green','https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=1400','home','campaign','gift-plants',4,'2026-01-01 00:00:00','2026-12-31 23:59:59','active',NULL,NOW(),NOW(),NULL),
-(5,'Summer Balcony','https://images.unsplash.com/photo-1463936575829-25148e1670d9?w=1400','home','campaign','summer-balcony-2026',5,'2026-03-01 00:00:00','2026-06-30 23:59:59','active',NULL,NOW(),NOW(),NULL),
+(5,'Summer Balcony','https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1400','home','campaign','summer-balcony-2026',5,'2026-03-01 00:00:00','2026-06-30 23:59:59','active',NULL,NOW(),NOW(),NULL),
 (6,'Office Plants','https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=1400','home','category','office-plants',6,'2026-01-01 00:00:00','2026-12-31 23:59:59','active',NULL,NOW(),NOW(),NULL),
 (7,'Tools & Care','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1400','catalog','category','gardening-tools',1,'2026-01-01 00:00:00','2026-12-31 23:59:59','active',NULL,NOW(),NOW(),NULL);
 
@@ -1034,10 +1034,10 @@ INSERT IGNORE INTO `order_items`
 (`id`,`order_id`,`product_id`,`product_variant_id`,`sku`,`name`,`unit_price`,`quantity`,`line_total`,`product_type`,`thumbnail_url`,`meta`,`created_at`,`updated_at`,`tax_amount`,`discount_amount`)
 VALUES
 (5,9004,112,NULL,'PLT-ALOE-001','Aloe Vera',249.00,1,249.00,'plant','https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400',NULL,'2026-07-15 11:00:00','2026-07-15 11:00:00',0.00,25.00),
-(6,9004,117,NULL,'PLT-MINT-001','Mint',129.00,1,129.00,'plant','https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?w=400',NULL,'2026-07-15 11:00:00','2026-07-15 11:00:00',0.00,15.00),
-(7,9004,125,NULL,'SED-CORI-001','Coriander Seeds Pack',49.00,2,98.00,'seed','https://images.unsplash.com/photo-1466692476866-aef1dfb1e735?w=400',NULL,'2026-07-15 11:00:00','2026-07-15 11:00:00',0.00,10.00),
+(6,9004,117,NULL,'PLT-MINT-001','Mint',129.00,1,129.00,'plant','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400',NULL,'2026-07-15 11:00:00','2026-07-15 11:00:00',0.00,15.00),
+(7,9004,125,NULL,'SED-CORI-001','Coriander Seeds Pack',49.00,2,98.00,'seed','https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400',NULL,'2026-07-15 11:00:00','2026-07-15 11:00:00',0.00,10.00),
 (8,9005,119,NULL,'PLT-HIB-RED-001','Hibiscus (Red)',399.00,1,399.00,'plant','https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400',NULL,'2026-08-05 09:30:00','2026-08-05 09:30:00',0.00,0.00),
-(9,9005,120,NULL,'PLT-BOUG-001','Bougainvillea',349.00,1,349.00,'plant','https://images.unsplash.com/photo-1463936575829-25148e1670d9?w=400',NULL,'2026-08-05 09:30:00','2026-08-05 09:30:00',0.00,0.00),
+(9,9005,120,NULL,'PLT-BOUG-001','Bougainvillea',349.00,1,349.00,'plant','https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400',NULL,'2026-08-05 09:30:00','2026-08-05 09:30:00',0.00,0.00),
 (10,9006,114,NULL,'PLT-RUBBER-001','Rubber Plant',699.00,1,699.00,'plant','https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=400',NULL,'2026-08-07 16:10:00','2026-08-07 16:10:00',0.00,60.00),
 (11,9006,205,NULL,'POT-CER-10','Ceramic Pot 10 inch',449.00,1,449.00,'pot','https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400',NULL,'2026-08-07 16:10:00','2026-08-07 16:10:00',0.00,40.00),
 (12,9007,123,NULL,'TRE-LEMON-001','Lemon Sapling',749.00,1,749.00,'tree','https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400',NULL,'2026-08-09 13:00:00','2026-08-09 13:00:00',0.00,0.00),
@@ -1176,6 +1176,11 @@ VALUES
 -- DONE
 -- =============================================================================
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- Botanical names for existing SKUs were corrected in nursery_catalog_accuracy.sql
+-- (Wikipedia / Kew). Apply that file after this seed on local/staging:
+--   mysql ... nursery_local < database/nursery_catalog_accuracy.sql
+
 
 SELECT 'Safe sample data apply finished (existing rows skipped via INSERT IGNORE)' AS status;
 SELECT 'ALL sample passwords = Secret@123 | See SAMPLE_LOGIN_CREDENTIALS.md for full email list' AS credentials;

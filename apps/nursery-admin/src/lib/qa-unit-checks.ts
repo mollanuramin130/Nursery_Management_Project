@@ -145,4 +145,8 @@ assert(paymentStatusLabel("success") === "Paid", "admin payment Paid");
 assert(paymentStatusLabel("failed") === "Failed", "admin payment Failed");
 assert(orderStatusLabel("OUT_FOR_DELIVERY") === "Out for delivery", "transition label");
 
+import { GREENLEAF_SUPPORT_PHONE, looksLikeErrorReference, newErrorReference } from "./support";
+assert(GREENLEAF_SUPPORT_PHONE === "8926627220", "helpline");
+assert(looksLikeErrorReference(newErrorReference()), "GL reference");
+
 console.log("qa-unit-checks: OK");

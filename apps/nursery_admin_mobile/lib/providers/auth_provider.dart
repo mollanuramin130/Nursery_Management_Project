@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:nursery_admin_mobile/core/api_client.dart';
+import 'package:nursery_admin_mobile/core/app_error.dart';
 import 'package:nursery_admin_mobile/core/config.dart';
 import 'package:nursery_admin_mobile/core/permissions.dart';
 import 'package:nursery_admin_mobile/core/session_storage.dart';
@@ -85,11 +86,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> login(String email, String password) async {
-    if (loading) return false;
+    if (loading) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] duplicate login prevented');
+      }
+      return false;
+    }
     loading = true;
     error = null;
     notifyListeners();
     try {
+      if (kDebugMode) {
+        debugPrint('[AUTH] login request started');
+      }
       final data = await _api.sendData<Map<String, dynamic>>(
         'POST',
         '/auth/login',
@@ -128,10 +137,13 @@ class AuthProvider extends ChangeNotifier {
       await _storage.saveUserJson(me.toJson());
       await _registerDeviceQuietly();
       loading = false;
+      if (kDebugMode) {
+        debugPrint('[AUTH] login request completed');
+      }
       notifyListeners();
       return true;
     } catch (e) {
-      error = e is ApiException ? e.userMessage : e.toString();
+      error = sanitizeCaughtError(e);
       loading = false;
       notifyListeners();
       return false;

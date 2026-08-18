@@ -42,18 +42,27 @@ class ApiException implements Exception {
         return message.isNotEmpty &&
                 !message.toLowerCase().contains('too many attempts')
             ? message
-            : 'You tried too many times. Please wait about a minute, then try again.';
+            : 'Please wait a moment, then try again.';
       case 500:
+        return 'GreenLeaf server is temporarily unavailable.';
       case 502:
       case 503:
-        return message.isNotEmpty
-            ? message
-            : 'The server is temporarily unavailable. Please try again.';
+      case 504:
+        return 'Unable to connect to GreenLeaf right now.';
       default:
         if (statusCode == null) {
           return 'Unable to connect. Check your internet connection.';
         }
-        return message.isNotEmpty ? message : 'Something went wrong.';
+        final lower = message.toLowerCase();
+        if (lower.contains('exception') ||
+            lower.contains('sql') ||
+            lower.contains('stack') ||
+            message.length > 140) {
+          return 'Something went wrong while loading this section.';
+        }
+        return message.isNotEmpty
+            ? message
+            : 'Something went wrong while loading this section.';
     }
   }
 }

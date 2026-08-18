@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nursery_app/theme/tokens.dart';
 
-/// GreenLeaf leaf mark — shared by splash, about surfaces, and tests.
+/// GreenLeaf leaf mark — shared by about surfaces and tests.
 class GreenLeafBrandMark extends StatelessWidget {
   const GreenLeafBrandMark({
     super.key,
