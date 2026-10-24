@@ -41,7 +41,9 @@ export function ProductActions({
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty("--sticky-cta-h", "4.5rem");
-    return () => root.style.removeProperty("--sticky-cta-h");
+    return () => {
+      root.style.removeProperty("--sticky-cta-h");
+    };
   }, []);
 
   async function addToCart(openDrawer = true): Promise<boolean> {
