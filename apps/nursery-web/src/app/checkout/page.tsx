@@ -70,7 +70,9 @@ export default function CheckoutPage() {
     if (step !== 4) return;
     const root = document.documentElement;
     root.style.setProperty("--sticky-cta-h", "4.5rem");
-    return () => root.style.removeProperty("--sticky-cta-h");
+    return () => {
+      root.style.removeProperty("--sticky-cta-h");
+    };
   }, [step]);
 
   const [notes, setNotes] = useState("");
