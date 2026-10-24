@@ -176,7 +176,7 @@ function RegisterForm() {
 
           {/* Step indicator */}
           <div className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
-            <span className={step === "mobile" ? "font-bold text-[var(--color-primary)]" : step !== "mobile" ? "text-emerald-600" : ""}>1. Mobile</span>
+            <span className={step === "mobile" ? "font-bold text-[var(--color-primary)]" : "text-emerald-600"}>1. Mobile</span>
             <span>→</span>
             <span className={step === "otp" ? "font-bold text-[var(--color-primary)]" : step === "details" ? "text-emerald-600" : ""}>2. Verify</span>
             <span>→</span>
