@@ -1,4 +1,6 @@
-import { loadEnvConfig } from "@next/env";
+import nextEnv from "@next/env";
+
+const { loadEnvConfig } = nextEnv;
 
 /**
  * QA-33: Admin browser uses same-origin BFF; JWTs are HttpOnly.
