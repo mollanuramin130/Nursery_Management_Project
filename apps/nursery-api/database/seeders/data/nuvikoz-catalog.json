@@ -1,0 +1,592 @@
+{
+  "version": "nuvikoz-starter-v1",
+  "categories": [
+    {
+      "slug": "indoor-plants",
+      "name": "Indoor Plants",
+      "image": "golden-money-plant"
+    },
+    {
+      "slug": "outdoor-plants",
+      "name": "Outdoor Plants",
+      "image": "hibiscus"
+    },
+    {
+      "slug": "flowering-plants",
+      "name": "Flowering Plants",
+      "image": "hibiscus"
+    },
+    {
+      "slug": "herbs-aromatics",
+      "name": "Herbs & Aromatics",
+      "image": "tulsi"
+    },
+    {
+      "slug": "succulents",
+      "name": "Succulents",
+      "image": "jade-plant"
+    },
+    {
+      "slug": "fruit-plants",
+      "name": "Fruit Plants",
+      "image": "guava-sapling"
+    },
+    {
+      "slug": "easy-care",
+      "name": "Easy Care",
+      "image": "snake-plant"
+    }
+  ],
+  "products": [
+    {
+      "sku": "NVK-PL-001",
+      "slug": "golden-money-plant",
+      "name": "Golden Money Plant",
+      "scientific_name": "Epipremnum aureum",
+      "price": 199,
+      "categories": [
+        "indoor-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "easy",
+      "description": "Trailing heart-shaped foliage for shelves and hanging planters. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Let the upper soil dry between waterings; train vines on a support.",
+      "care": "Let the upper soil dry between waterings; train vines on a support.",
+      "art": "foliage"
+    },
+    {
+      "sku": "NVK-PL-002",
+      "slug": "snake-plant",
+      "name": "Snake Plant",
+      "scientific_name": "Dracaena trifasciata",
+      "price": 249,
+      "categories": [
+        "indoor-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "Upright architectural leaves for a bright room. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Let the mix dry well before watering; avoid water collecting in the leaf base.",
+      "care": "Let the mix dry well before watering; avoid water collecting in the leaf base.",
+      "art": "upright"
+    },
+    {
+      "sku": "NVK-PL-003",
+      "slug": "zz-plant",
+      "name": "ZZ Plant",
+      "scientific_name": "Zamioculcas zamiifolia",
+      "price": 399,
+      "categories": [
+        "indoor-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "Glossy foliage with a compact upright habit. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Allow the potting mix to dry between waterings; keep away from harsh midday sun.",
+      "care": "Allow the potting mix to dry between waterings; keep away from harsh midday sun.",
+      "art": "foliage"
+    },
+    {
+      "sku": "NVK-PL-004",
+      "slug": "peace-lily",
+      "name": "Peace Lily",
+      "scientific_name": "Spathiphyllum wallisii",
+      "price": 299,
+      "categories": [
+        "indoor-plants"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "Deep green foliage with occasional white spathes. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Keep lightly moist without waterlogging; flowering depends on light and maturity.",
+      "care": "Keep lightly moist without waterlogging; flowering depends on light and maturity.",
+      "art": "flower"
+    },
+    {
+      "sku": "NVK-PL-005",
+      "slug": "areca-palm",
+      "name": "Areca Palm",
+      "scientific_name": "Dypsis lutescens",
+      "price": 399,
+      "categories": [
+        "indoor-plants"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "Feathery foliage for a spacious bright corner. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Water when the upper mix begins to dry; protect from hot dry drafts.",
+      "care": "Water when the upper mix begins to dry; protect from hot dry drafts.",
+      "art": "palm"
+    },
+    {
+      "sku": "NVK-PL-006",
+      "slug": "spider-plant",
+      "name": "Spider Plant",
+      "scientific_name": "Chlorophytum comosum",
+      "price": 199,
+      "categories": [
+        "indoor-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "easy",
+      "description": "Arching striped leaves suited to shelves and hanging pots. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Water after the upper mix dries; keep roots out of standing water.",
+      "care": "Water after the upper mix dries; keep roots out of standing water.",
+      "art": "upright"
+    },
+    {
+      "sku": "NVK-PL-007",
+      "slug": "rubber-plant",
+      "name": "Rubber Plant",
+      "scientific_name": "Ficus elastica",
+      "price": 399,
+      "categories": [
+        "indoor-plants"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "Large glossy leaves for a statement container. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Allow the upper soil to dry; wipe leaves gently and avoid sudden position changes.",
+      "care": "Allow the upper soil to dry; wipe leaves gently and avoid sudden position changes.",
+      "art": "foliage"
+    },
+    {
+      "sku": "NVK-PL-008",
+      "slug": "monstera",
+      "name": "Monstera",
+      "scientific_name": "Monstera deliciosa",
+      "price": 599,
+      "categories": [
+        "indoor-plants"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A climbing foliage plant whose leaf splits develop with maturity. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Offer a support and filtered light; let the top layer of mix dry.",
+      "care": "Offer a support and filtered light; let the top layer of mix dry.",
+      "art": "foliage"
+    },
+    {
+      "sku": "NVK-PL-009",
+      "slug": "heartleaf-philodendron",
+      "name": "Heartleaf Philodendron",
+      "scientific_name": "Philodendron hederaceum",
+      "price": 249,
+      "categories": [
+        "indoor-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "easy",
+      "description": "Heart-shaped leaves on a trailing or climbing vine. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Keep in filtered light; water after the surface begins to dry.",
+      "care": "Keep in filtered light; water after the surface begins to dry.",
+      "art": "foliage"
+    },
+    {
+      "sku": "NVK-PL-010",
+      "slug": "aglaonema-green",
+      "name": "Aglaonema Green",
+      "scientific_name": "Aglaonema commutatum",
+      "price": 349,
+      "categories": [
+        "indoor-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "medium",
+      "difficulty_level": "easy",
+      "description": "Patterned foliage for a sheltered indoor display. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Use an airy mix and let the upper soil dry slightly between waterings.",
+      "care": "Use an airy mix and let the upper soil dry slightly between waterings.",
+      "art": "foliage"
+    },
+    {
+      "sku": "NVK-PL-011",
+      "slug": "hibiscus",
+      "name": "Hibiscus",
+      "scientific_name": "Hibiscus rosa-sinensis",
+      "price": 249,
+      "categories": [
+        "outdoor-plants",
+        "flowering-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A tropical flowering shrub for sunny patios and gardens. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Keep evenly moist in active growth; flower colour depends on the supplied variety.",
+      "care": "Keep evenly moist in active growth; flower colour depends on the supplied variety.",
+      "art": "flower"
+    },
+    {
+      "sku": "NVK-PL-012",
+      "slug": "arabian-jasmine",
+      "name": "Arabian Jasmine",
+      "scientific_name": "Jasminum sambac",
+      "price": 249,
+      "categories": [
+        "outdoor-plants",
+        "flowering-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A fragrant flowering shrub for a sunny balcony. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Give sun and drainage; prune lightly after a flowering flush.",
+      "care": "Give sun and drainage; prune lightly after a flowering flush.",
+      "art": "flower"
+    },
+    {
+      "sku": "NVK-PL-013",
+      "slug": "bougainvillea",
+      "name": "Bougainvillea",
+      "scientific_name": "Bougainvillea glabra",
+      "price": 299,
+      "categories": [
+        "outdoor-plants",
+        "flowering-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "A vigorous climber with colourful papery bracts. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Provide support and strong sun; avoid persistently wet soil and handle thorns carefully.",
+      "care": "Provide support and strong sun; avoid persistently wet soil and handle thorns carefully.",
+      "art": "flower"
+    },
+    {
+      "sku": "NVK-PL-014",
+      "slug": "ixora",
+      "name": "Ixora",
+      "scientific_name": "Ixora coccinea",
+      "price": 249,
+      "categories": [
+        "outdoor-plants",
+        "flowering-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "Clustered flowers and glossy foliage for warm gardens. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Use a slightly acidic well-drained mix; avoid letting the root ball completely dry.",
+      "care": "Use a slightly acidic well-drained mix; avoid letting the root ball completely dry.",
+      "art": "flower"
+    },
+    {
+      "sku": "NVK-PL-015",
+      "slug": "marigold",
+      "name": "Marigold",
+      "scientific_name": "Tagetes erecta",
+      "price": 99,
+      "categories": [
+        "outdoor-plants",
+        "flowering-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "easy",
+      "description": "A seasonal flowering plant for bright containers and borders. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Water the soil rather than the blooms; remove faded flowers.",
+      "care": "Water the soil rather than the blooms; remove faded flowers.",
+      "art": "flower"
+    },
+    {
+      "sku": "NVK-PL-016",
+      "slug": "periwinkle",
+      "name": "Periwinkle",
+      "scientific_name": "Catharanthus roseus",
+      "price": 129,
+      "categories": [
+        "outdoor-plants",
+        "flowering-plants",
+        "easy-care"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "A warm-season flowering plant for sunny containers. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Use excellent drainage; avoid overwatering and prolonged water on the foliage.",
+      "care": "Use excellent drainage; avoid overwatering and prolonged water on the foliage.",
+      "art": "flower"
+    },
+    {
+      "sku": "NVK-PL-017",
+      "slug": "tulsi",
+      "name": "Tulsi",
+      "scientific_name": "Ocimum tenuiflorum",
+      "price": 99,
+      "categories": [
+        "outdoor-plants",
+        "herbs-aromatics",
+        "easy-care"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "easy",
+      "description": "An aromatic leafy plant for a sunny home garden. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Water when the topsoil dries and pinch tips for branching.",
+      "care": "Water when the topsoil dries and pinch tips for branching.",
+      "art": "herb"
+    },
+    {
+      "sku": "NVK-PL-018",
+      "slug": "mint",
+      "name": "Mint",
+      "scientific_name": "Mentha spicata",
+      "price": 99,
+      "categories": [
+        "outdoor-plants",
+        "herbs-aromatics",
+        "easy-care"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "partial",
+      "water_requirement": "high",
+      "difficulty_level": "easy",
+      "description": "An aromatic spreading herb best kept in its own container. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Keep the mix evenly moist with good drainage; trim regularly.",
+      "care": "Keep the mix evenly moist with good drainage; trim regularly.",
+      "art": "herb"
+    },
+    {
+      "sku": "NVK-PL-019",
+      "slug": "curry-leaf",
+      "name": "Curry Leaf",
+      "scientific_name": "Murraya koenigii",
+      "price": 199,
+      "categories": [
+        "outdoor-plants",
+        "herbs-aromatics"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "An aromatic small tree for a sunny kitchen garden. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Allow the surface to dry slightly; protect young plants from cold and waterlogging.",
+      "care": "Allow the surface to dry slightly; protect young plants from cold and waterlogging.",
+      "art": "herb"
+    },
+    {
+      "sku": "NVK-PL-020",
+      "slug": "lemongrass",
+      "name": "Lemongrass",
+      "scientific_name": "Cymbopogon citratus",
+      "price": 149,
+      "categories": [
+        "outdoor-plants",
+        "herbs-aromatics",
+        "easy-care"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "easy",
+      "description": "A clumping aromatic grass for a sunny terrace. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Give a roomy container and regular moisture while actively growing.",
+      "care": "Give a roomy container and regular moisture while actively growing.",
+      "art": "upright"
+    },
+    {
+      "sku": "NVK-PL-021",
+      "slug": "jade-plant",
+      "name": "Jade Plant",
+      "scientific_name": "Crassula ovata",
+      "price": 199,
+      "categories": [
+        "indoor-plants",
+        "outdoor-plants",
+        "succulents",
+        "easy-care"
+      ],
+      "indoor_outdoor": "both",
+      "sunlight": "partial",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "A branching succulent with fleshy oval leaves. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Use gritty soil and let it dry between waterings; introduce direct sun gradually.",
+      "care": "Use gritty soil and let it dry between waterings; introduce direct sun gradually.",
+      "art": "succulent"
+    },
+    {
+      "sku": "NVK-PL-022",
+      "slug": "aloe-vera",
+      "name": "Aloe Vera",
+      "scientific_name": "Aloe vera",
+      "price": 149,
+      "categories": [
+        "indoor-plants",
+        "outdoor-plants",
+        "succulents",
+        "easy-care"
+      ],
+      "indoor_outdoor": "both",
+      "sunlight": "partial",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "A sculptural succulent for a bright well-ventilated spot. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Let the mix dry before watering; avoid water sitting in the rosette.",
+      "care": "Let the mix dry before watering; avoid water sitting in the rosette.",
+      "art": "upright"
+    },
+    {
+      "sku": "NVK-PL-023",
+      "slug": "zebra-haworthia",
+      "name": "Zebra Haworthia",
+      "scientific_name": "Haworthiopsis attenuata",
+      "price": 199,
+      "categories": [
+        "indoor-plants",
+        "succulents",
+        "easy-care"
+      ],
+      "indoor_outdoor": "indoor",
+      "sunlight": "bright_indirect",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "A compact striped succulent for a bright windowsill. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Use a gritty mix; water sparingly after drying and protect from scorching sun.",
+      "care": "Use a gritty mix; water sparingly after drying and protect from scorching sun.",
+      "art": "succulent"
+    },
+    {
+      "sku": "NVK-PL-024",
+      "slug": "echeveria",
+      "name": "Echeveria",
+      "scientific_name": "Echeveria elegans",
+      "price": 249,
+      "categories": [
+        "indoor-plants",
+        "outdoor-plants",
+        "succulents"
+      ],
+      "indoor_outdoor": "both",
+      "sunlight": "partial",
+      "water_requirement": "low",
+      "difficulty_level": "moderate",
+      "description": "A rosette succulent suited to a bright sheltered container. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Provide strong light with gradual sun acclimation; keep the crown dry.",
+      "care": "Provide strong light with gradual sun acclimation; keep the crown dry.",
+      "art": "succulent"
+    },
+    {
+      "sku": "NVK-PL-025",
+      "slug": "elephant-bush",
+      "name": "Elephant Bush",
+      "scientific_name": "Portulacaria afra",
+      "price": 199,
+      "categories": [
+        "indoor-plants",
+        "outdoor-plants",
+        "succulents",
+        "easy-care"
+      ],
+      "indoor_outdoor": "both",
+      "sunlight": "partial",
+      "water_requirement": "low",
+      "difficulty_level": "easy",
+      "description": "Small fleshy leaves on branching stems for sunny containers. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): A starter choice for growers who prefer simpler care. Let the mix dry between waterings and protect from prolonged monsoon rain.",
+      "care": "Let the mix dry between waterings and protect from prolonged monsoon rain.",
+      "art": "succulent"
+    },
+    {
+      "sku": "NVK-PL-026",
+      "slug": "guava-sapling",
+      "name": "Guava Sapling",
+      "scientific_name": "Psidium guajava",
+      "price": 299,
+      "categories": [
+        "outdoor-plants",
+        "fruit-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A young fruit-tree plant for a sunny garden or large container. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Water consistently while establishing; fruiting time and quality depend on variety and care.",
+      "care": "Water consistently while establishing; fruiting time and quality depend on variety and care.",
+      "art": "tree"
+    },
+    {
+      "sku": "NVK-PL-027",
+      "slug": "lemon-sapling",
+      "name": "Lemon Sapling",
+      "scientific_name": "Citrus limon",
+      "price": 349,
+      "categories": [
+        "outdoor-plants",
+        "fruit-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A citrus sapling for a sunny protected garden. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Use free-draining soil, water evenly, and inspect new growth for pests.",
+      "care": "Use free-draining soil, water evenly, and inspect new growth for pests.",
+      "art": "tree"
+    },
+    {
+      "sku": "NVK-PL-028",
+      "slug": "pomegranate-sapling",
+      "name": "Pomegranate Sapling",
+      "scientific_name": "Punica granatum",
+      "price": 349,
+      "categories": [
+        "outdoor-plants",
+        "fruit-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A fruiting shrub suited to a sunny garden. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Allow the soil surface to dry slightly; avoid alternating severe drought and overwatering.",
+      "care": "Allow the soil surface to dry slightly; avoid alternating severe drought and overwatering.",
+      "art": "tree"
+    },
+    {
+      "sku": "NVK-PL-029",
+      "slug": "mango-sapling",
+      "name": "Mango Sapling",
+      "scientific_name": "Mangifera indica",
+      "price": 499,
+      "categories": [
+        "outdoor-plants",
+        "fruit-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A young tree for a garden with room for long-term growth. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Plant in well-drained ground with sufficient space; protect young growth from cold.",
+      "care": "Plant in well-drained ground with sufficient space; protect young growth from cold.",
+      "art": "tree"
+    },
+    {
+      "sku": "NVK-PL-030",
+      "slug": "papaya-sapling",
+      "name": "Papaya Sapling",
+      "scientific_name": "Carica papaya",
+      "price": 149,
+      "categories": [
+        "outdoor-plants",
+        "fruit-plants"
+      ],
+      "indoor_outdoor": "outdoor",
+      "sunlight": "full_sun",
+      "water_requirement": "medium",
+      "difficulty_level": "moderate",
+      "description": "A fast-growing tropical plant for a warm sunny garden. Young nursery plant; confirm current size and pot option before ordering. Nursery recommendation (editorial, not a customer review): Best for growers able to check light and moisture regularly. Use fertile well-drained soil; fruiting depends on plant sex, pollination and growing conditions.",
+      "care": "Use fertile well-drained soil; fruiting depends on plant sex, pollination and growing conditions.",
+      "art": "tree"
+    }
+  ]
+}
