@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="nursery_app (Production API)" type="FlutterRunConfigurationType" factoryname="Flutter">
+    <option name="additionalArgs" value="--dart-define=API_BASE_URL=https://api.nuvikoz.com/api/v1" />
+    <option name="filePath" value="$PROJECT_DIR$/apps/nursery_app/lib/main.dart" />
+    <method v="2" />
+  </configuration>
+</component>
