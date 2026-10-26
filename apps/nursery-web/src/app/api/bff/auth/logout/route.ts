@@ -15,7 +15,8 @@ export async function POST(req: Request) {
   let refresh = session.refresh;
 
   if (refresh && !access) {
-    const rotated = await refreshUpstream(refresh);
+    // Local logout must still succeed if the upstream service is unavailable.
+    const rotated = await refreshUpstream(refresh).catch(() => null);
     if (rotated) {
       access = rotated.access;
       refresh = rotated.refresh;

@@ -28,7 +28,13 @@ export async function POST(req: Request) {
     return res;
   }
 
-  const tokens = await refreshUpstream(session.refresh);
+  let tokens;
+    try {
+      tokens = await refreshUpstream(session.refresh);
+    } catch {
+      return NextResponse.json({ success: false, message: "Authentication service temporarily unavailable",
+        data: null, errors: null, meta: { error_code: "AUTH_SERVICE_UNAVAILABLE" } }, { status: 503 });
+    }
   if (!tokens) {
     const res = NextResponse.json(
       {
