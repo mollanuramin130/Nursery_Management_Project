@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
+use App\Modules\Auth\Services\OtpService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -100,7 +101,15 @@ class Qa02AuthMessagesTest extends TestCase
     {
         $this->makeUser();
 
+        $otp = app(OtpService::class);
+        config(['auth.otp.dev_code' => '123456']);
+        $otp->sendCode('9876543210', 'register');
+        $record = $otp->verifyCode('9876543210', '123456', 'register');
+        $proof = $otp->issueVerifiedToken($record);
+
         $this->postJson('/api/v1/auth/register', [
+            'mobile' => '9876543210',
+            'otp_verified_token' => $proof,
             'name' => 'Dup',
             'email' => 'qa-auth@example.com',
             'password' => 'Secret@123',

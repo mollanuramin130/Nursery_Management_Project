@@ -20,6 +20,8 @@ use App\Modules\Cart\Services\CartService;
 use App\Shared\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -33,13 +35,13 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
-        $this->otpService->validateVerifiedToken(
-            $validated['otp_verified_token'],
-            'register',
-            $validated['mobile'],
-        );
+        $data = DB::transaction(function () use ($validated) {
+            $this->otpService->consumeVerifiedToken(
+                $validated['otp_verified_token'], 'register', $validated['mobile'],
+            );
 
-        $data = $this->authService->register($validated);
+            return $this->authService->register($validated);
+        });
         $this->mergeGuestCartIfNeeded($request, $data);
 
         return ApiResponse::success($data, 'Registration successful', 201);
@@ -96,16 +98,12 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
-        $this->otpService->validateVerifiedToken(
-            $validated['otp_verified_token'],
-            'reset',
-            $validated['mobile'],
-        );
-
-        $this->authService->resetPasswordViaMobile(
-            $validated['mobile'],
-            $validated['password'],
-        );
+        DB::transaction(function () use ($validated) {
+            $this->otpService->consumeVerifiedToken(
+                $validated['otp_verified_token'], 'reset', $validated['mobile'],
+            );
+            $this->authService->resetPasswordViaMobile($validated['mobile'], $validated['password']);
+        });
 
         return ApiResponse::success(null, 'Password reset successful');
     }
@@ -113,14 +111,14 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         if (app()->environment('local')) {
-            \Illuminate\Support\Facades\Log::debug('[AUTH] login request started');
+            Log::debug('[AUTH] login request started');
         }
 
         $data = $this->authService->login($request->validated());
         $this->mergeGuestCartIfNeeded($request, $data);
 
         if (app()->environment('local')) {
-            \Illuminate\Support\Facades\Log::debug('[AUTH] login request completed');
+            Log::debug('[AUTH] login request completed');
         }
 
         return ApiResponse::success($data, 'Login successful');

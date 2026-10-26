@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
+use App\Modules\Auth\Services\OtpService;
 use App\Modules\Catalog\Services\HomeService;
 use App\Shared\Rules\SecureImageUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -72,7 +73,15 @@ class Phase12HardeningTest extends TestCase
     {
         $this->seedCustomerRole();
 
+        $otp = app(OtpService::class);
+        config(['auth.otp.dev_code' => '123456']);
+        $otp->sendCode('9876543210', 'register');
+        $record = $otp->verifyCode('9876543210', '123456', 'register');
+        $proof = $otp->issueVerifiedToken($record);
+
         $this->postJson('/api/v1/auth/register', [
+            'mobile' => '9876543210',
+            'otp_verified_token' => $proof,
             'name' => 'Strong User',
             'email' => 'strong@example.com',
             'password' => 'Secret@123',
