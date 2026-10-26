@@ -67,7 +67,9 @@ export function AnalyticsShell({
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [exporting, setExporting] = useState(false);
   const dataRef = useRef(data);
-  dataRef.current = data;
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const setRange = (next: AnalyticsRangeParams) => {
     const q = new URLSearchParams(rangeToQuery(next));

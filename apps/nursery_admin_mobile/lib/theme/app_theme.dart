@@ -107,18 +107,18 @@ ThemeData buildOpsTheme() {
 }
 
 Color statusColor(String status) {
-  final s = status.toUpperCase();
+  final s = status.trim().toUpperCase();
   if (s.contains('CANCEL') || s.contains('FAIL') || s == 'OUT_OF_STOCK') {
     return OpsColors.danger;
   }
   if (s.contains('PENDING') || s.contains('LOW') || s.contains('DRAFT')) {
     return OpsColors.warning;
   }
-  if (s.contains('DELIVER') ||
-      s.contains('ACTIVE') ||
-      s.contains('RECEIVED') ||
+  if (s == 'DELIVERED' ||
+      s == 'ACTIVE' ||
+      s == 'RECEIVED' ||
       s == 'IN_STOCK' ||
-      s.contains('CONFIRM')) {
+      s == 'CONFIRMED') {
     return OpsColors.success;
   }
   return OpsColors.muted;
