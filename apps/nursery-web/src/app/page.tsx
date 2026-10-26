@@ -6,7 +6,7 @@ import { bannerHref } from "@/lib/deep-link";
 import { serverGet } from "@/lib/server-api";
 import type { Category, HomeData } from "@/lib/types";
 
-const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "GreenLeaf Nursery";
+const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "NUVIKOZ";
 
 const SHOP_BY_NEED: { title: string; q: string; blurb: string; href?: string }[] = [
   {
@@ -30,6 +30,7 @@ export default async function HomePage() {
   const catsRes = await serverGet<Category[]>("/categories", { revalidate: 120 });
   const home = homeRes?.data;
   const hero = home?.banners?.[0];
+  const collectionBanners = home?.banners?.slice(1, 5) ?? [];
   const products = home?.featured_products ?? [];
   const bestSellers = home?.best_sellers ?? [];
   const newArrivals = home?.new_arrivals ?? [];
@@ -54,10 +55,10 @@ export default async function HomePage() {
               fill
               priority
               sizes="100vw"
-              className="object-cover opacity-55"
+              className="object-cover object-[65%_center] md:object-center"
             />
           ) : null}
-          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(15,61,40,0.92)_0%,rgba(15,61,40,0.55)_55%,rgba(15,61,40,0.35)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(10,35,23,0.9)_0%,rgba(10,35,23,0.55)_50%,rgba(10,35,23,0.08)_100%)]" />
         </div>
 
         <div className="relative container grid min-h-[78vh] items-end gap-8 py-14 md:min-h-[72vh] md:grid-cols-[1.1fr_0.9fr] md:items-center md:py-20">
@@ -66,10 +67,10 @@ export default async function HomePage() {
               {storeName}
             </p>
             <h1 className="display text-[clamp(2.8rem,8vw,5.2rem)] text-white">
-              Bring nature home
+              {hero?.title || "Bring nature home"}
             </h1>
             <p className="mt-4 max-w-md text-base leading-relaxed text-[#dce9e0] md:text-lg">
-              Healthy plants, pots, and care guidance — curated for Indian balconies, desks, and sunny corners.
+              Indoor favourites, colourful blooms and fruit plants — explore a greener way to fill your home, balcony and garden.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -97,6 +98,42 @@ export default async function HomePage() {
       </section>
 
       <ContinueShoppingRail />
+
+      {collectionBanners.length ? (
+        <section className="section pb-0" aria-labelledby="home-collections-title">
+          <div className="container">
+            <div className="section-head">
+              <h2 id="home-collections-title">Find your kind of green</h2>
+              <p>From colourful balconies to your own little garden.</p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              {collectionBanners.map((banner) => (
+                <Link
+                  key={banner.id}
+                  href={bannerHref(banner)}
+                  className="group relative flex min-h-[340px] items-end overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-primary-deep)] p-6 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] md:min-h-[380px] md:p-8"
+                >
+                  <SafeImage
+                    src={banner.image_url}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover object-[65%_center] transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                  <div className="relative max-w-sm">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-white/80">The {storeName} collection</p>
+                    <h3 className="display text-3xl leading-tight md:text-4xl">{banner.title}</h3>
+                    <span className="mt-5 inline-flex min-h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[var(--color-primary-deep)]">
+                      Explore plants <span aria-hidden="true" className="ml-2">→</span>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="container">
@@ -411,3 +448,4 @@ export default async function HomePage() {
     </>
   );
 }
+
