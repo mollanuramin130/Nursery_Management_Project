@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Integrations\Push\FcmPushGateway;
 use App\Jobs\DeliverNotificationChannelsJob;
-use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
 use App\Modules\Customer\Services\PreferenceService;
 use App\Modules\Notification\Models\Notification;
@@ -27,10 +26,8 @@ class Qa23FcmLiveReadinessTest extends TestCase
     {
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
-        putenv('FCM_SERVER_KEY=');
-        putenv('FIREBASE_CREDENTIALS=');
-        $_ENV['FCM_SERVER_KEY'] = '';
-        $_ENV['FIREBASE_CREDENTIALS'] = '';
+        config(['services.fcm.server_key' => '']);
+        config(['services.fcm.credentials' => '']);
     }
 
     public function test_gateway_mode_is_local_stub_without_credentials(): void
@@ -44,8 +41,7 @@ class Qa23FcmLiveReadinessTest extends TestCase
 
     public function test_legacy_server_key_path_marks_invalid_token(): void
     {
-        putenv('FCM_SERVER_KEY=test-server-key-not-real');
-        $_ENV['FCM_SERVER_KEY'] = 'test-server-key-not-real';
+        config(['services.fcm.server_key' => 'test-server-key-not-real']);
 
         Http::fake([
             'https://fcm.googleapis.com/fcm/send' => Http::response([
@@ -77,8 +73,7 @@ class Qa23FcmLiveReadinessTest extends TestCase
             'private_key' => $pem,
         ]));
 
-        putenv('FIREBASE_CREDENTIALS='.$path);
-        $_ENV['FIREBASE_CREDENTIALS'] = $path;
+        config(['services.fcm.credentials' => $path]);
 
         Http::fake([
             'https://oauth2.googleapis.com/token' => Http::response([
@@ -102,8 +97,7 @@ class Qa23FcmLiveReadinessTest extends TestCase
         $this->assertFalse($result['invalid_token']);
 
         @unlink($path);
-        putenv('FIREBASE_CREDENTIALS=');
-        $_ENV['FIREBASE_CREDENTIALS'] = '';
+        config(['services.fcm.credentials' => '']);
     }
 
     public function test_http_v1_unregistered_token_flagged(): void
@@ -119,8 +113,7 @@ class Qa23FcmLiveReadinessTest extends TestCase
             'client_email' => 'firebase-adminsdk@greenleaf-qa23-test.iam.gserviceaccount.com',
             'private_key' => $pem,
         ]));
-        putenv('FIREBASE_CREDENTIALS='.$path);
-        $_ENV['FIREBASE_CREDENTIALS'] = $path;
+        config(['services.fcm.credentials' => $path]);
 
         Http::fake([
             'https://oauth2.googleapis.com/token' => Http::response(['access_token' => 'ya29.fake', 'expires_in' => 3600], 200),
@@ -137,18 +130,13 @@ class Qa23FcmLiveReadinessTest extends TestCase
         $this->assertTrue($result['invalid_token']);
 
         @unlink($path);
-        putenv('FIREBASE_CREDENTIALS=');
-        $_ENV['FIREBASE_CREDENTIALS'] = '';
+        config(['services.fcm.credentials' => '']);
     }
 
     public function test_delivery_job_deactivates_invalid_token(): void
     {
-        putenv('FCM_SERVER_KEY=test-server-key-not-real');
-        $_ENV['FCM_SERVER_KEY'] = 'test-server-key-not-real';
-        $_SERVER['FCM_SERVER_KEY'] = 'test-server-key-not-real';
-        putenv('FIREBASE_CREDENTIALS=');
-        $_ENV['FIREBASE_CREDENTIALS'] = '';
-        $_SERVER['FIREBASE_CREDENTIALS'] = '';
+        config(['services.fcm.server_key' => 'test-server-key-not-real']);
+        config(['services.fcm.credentials' => '']);
 
         Http::fake([
             'https://fcm.googleapis.com/fcm/send' => Http::response([

@@ -67,12 +67,8 @@ class Qa23RazorpayTestConfigGateTest extends TestCase
     {
         // phpunit.xml defaults ALLOW_UNSIGNED=true for local simulation suites.
         // Override for this gate: empty secret + unsigned false → 503.
-        putenv('RAZORPAY_WEBHOOK_SECRET=');
-        putenv('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS=false');
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = '';
-        $_ENV['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = '';
-        $_SERVER['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
+        config(['store.razorpay_webhook_secret' => '']);
+        config(['store.allow_unsigned_webhooks' => 'false']);
 
         $this->postJson('/api/v1/payments/webhooks/razorpay', ['event' => 'payment.captured'])
             ->assertStatus(503)

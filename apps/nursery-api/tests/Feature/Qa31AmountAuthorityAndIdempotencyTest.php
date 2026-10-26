@@ -14,6 +14,7 @@ use App\Modules\Payment\Models\Payment;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -28,18 +29,10 @@ class Qa31AmountAuthorityAndIdempotencyTest extends TestCase
     {
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
-        putenv('RAZORPAY_KEY=');
-        putenv('RAZORPAY_SECRET=');
-        putenv('RAZORPAY_WEBHOOK_SECRET=qa31_webhook_secret');
-        putenv('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS=false');
-        $_ENV['RAZORPAY_KEY'] = '';
-        $_ENV['RAZORPAY_SECRET'] = '';
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = 'qa31_webhook_secret';
-        $_ENV['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
-        $_SERVER['RAZORPAY_KEY'] = '';
-        $_SERVER['RAZORPAY_SECRET'] = '';
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = 'qa31_webhook_secret';
-        $_SERVER['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
+        config(['store.razorpay_key' => '']);
+        config(['store.razorpay_secret' => '']);
+        config(['store.razorpay_webhook_secret' => 'qa31_webhook_secret']);
+        config(['store.allow_unsigned_webhooks' => 'false']);
     }
 
     public function test_client_amount_override_rejected_even_when_pending_payment_exists(): void
@@ -201,7 +194,7 @@ class Qa31AmountAuthorityAndIdempotencyTest extends TestCase
         ];
     }
 
-    private function postSignedWebhook(array $payload): \Illuminate\Testing\TestResponse
+    private function postSignedWebhook(array $payload): TestResponse
     {
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES);
         $this->assertIsString($raw);

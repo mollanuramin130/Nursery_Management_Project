@@ -13,6 +13,7 @@ use App\Modules\Order\Models\OrderItem;
 use App\Modules\Order\Services\CheckoutService;
 use App\Modules\Order\Services\OrderStateMachine;
 use App\Modules\Payment\Models\Payment;
+use App\Modules\Subscription\Services\SubscriptionService;
 use App\Shared\Exceptions\ApiException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -81,7 +82,7 @@ class PaymentService
                 ->first();
 
             if ($pending) {
-                $hasKeys = (string) env('RAZORPAY_KEY', '') !== '' && (string) env('RAZORPAY_SECRET', '') !== '';
+                $hasKeys = (string) config('store.razorpay_key') !== '' && (string) config('store.razorpay_secret') !== '';
                 if (! $hasKeys && app()->environment('production')) {
                     throw new ApiException(
                         'Payment gateway is not configured',
@@ -91,11 +92,11 @@ class PaymentService
                 }
 
                 $clientPayload = [
-                    'key' => (string) env('RAZORPAY_KEY', 'rzp_test_local'),
+                    'key' => (string) config('store.razorpay_key'),
                     'order_id' => $pending->provider_order_id,
                     'amount' => (int) round(((float) $pending->amount) * 100),
                     'currency' => strtoupper((string) $pending->currency),
-                    'name' => env('APP_NAME', 'GreenLeaf Nursery'),
+                    'name' => config('app.name', 'GreenLeaf Nursery'),
                     'mode' => $hasKeys ? 'live_or_test' : 'local_stub',
                 ];
                 if ($gateway instanceof RazorpayGateway) {
@@ -276,8 +277,8 @@ class PaymentService
             throw new ApiException('Unsupported webhook provider', 400, 'BAD_REQUEST');
         }
 
-        $secret = (string) env('RAZORPAY_WEBHOOK_SECRET', '');
-        $allowUnsigned = filter_var(env('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS', false), FILTER_VALIDATE_BOOLEAN);
+        $secret = (string) config('store.razorpay_webhook_secret');
+        $allowUnsigned = filter_var(config('store.allow_unsigned_webhooks'), FILTER_VALIDATE_BOOLEAN);
 
         if ($secret === '') {
             if (app()->environment('production') || ! $allowUnsigned) {
@@ -419,7 +420,7 @@ class PaymentService
         $this->orderNotifications->notifyCustomerStatus($order->fresh(), 'CONFIRMED');
 
         if ($order->subscription_id) {
-            app(\App\Modules\Subscription\Services\SubscriptionService::class)->onOrderPaid($order->fresh());
+            app(SubscriptionService::class)->onOrderPaid($order->fresh());
         }
 
         return $order->fresh();
@@ -459,7 +460,7 @@ class PaymentService
                 $this->inventory->release($lines, 'order', $order->id, null);
                 $this->stateMachine->transition($order, 'PAYMENT_FAILED', null, $message);
                 if ($order->subscription_id) {
-                    app(\App\Modules\Subscription\Services\SubscriptionService::class)
+                    app(SubscriptionService::class)
                         ->onOrderPaymentFailed($order->fresh());
                 }
             }

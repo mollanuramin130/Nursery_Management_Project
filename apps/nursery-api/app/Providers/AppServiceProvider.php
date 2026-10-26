@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Password reset emails must open Customer Web (API has no HTML reset route).
         ResetPassword::createUrlUsing(function (object $user, string $token) {
-            $base = rtrim((string) env('CUSTOMER_WEB_URL', 'http://127.0.0.1:3000'), '/');
+            $base = rtrim((string) config('store.customer_web_url'), '/');
             $email = method_exists($user, 'getEmailForPasswordReset')
                 ? $user->getEmailForPasswordReset()
                 : (string) ($user->email ?? '');

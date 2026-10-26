@@ -5,21 +5,25 @@ namespace App\Modules\Order\Services;
 use App\Modules\Auth\Models\User;
 use App\Modules\Cart\Models\Cart;
 use App\Modules\Cart\Services\CartService;
+use App\Modules\Catalog\Models\Product;
 use App\Modules\Customer\Services\AddressService;
 use App\Modules\Delivery\Models\ShippingMethod;
 use App\Modules\Inventory\Models\Warehouse;
 use App\Modules\Inventory\Services\InventoryService;
 use App\Modules\Notification\Services\NotificationService;
 use App\Modules\Notification\Services\OrderNotificationDispatcher;
-use App\Modules\Catalog\Models\Product;
 use App\Modules\Order\Models\Order;
 use App\Modules\Order\Models\OrderItem;
 use App\Modules\Order\Models\OrderStatusHistory;
-use App\Modules\Review\Models\Review;
 use App\Modules\Promotion\Models\Coupon;
 use App\Modules\Promotion\Models\CouponRedemption;
+use App\Modules\Review\Models\Review;
+use App\Modules\Subscription\Models\Subscription;
+use App\Modules\Subscription\Models\SubscriptionCycle;
+use App\Modules\Subscription\Services\SubscriptionService;
 use App\Shared\Exceptions\ApiException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CheckoutService
@@ -150,7 +154,7 @@ class CheckoutService
                 'request_id' => $requestId,
                 'warehouse_id' => $warehouseId,
             ];
-            if (\Illuminate\Support\Facades\Schema::hasColumn('orders', 'campaign_id')) {
+            if (Schema::hasColumn('orders', 'campaign_id')) {
                 $orderPayload['campaign_id'] = isset($payload['campaign_id'])
                     ? (int) $payload['campaign_id']
                     : null;
@@ -591,6 +595,7 @@ class CheckoutService
                     'name' => $line->name,
                     'reason' => 'unavailable',
                 ];
+
                 continue;
             }
 
@@ -601,6 +606,7 @@ class CheckoutService
                     'name' => $product->name,
                     'reason' => 'out_of_stock',
                 ];
+
                 continue;
             }
 
@@ -616,6 +622,7 @@ class CheckoutService
                     'name' => $product->name,
                     'reason' => 'unavailable',
                 ];
+
                 continue;
             }
 
@@ -882,7 +889,7 @@ class CheckoutService
             $appliedCoupon = $coupon->code;
         }
 
-        $threshold = (float) env('FREE_DELIVERY_THRESHOLD', 999);
+        $threshold = (float) config('store.free_delivery_threshold');
         $merchandise = round(max(0, $subtotal - $discount), 2);
         $qualifiesFree = $threshold > 0 && $merchandise >= $threshold;
 
@@ -940,8 +947,8 @@ class CheckoutService
      * Reuses inventory reserve/commit and order state machine.
      */
     public function placeSubscriptionOrder(
-        \App\Modules\Subscription\Models\Subscription $subscription,
-        \App\Modules\Subscription\Models\SubscriptionCycle $cycle,
+        Subscription $subscription,
+        SubscriptionCycle $cycle,
         ?string $ip = null,
         ?string $platform = null,
         ?string $requestId = null,
@@ -968,7 +975,7 @@ class CheckoutService
         $discount = 0.0;
         $tax = 0.0;
 
-        $threshold = (float) env('FREE_DELIVERY_THRESHOLD', 999);
+        $threshold = (float) config('store.free_delivery_threshold');
         $qualifiesFree = $threshold > 0 && $subtotal >= $threshold;
         $shipping = null;
         $shippingTotal = 0.0;
@@ -1065,7 +1072,7 @@ class CheckoutService
                 "Order {$order->order_number} is confirmed (COD subscription).",
                 ['order_id' => $order->id, 'order_number' => $order->order_number],
             );
-            app(\App\Modules\Subscription\Services\SubscriptionService::class)->onOrderPaid($order->fresh());
+            app(SubscriptionService::class)->onOrderPaid($order->fresh());
         }
 
         return $this->summary($order->fresh(['items']));

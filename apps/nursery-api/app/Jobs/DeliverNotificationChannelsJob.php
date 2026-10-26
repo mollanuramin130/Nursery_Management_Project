@@ -44,21 +44,25 @@ class DeliverNotificationChannelsJob implements ShouldQueue
         foreach ($channels as $channel) {
             if ($channel === 'in_app') {
                 $this->markChannel($notification->id, 'in_app', 'sent', 'database');
+
                 continue;
             }
 
             if ($channel === 'email') {
                 if (! $this->allowEmail($notification, $preferences)) {
                     $this->markChannel($notification->id, 'email', 'skipped', null, 'preference');
+
                     continue;
                 }
                 $this->sendEmail($notification, $user, $data);
+
                 continue;
             }
 
             if ($channel === 'push') {
                 if (! $this->allowPush($notification, $preferences)) {
                     $this->markChannel($notification->id, 'push', 'skipped', null, 'preference');
+
                     continue;
                 }
                 $this->sendPush($notification, $user, $data, $fcm);
@@ -133,7 +137,7 @@ class DeliverNotificationChannelsJob implements ShouldQueue
             ));
 
             $delivery->status = 'sent';
-            $delivery->provider = app()->environment('production') && env('MAIL_MAILER') === 'log' ? 'log' : (string) config('mail.default');
+            $delivery->provider = app()->environment('production') && config('mail.default') === 'log' ? 'log' : (string) config('mail.default');
             $delivery->attempts = (int) $delivery->attempts + 1;
             $delivery->sent_at = now();
             $delivery->error_message = null;
@@ -264,13 +268,13 @@ class DeliverNotificationChannelsJob implements ShouldQueue
      */
     private function safeCta(array $data): array
     {
-        $base = rtrim((string) env('CUSTOMER_WEB_URL', env('APP_URL', 'http://127.0.0.1:3000')), '/');
+        $base = rtrim((string) config('store.customer_web_url'), '/');
         if (! empty($data['order_id']) && is_numeric($data['order_id'])) {
             $basePath = (($data['audience'] ?? 'customer') === 'admin')
                 ? '/orders/'
                 : '/account/orders/';
             $webBase = (($data['audience'] ?? 'customer') === 'admin')
-                ? rtrim((string) env('ADMIN_WEB_URL', env('APP_URL', 'http://127.0.0.1:3001')), '/')
+                ? rtrim((string) config('store.admin_web_url'), '/')
                 : $base;
 
             return [

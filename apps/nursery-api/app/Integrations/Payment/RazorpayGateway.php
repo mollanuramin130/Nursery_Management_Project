@@ -3,6 +3,7 @@
 namespace App\Integrations\Payment;
 
 use App\Shared\Exceptions\ApiException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class RazorpayGateway implements PaymentGatewayInterface
@@ -15,8 +16,8 @@ class RazorpayGateway implements PaymentGatewayInterface
     public function createOrder(float $amount, string $currency, string $receipt, array $notes = []): array
     {
         $amountPaise = (int) round($amount * 100);
-        $key = (string) env('RAZORPAY_KEY', '');
-        $secret = (string) env('RAZORPAY_SECRET', '');
+        $key = (string) config('store.razorpay_key');
+        $secret = (string) config('store.razorpay_secret');
 
         // Local stub when keys are not configured — never in production.
         if ($key === '' || $secret === '') {
@@ -37,7 +38,7 @@ class RazorpayGateway implements PaymentGatewayInterface
                     'order_id' => $providerOrderId,
                     'amount' => $amountPaise,
                     'currency' => strtoupper($currency),
-                    'name' => env('APP_NAME', 'GreenLeaf Nursery'),
+                    'name' => config('app.name', 'GreenLeaf Nursery'),
                     'notes' => $notes,
                     'mode' => 'local_stub',
                 ],
@@ -66,7 +67,7 @@ class RazorpayGateway implements PaymentGatewayInterface
                 'order_id' => $providerOrderId,
                 'amount' => $amountPaise,
                 'currency' => strtoupper($currency),
-                'name' => env('APP_NAME', 'GreenLeaf Nursery'),
+                'name' => config('app.name', 'GreenLeaf Nursery'),
             ],
             'raw' => $json,
         ];
@@ -182,7 +183,7 @@ class RazorpayGateway implements PaymentGatewayInterface
 
     public function verifySignature(string $providerOrderId, string $providerPaymentId, string $signature): bool
     {
-        $secret = (string) env('RAZORPAY_SECRET', '');
+        $secret = (string) config('store.razorpay_secret');
 
         // Local stub verify — never in production.
         if ($secret === '') {
@@ -201,8 +202,8 @@ class RazorpayGateway implements PaymentGatewayInterface
 
     private function buildUpiDeepLink(float $amount, string $currency, string $receipt): string
     {
-        $pa = (string) env('UPI_PAYEE_VPA', 'greenleaf@razorpay');
-        $pn = rawurlencode((string) env('APP_NAME', 'GreenLeaf Nursery'));
+        $pa = (string) config('store.upi_payee_vpa');
+        $pn = rawurlencode((string) config('app.name', 'GreenLeaf Nursery'));
         $am = number_format($amount, 2, '.', '');
         $cu = strtoupper($currency ?: 'INR');
         $tn = rawurlencode($receipt);
@@ -215,8 +216,8 @@ class RazorpayGateway implements PaymentGatewayInterface
      */
     private function tryCreateRazorpayQr(int $amountPaise, string $receipt, array $notes): ?array
     {
-        $key = (string) env('RAZORPAY_KEY', '');
-        $secret = (string) env('RAZORPAY_SECRET', '');
+        $key = (string) config('store.razorpay_key');
+        $secret = (string) config('store.razorpay_secret');
         if ($key === '' || $secret === '') {
             return null;
         }
@@ -224,7 +225,7 @@ class RazorpayGateway implements PaymentGatewayInterface
         try {
             $payload = [
                 'type' => 'upi_qr',
-                'name' => env('APP_NAME', 'GreenLeaf Nursery'),
+                'name' => config('app.name', 'GreenLeaf Nursery'),
                 'usage' => 'single_use',
                 'fixed_amount' => true,
                 'payment_amount' => $amountPaise,
@@ -236,7 +237,7 @@ class RazorpayGateway implements PaymentGatewayInterface
             return $this->razorpayRequest('POST', 'https://api.razorpay.com/v1/payments/qr_codes', $payload, $key, $secret);
         } catch (\Throwable $e) {
             // Fallback: Checkout / deep-link still available; do not fail initiate.
-            \Illuminate\Support\Facades\Log::warning('razorpay.qr_create_failed', [
+            Log::warning('razorpay.qr_create_failed', [
                 'message' => $e->getMessage(),
             ]);
 
@@ -269,7 +270,7 @@ class RazorpayGateway implements PaymentGatewayInterface
         curl_close($ch);
 
         if ($body === false || $status >= 400) {
-            \Illuminate\Support\Facades\Log::error('razorpay.request_failed', [
+            Log::error('razorpay.request_failed', [
                 'url' => $url,
                 'http_status' => $status,
                 'curl_error' => $error ?: null,

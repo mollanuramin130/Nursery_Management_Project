@@ -243,7 +243,7 @@ class CartService
      */
     public function freeDeliveryMeta(float $merchandiseAfterDiscount): array
     {
-        $threshold = (float) env('FREE_DELIVERY_THRESHOLD', 999);
+        $threshold = (float) config('store.free_delivery_threshold');
         $remaining = round(max(0, $threshold - $merchandiseAfterDiscount), 2);
 
         return [
@@ -476,7 +476,6 @@ class CartService
             );
             $userCart->status = 'active';
             $userCart->save();
-
 
             $userCart = Cart::query()->whereKey($userCart->id)->lockForUpdate()->first();
 

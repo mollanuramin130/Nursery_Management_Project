@@ -54,9 +54,7 @@ class Phase21WebhookHardeningTest extends TestCase
 
         // Unsigned allowed in testing via env; payload has payment entity without order_id.
         config(['app.env' => 'testing']);
-        putenv('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS=true');
-        $_ENV['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'true';
-        $_SERVER['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'true';
+        config(['store.allow_unsigned_webhooks' => 'true']);
 
         $payload = [
             'event' => 'payment.captured',
