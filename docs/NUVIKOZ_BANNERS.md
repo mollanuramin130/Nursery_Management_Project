@@ -1,16 +1,18 @@
-# Nuvikoz home banners
+# Nuvikoz clean delivery banners — version 2
 
-Three original AI-generated garden scenes, created with the built-in ImageGen tool, converted without cropping to 1536 × 1024 WebP (about 190–280 KB each). Text and working links are rendered by the website, not embedded in the image, so headings stay readable on mobile and can be edited in Admin.
+Three minimal studio-style banners replace the earlier dense garden scenes. Built-in ImageGen generated the original PNG artwork; lossless-dimension WebP encoding produces 1536 × 1024 images of about 85–110 KB each. Website headings and working buttons are HTML, so they remain readable and editable. The page uses an ivory/sage background, dark green text and light overlays.
 
-- `apps/nursery-api/public/banners/nuvikoz/indoor-v1.webp`: indoor foliage, “Bring nature home”, links to `/shop`.
-- `apps/nursery-api/public/banners/nuvikoz/flowers-v1.webp`: flowering balcony, “Flowers for brighter balconies”, links to `/category/flowering-plants`.
-- `apps/nursery-api/public/banners/nuvikoz/grow-v1.webp`: fruit and aromatic plants, “Grow your own green corner”, links to `/category/outdoor-plants`.
+Assets under `apps/nursery-api/public/banners/nuvikoz/`:
 
-These are styled gardening inspiration, not photographs of the exact stock supplied. No prices, discounts, delivery promises, reviews or guarantees are embedded. Existing products and inventory are unchanged.
+- `indoor-v2.webp`: two potted plants and delivery packaging; “Plants, delivered to your door”; `/shop`.
+- `flowers-v2.webp`: three clearly separated foliage, flowering and succulent plants; “A plant for every corner”; `/shop?product_type=plant`.
+- `grow-v2.webp`: gardening tools, gloves, watering can and shipping box; “Garden tools, delivered”; `/shop?product_type=tool`.
 
-## Deploy on this Hostinger installation
+The tools banner is a promotion, not a stock import. Add actual tool products and inventory through Admin for items to appear in that collection. No tool stock, discounts, delivery times or service areas are invented. Images are styled AI-generated marketing artwork, not exact-stock photographs. Old v1 files remain available to avoid breaking existing links.
 
-Run from the API app:
+## Hostinger commands
+
+Run each command from SSH; stop if a command fails:
 
 ```bash
 cd /home/u317570912/domains/api.nuvikoz.com/source/apps/nursery-api
@@ -19,37 +21,32 @@ composer dump-autoload --no-dev --optimize --no-scripts
 php artisan package:discover --ansi
 mkdir -p /home/u317570912/domains/api.nuvikoz.com/public_html/banners/nuvikoz
 cp -a public/banners/nuvikoz/. /home/u317570912/domains/api.nuvikoz.com/public_html/banners/nuvikoz/
-curl -I --max-time 20 https://api.nuvikoz.com/banners/nuvikoz/indoor-v1.webp
-php artisan banners:seed-nuvikoz --dry-run
+curl -I --max-time 20 https://api.nuvikoz.com/banners/nuvikoz/indoor-v2.webp
+php artisan banners:seed-nuvikoz --refresh-artwork --dry-run
 ```
 
-The image should return HTTP 200 with image/webp. Preview should report 3 new banners and roll back. Once successful:
+The image should return HTTP 200 with image/webp. Preview rolls back all inserts/updates. Expect 3 new banners on a first install, or 3 updated if v1 was already installed (deleted banners stay skipped). Then apply:
 
 ```bash
-php artisan banners:seed-nuvikoz --force
-curl -sS --max-time 20 'https://api.nuvikoz.com/api/v1/banners?placement=home'
+php artisan banners:seed-nuvikoz --refresh-artwork --force
 ```
 
-Expected: `IMPORTED: 3 new banners; 0 existing banners skipped.` Reruns skip the three records, retaining Admin changes and soft deletes. The command serialises imports with a cache lock. It requires the active categories created by the catalog seeder. Preview uses a rolled-back transaction; MySQL auto-increment numbers may have gaps.
+`--refresh-artwork` replaces title, image URL and collection link only for identified seeded banners. It retains their ID, visibility, sort order and schedule, and preserves unrelated metadata. Deleted banners are never restored. Other banners are untouched. Without this flag, existing seeded banners are skipped. MySQL preview can consume auto-increment numbers; gaps are harmless.
 
-**Redeploy the Customer Portal (`nuvikoz.com`) in hPanel**, using branch `development/v1.0.0`, root `apps/nursery-web`. This is required for the new collection cards and the Next.js image allowlist. Auto-deployment may already have built the commit: confirm the latest deployment completed. No Admin portal redeployment is needed. The existing `npm run build` command uses Webpack.
+In hPanel redeploy **Customer Portal nuvikoz.com**, branch `development/v1.0.0`, root `apps/nursery-web`, unless auto-deployment has already successfully deployed this commit. This is required for the lighter design and Tools button. No Admin redeployment or migrations are required. Do not overwrite public_html/index.php. APP_URL should remain https://api.nuvikoz.com.
 
-The first active home banner by sort order is the hero, and up to four additional banners appear as collection cards below. New banners use sort orders -300, -200 and -100; existing banners are preserved. Change title, link, sort order or status in Admin → Banners. If an existing banner sorts before these, it remains the hero until you reorder it. Home-feed cache is invalidated on import; allow around a minute for the customer portal cache to refresh.
-
-The home brand fallback is NUVIKOZ. If an older NEXT_PUBLIC_STORE_NAME environment variable overrides it, set that variable to NUVIKOZ in the customer deployment and rebuild.
-
-Only the new banner asset directory is copied to public_html. Never copy the entire Laravel public directory over the customised index.php. No migrations or catalog reseeding are required.
+After import, the home-feed cache is cleared; allow about a minute for frontend caching. Manage banners under Admin → Banners. Set NEXT_PUBLIC_STORE_NAME=NUVIKOZ in the customer deployment if an older environment value overrides the brand name. Lowest sort order is the hero, up to four following banners are collection cards.
 
 ## Validation
 
-PHP syntax and inserted columns are checked against the repository migration. PHPUnit coverage includes preview rollback, repeatability and preserving Admin-edited/deleted banners. Run `php artisan test --filter=NuvikozBannerSeederTest` only against the development/test database; database-refresh tests must not target production. PHP is unavailable in the authoring environment, so runtime database validation is performed with the Hostinger preview command.
+PHP syntax, schema column names, TSX rendering and link destinations are checked during authoring. PHPUnit tests cover rollback, repeatability, soft-deletes and explicit artwork refresh preserving status/order. PHP runtime is unavailable in the authoring environment, so run the production dry-run before applying. Run `php artisan test --filter=NuvikozBannerSeederTest` only on a test database with dev dependencies, never on the live database.
 
-## Artwork prompts
+## ImageGen prompt set
 
-Common direction: ads-marketing; premium photographic banner background for NUVIKOZ Indian plant nursery; 1536×1024 landscape; botanical editorial photography; emerald green and warm cream; natural textures and directional light. No lettering, logos, watermarks, buttons or collage panels. Calm dark green left 45% for website text; plants concentrated to the right with foliage through the centre for mobile cropping. No people, discount or certification badges.
+Common: premium clean ecommerce website banner, 1536×1024 landscape, warm ivory or light sage studio background, restrained sage/terracotta palette, soft daylight, realistic commercial product photography, separated objects on the right, generous negative space on the left for website headlines. No dense foliage, clutter, people, embedded text, watermark, discount badges or delivery guarantees.
 
-Indoor: sculptural snake plant, trailing golden pothos on warm wood, glossy rubber plant and feathery areca palm, terracotta and cream ceramic pots, warm plaster wall, morning side light, inviting home corner.
+Delivery: exactly two potted plants, golden pothos and upright snake plant, alongside a neat open kraft shipping box, folded protective paper and simple leaf icon. Clear silhouettes, subtle shadows, elegant studio arrangement.
 
-Flowers: sunny Indian balcony with red hibiscus, white Arabian jasmine and pink bougainvillea, terracotta pots, subtle curved architectural opening, dappled warm light, natural saturated colour.
+Plants: rubber plant, compact red flowering hibiscus and aloe vera, coordinated terracotta and cream pots on ivory plinths, clear separated silhouettes with generous spacing.
 
-Grow: sunlit Indian kitchen garden, young guava and lemon plants, tulsi and curry leaf in earthen pots, tactile soil, small watering can at the right, layered foliage and garden stone. Realistic container plants, not enormous trees.
+Tools: wooden handled hand trowel, three-prong cultivator, closed pruning shears, one pair of gloves and sage watering can, neatly laid out with open kraft shipping box and folded packing paper; one tiny potted plant as an accent. Clearly communicates gardening tools delivery.

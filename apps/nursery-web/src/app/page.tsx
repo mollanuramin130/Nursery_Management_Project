@@ -46,7 +46,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-[var(--color-primary-deep)] text-white">
+      <section className="relative overflow-hidden bg-[#f7f3e9] text-[#173e2b]">
         <div className="absolute inset-0">
           {hero?.image_url ? (
             <SafeImage
@@ -58,36 +58,36 @@ export default async function HomePage() {
               className="object-cover object-[65%_center] md:object-center"
             />
           ) : null}
-          <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(10,35,23,0.9)_0%,rgba(10,35,23,0.55)_50%,rgba(10,35,23,0.08)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(250,247,239,0.98)_0%,rgba(250,247,239,0.86)_35%,rgba(250,247,239,0.12)_70%,transparent_100%)]" />
         </div>
 
         <div className="relative container grid min-h-[78vh] items-end gap-8 py-14 md:min-h-[72vh] md:grid-cols-[1.1fr_0.9fr] md:items-center md:py-20">
           <div className="animate-up max-w-xl">
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#d5e8da]">
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#44644c]">
               {storeName}
             </p>
-            <h1 className="display text-[clamp(2.8rem,8vw,5.2rem)] text-white">
+            <h1 className="display text-[clamp(2.8rem,8vw,5.2rem)] text-[#173e2b]">
               {hero?.title || "Bring nature home"}
             </h1>
-            <p className="mt-4 max-w-md text-base leading-relaxed text-[#dce9e0] md:text-lg">
-              Indoor favourites, colourful blooms and fruit plants — explore a greener way to fill your home, balcony and garden.
+            <p className="mt-4 max-w-md text-base leading-relaxed text-[#395541] md:text-lg">
+              Beautiful plants and useful gardening tools, delivered to your door. Find what you need to grow your own green corner.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href={bannerHref(hero)}
-                className="inline-flex min-h-12 items-center rounded-full bg-white px-6 text-sm font-semibold text-[var(--color-primary-deep)] hover:bg-[#f3f7f4]"
+                className="inline-flex min-h-12 items-center rounded-full bg-[#173e2b] px-6 text-sm font-semibold text-white hover:bg-[#28563d]"
               >
                 {hero?.link_type === "campaign" ? "Explore collection" : "Shop plants"}
               </Link>
               <Link
                 href="/find-your-plant"
-                className="inline-flex min-h-12 items-center rounded-full border border-white/40 px-6 text-sm font-semibold text-white hover:bg-white/10"
+                className="inline-flex min-h-12 items-center rounded-full border border-[#173e2b]/35 bg-white/70 px-6 text-sm font-semibold text-[#173e2b] hover:bg-white"
               >
                 Find your plant
               </Link>
               <Link
                 href="/offers"
-                className="inline-flex min-h-12 items-center rounded-full border border-white/40 px-6 text-sm font-semibold text-white hover:bg-white/10"
+                className="inline-flex min-h-12 items-center rounded-full border border-[#173e2b]/35 bg-white/70 px-6 text-sm font-semibold text-[#173e2b] hover:bg-white"
               >
                 Special offers
               </Link>
@@ -104,14 +104,14 @@ export default async function HomePage() {
           <div className="container">
             <div className="section-head">
               <h2 id="home-collections-title">Find your kind of green</h2>
-              <p>From colourful balconies to your own little garden.</p>
+              <p>Beautiful plants. Useful tools. A greener everyday.</p>
             </div>
             <div className="grid gap-5 md:grid-cols-2">
               {collectionBanners.map((banner) => (
                 <Link
                   key={banner.id}
                   href={bannerHref(banner)}
-                  className="group relative flex min-h-[340px] items-end overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-primary-deep)] p-6 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] md:min-h-[380px] md:p-8"
+                  className="group relative flex min-h-[340px] items-end overflow-hidden rounded-[var(--radius-xl)] bg-[#f7f3e9] p-6 text-[#173e2b] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--color-primary)] md:min-h-[380px] md:p-8"
                 >
                   <SafeImage
                     src={banner.image_url}
@@ -120,12 +120,12 @@ export default async function HomePage() {
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover object-[65%_center] transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#faf7ef] via-[#faf7ef]/60 to-transparent" />
                   <div className="relative max-w-sm">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-white/80">The {storeName} collection</p>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#395541]">The {storeName} collection</p>
                     <h3 className="display text-3xl leading-tight md:text-4xl">{banner.title}</h3>
                     <span className="mt-5 inline-flex min-h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-[var(--color-primary-deep)]">
-                      Explore plants <span aria-hidden="true" className="ml-2">→</span>
+                      {banner.link_value?.includes("product_type=tool") ? "Explore tools" : "Explore plants"} <span aria-hidden="true" className="ml-2">→</span>
                     </span>
                   </div>
                 </Link>
@@ -448,4 +448,5 @@ export default async function HomePage() {
     </>
   );
 }
+
 
