@@ -15,6 +15,7 @@ use App\Shared\Support\ProductionReadinessChecker;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -31,15 +32,9 @@ class Qa20ProductionReleaseGateTest extends TestCase
     {
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
-        putenv('RAZORPAY_KEY=');
-        putenv('RAZORPAY_SECRET=');
-        putenv('RAZORPAY_WEBHOOK_SECRET=');
-        $_ENV['RAZORPAY_KEY'] = '';
-        $_ENV['RAZORPAY_SECRET'] = '';
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = '';
-        $_SERVER['RAZORPAY_KEY'] = '';
-        $_SERVER['RAZORPAY_SECRET'] = '';
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = '';
+        config(['store.razorpay_key' => '']);
+        config(['store.razorpay_secret' => '']);
+        config(['store.razorpay_webhook_secret' => '']);
     }
 
     private function customer(string $email = 'qa20-cust@example.com'): User
@@ -140,7 +135,7 @@ class Qa20ProductionReleaseGateTest extends TestCase
         ];
     }
 
-    private function postSignedWebhook(array $payload, string $secret): \Illuminate\Testing\TestResponse
+    private function postSignedWebhook(array $payload, string $secret): TestResponse
     {
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES);
         $sig = hash_hmac('sha256', $raw, $secret);
@@ -179,9 +174,7 @@ class Qa20ProductionReleaseGateTest extends TestCase
     public function test_webhook_after_client_verify_is_idempotent(): void
     {
         $secret = 'qa20_wh_secret';
-        putenv('RAZORPAY_WEBHOOK_SECRET='.$secret);
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = $secret;
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = $secret;
+        config(['store.razorpay_webhook_secret' => $secret]);
 
         $ctx = $this->placePending();
         $init = $this->withToken($ctx['token'])
@@ -261,9 +254,7 @@ class Qa20ProductionReleaseGateTest extends TestCase
     public function test_retry_after_failed_payment_allows_new_initiate(): void
     {
         $secret = 'qa20_wh_secret';
-        putenv('RAZORPAY_WEBHOOK_SECRET='.$secret);
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = $secret;
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = $secret;
+        config(['store.razorpay_webhook_secret' => $secret]);
 
         $ctx = $this->placePending();
         $init = $this->withToken($ctx['token'])

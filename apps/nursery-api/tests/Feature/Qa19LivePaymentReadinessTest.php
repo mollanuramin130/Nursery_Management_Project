@@ -31,15 +31,9 @@ class Qa19LivePaymentReadinessTest extends TestCase
     {
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
-        putenv('RAZORPAY_KEY=');
-        putenv('RAZORPAY_SECRET=');
-        putenv('RAZORPAY_WEBHOOK_SECRET=');
-        $_ENV['RAZORPAY_KEY'] = '';
-        $_ENV['RAZORPAY_SECRET'] = '';
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = '';
-        $_SERVER['RAZORPAY_KEY'] = '';
-        $_SERVER['RAZORPAY_SECRET'] = '';
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = '';
+        config(['store.razorpay_key' => '']);
+        config(['store.razorpay_secret' => '']);
+        config(['store.razorpay_webhook_secret' => '']);
     }
 
     private function customer(): User

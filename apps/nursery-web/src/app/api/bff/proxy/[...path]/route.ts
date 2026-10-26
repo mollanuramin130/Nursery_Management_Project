@@ -1,3 +1,4 @@
+import { proxyPath, requiresAuthHandler } from "@/lib/server/proxy-path";
 import { NextRequest, NextResponse } from "next/server";
 import {
   forwardLaravelResponse,
@@ -18,17 +19,16 @@ async function handle(req: NextRequest, pathParts: string[]) {
   const csrfFail = assertCsrf(req, session.csrf);
   if (csrfFail) return csrfFail;
 
-  const path = `/${pathParts.join("/")}`;
+  const path = proxyPath(pathParts);
+  if (!path) {
+    return NextResponse.json({ success: false, message: "Invalid proxy path", data: null,
+      errors: null, meta: { error_code: "INVALID_PATH" } }, { status: 400 });
+  }
   const url = new URL(req.url);
   const qs = url.search;
 
   // Never allow browser to hit auth token endpoints via proxy (BFF auth routes only).
-  if (
-    path === "/auth/login" ||
-    path === "/auth/register" ||
-    path === "/auth/refresh" ||
-    path === "/auth/logout"
-  ) {
+  if (requiresAuthHandler(path)) {
     return NextResponse.json(
       {
         success: false,
@@ -70,7 +70,13 @@ async function handle(req: NextRequest, pathParts: string[]) {
 
   // Server-side silent refresh — browser never sees JWTs.
   if (upstream.status === 401 && session.refresh) {
-    const tokens = await refreshUpstream(session.refresh);
+    let tokens;
+    try {
+      tokens = await refreshUpstream(session.refresh);
+    } catch {
+      return NextResponse.json({ success: false, message: "Authentication service temporarily unavailable",
+        data: null, errors: null, meta: { error_code: "AUTH_SERVICE_UNAVAILABLE" } }, { status: 503 });
+    }
     if (tokens) {
       access = tokens.access;
       upstream = await laravelFetch(`${path}${qs}`, {

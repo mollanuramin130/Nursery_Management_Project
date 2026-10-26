@@ -5,7 +5,7 @@ namespace App\Modules\Auth\Services;
 use App\Modules\Auth\Models\RefreshToken;
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
-use App\Modules\Auth\Services\OtpService;
+use App\Modules\Marketing\Services\MarketingAutomationService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -54,7 +54,7 @@ class AuthService
 
             // Best-effort welcome journey — never fails registration.
             try {
-                app(\App\Modules\Marketing\Services\MarketingAutomationService::class)->sendWelcome($user);
+                app(MarketingAutomationService::class)->sendWelcome($user);
             } catch (\Throwable) {
             }
 
@@ -236,7 +236,7 @@ class AuthService
     {
         $accessToken = JWTAuth::fromUser($user);
         $plainRefresh = Str::random(64);
-        $ttlMinutes = (int) env('JWT_REFRESH_TTL', 129600);
+        $ttlMinutes = (int) config('jwt.refresh_ttl', 129600);
 
         RefreshToken::query()->create([
             'user_id' => $user->id,

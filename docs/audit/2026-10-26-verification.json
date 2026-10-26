@@ -1,0 +1,328 @@
+{
+  "date": "2026-10-26",
+  "baseline": "74156597492ce8e1d2d405b3be3aeb8f12dca0a8",
+  "branch": "audit/2026-10-26-platform-hardening",
+  "production_modified": false,
+  "runtime": {
+    "node": "24.22.1",
+    "php": "8.4.23 static CLI; sodium unavailable locally",
+    "target": "Node 22; PHP >=8.4.1 with sodium"
+  },
+  "api": {
+    "tool": "phpunit",
+    "result": "passed",
+    "tests": 275,
+    "passed": 274,
+    "assertions": 1384,
+    "duration_ms": 14746,
+    "skipped": 1
+  },
+  "web": {
+    "unit_checks": "PASS",
+    "audit_tests": {
+      "pass": 7,
+      "fail": 0
+    },
+    "typecheck": "PASS",
+    "production_build": "PASS",
+    "npm_audit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "lint": {
+      "errors": 20,
+      "warnings": 10
+    }
+  },
+  "admin": {
+    "unit_checks": "PASS",
+    "audit_tests": {
+      "pass": 7,
+      "fail": 0
+    },
+    "typecheck": "PASS",
+    "production_build": "PASS",
+    "npm_audit": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "lint": {
+      "errors": 61,
+      "warnings": 7
+    }
+  },
+  "composer_validate": "PASS",
+  "composer_audit": {
+    "advisories": [],
+    "abandoned": [],
+    "filter": []
+  },
+  "contrast": [
+    {
+      "app": "nursery-web",
+      "width": 390,
+      "id": "cta",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "400",
+      "size": "16px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-web",
+      "width": 390,
+      "id": "button",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "600",
+      "size": "14px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-web",
+      "width": 390,
+      "id": "muted",
+      "fg": "rgb(90, 101, 94)",
+      "bg": "rgb(243, 245, 242)",
+      "weight": "400",
+      "size": "16px",
+      "contrast": 5.54
+    },
+    {
+      "app": "nursery-web",
+      "width": 1440,
+      "id": "cta",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "400",
+      "size": "16px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-web",
+      "width": 1440,
+      "id": "button",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "600",
+      "size": "14px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-web",
+      "width": 1440,
+      "id": "muted",
+      "fg": "rgb(90, 101, 94)",
+      "bg": "rgb(243, 245, 242)",
+      "weight": "400",
+      "size": "16px",
+      "contrast": 5.54
+    },
+    {
+      "app": "nursery-admin",
+      "width": 390,
+      "id": "cta",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "400",
+      "size": "14px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-admin",
+      "width": 390,
+      "id": "button",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "600",
+      "size": "12.25px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-admin",
+      "width": 390,
+      "id": "muted",
+      "fg": "rgb(94, 109, 100)",
+      "bg": "rgb(238, 241, 239)",
+      "weight": "400",
+      "size": "14px",
+      "contrast": 4.8
+    },
+    {
+      "app": "nursery-admin",
+      "width": 1440,
+      "id": "cta",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "400",
+      "size": "14px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-admin",
+      "width": 1440,
+      "id": "button",
+      "fg": "rgb(255, 255, 255)",
+      "bg": "rgb(26, 92, 58)",
+      "weight": "600",
+      "size": "12.25px",
+      "contrast": 7.97
+    },
+    {
+      "app": "nursery-admin",
+      "width": 1440,
+      "id": "muted",
+      "fg": "rgb(94, 109, 100)",
+      "bg": "rgb(238, 241, 239)",
+      "weight": "400",
+      "size": "14px",
+      "contrast": 4.8
+    }
+  ],
+  "browser_smoke": [
+    {
+      "app": "customer",
+      "width": 390,
+      "route": "/login",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Retry",
+        "\u00d7",
+        "Search",
+        "\u2315",
+        "Cart",
+        "Password",
+        "OTP",
+        "Show",
+        "Sign in"
+      ],
+      "errors": []
+    },
+    {
+      "app": "customer",
+      "width": 390,
+      "route": "/register",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Retry",
+        "\u00d7",
+        "Search",
+        "\u2315",
+        "Cart",
+        "Send verification code"
+      ],
+      "errors": []
+    },
+    {
+      "app": "customer",
+      "width": 390,
+      "route": "/shop",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Retry",
+        "\u00d7",
+        "Search",
+        "\u2315",
+        "Cart",
+        "Filters",
+        "Clear filters"
+      ],
+      "errors": []
+    },
+    {
+      "app": "customer",
+      "width": 1440,
+      "route": "/login",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Retry",
+        "\u00d7",
+        "Search",
+        "\u2315",
+        "Cart",
+        "Password",
+        "OTP",
+        "Show",
+        "Sign in"
+      ],
+      "errors": []
+    },
+    {
+      "app": "customer",
+      "width": 1440,
+      "route": "/register",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Retry",
+        "\u00d7",
+        "Search",
+        "\u2315",
+        "Cart",
+        "Send verification code"
+      ],
+      "errors": []
+    },
+    {
+      "app": "customer",
+      "width": 1440,
+      "route": "/shop",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Retry",
+        "\u00d7",
+        "Search",
+        "\u2315",
+        "Cart",
+        "Filters",
+        "Clear filters"
+      ],
+      "errors": []
+    },
+    {
+      "app": "admin",
+      "width": 390,
+      "route": "/login",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Sign in"
+      ],
+      "errors": []
+    },
+    {
+      "app": "admin",
+      "width": 1440,
+      "route": "/login",
+      "status": 200,
+      "overflow": false,
+      "buttons": [
+        "Sign in"
+      ],
+      "errors": []
+    }
+  ],
+  "limitations": [
+    "No Flutter SDK/device build verification",
+    "No real payment/email/SMS/push integration test",
+    "SQLite tests do not prove MySQL concurrency",
+    "Production SMS provider missing",
+    "Seed SVG images unsupported by customer Flutter raster image widget",
+    "Full lint remains failing; rules not disabled",
+    "Node 22/Hostinger WASM runtime not locally reproduced",
+    "Browser smoke used unavailable local API; no authenticated E2E claim"
+  ]
+}

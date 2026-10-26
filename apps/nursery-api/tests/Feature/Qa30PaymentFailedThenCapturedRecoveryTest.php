@@ -14,6 +14,7 @@ use App\Modules\Payment\Models\Payment;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -29,18 +30,10 @@ class Qa30PaymentFailedThenCapturedRecoveryTest extends TestCase
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
 
-        putenv('RAZORPAY_KEY=');
-        putenv('RAZORPAY_SECRET=');
-        putenv('RAZORPAY_WEBHOOK_SECRET=qa30_webhook_secret');
-        putenv('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS=false');
-        $_ENV['RAZORPAY_KEY'] = '';
-        $_ENV['RAZORPAY_SECRET'] = '';
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = 'qa30_webhook_secret';
-        $_ENV['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
-        $_SERVER['RAZORPAY_KEY'] = '';
-        $_SERVER['RAZORPAY_SECRET'] = '';
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = 'qa30_webhook_secret';
-        $_SERVER['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
+        config(['store.razorpay_key' => '']);
+        config(['store.razorpay_secret' => '']);
+        config(['store.razorpay_webhook_secret' => 'qa30_webhook_secret']);
+        config(['store.allow_unsigned_webhooks' => 'false']);
     }
 
     public function test_failed_webhook_then_captured_confirms_order_and_commits_stock_once(): void
@@ -186,7 +179,7 @@ class Qa30PaymentFailedThenCapturedRecoveryTest extends TestCase
         $this->assertSame('CONFIRMED', Order::query()->find($orderId)?->status);
     }
 
-    private function postSignedWebhook(array $payload): \Illuminate\Testing\TestResponse
+    private function postSignedWebhook(array $payload): TestResponse
     {
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES);
         $this->assertIsString($raw);

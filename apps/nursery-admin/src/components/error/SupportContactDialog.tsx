@@ -35,7 +35,7 @@ export function SupportContactDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-base font-semibold text-[var(--admin-ink)]">GreenLeaf Support</h2>
-        <p className="mt-1 text-sm text-[var(--admin-muted)]">We're here to help.</p>
+        <p className="mt-1 text-sm text-[var(--admin-muted)]">We’re here to help.</p>
         <p className="mt-3 text-sm font-semibold">Support: {GREENLEAF_SUPPORT_PHONE}</p>
         {reference ? (
           <p className="mt-1 text-sm font-semibold">Reference: {reference}</p>

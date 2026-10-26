@@ -16,6 +16,7 @@ use App\Shared\Exceptions\ApiException;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -34,18 +35,10 @@ class Qa18ProductionPaymentTest extends TestCase
         $this->seed(RolePermissionSeeder::class);
 
         // Ensure local stub path (no secrets printed).
-        putenv('RAZORPAY_KEY=');
-        putenv('RAZORPAY_SECRET=');
-        putenv('RAZORPAY_WEBHOOK_SECRET=');
-        putenv('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS=false');
-        $_ENV['RAZORPAY_KEY'] = '';
-        $_ENV['RAZORPAY_SECRET'] = '';
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = '';
-        $_ENV['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
-        $_SERVER['RAZORPAY_KEY'] = '';
-        $_SERVER['RAZORPAY_SECRET'] = '';
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = '';
-        $_SERVER['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
+        config(['store.razorpay_key' => '']);
+        config(['store.razorpay_secret' => '']);
+        config(['store.razorpay_webhook_secret' => '']);
+        config(['store.allow_unsigned_webhooks' => 'false']);
     }
 
     private function customer(): User
@@ -169,7 +162,7 @@ class Qa18ProductionPaymentTest extends TestCase
         ];
     }
 
-    private function postSignedWebhook(array $payload, string $secret, ?string $overrideSignature = null): \Illuminate\Testing\TestResponse
+    private function postSignedWebhook(array $payload, string $secret, ?string $overrideSignature = null): TestResponse
     {
         $raw = json_encode($payload, JSON_UNESCAPED_SLASHES);
         $this->assertIsString($raw);
@@ -266,9 +259,7 @@ class Qa18ProductionPaymentTest extends TestCase
     public function test_duplicate_webhook_is_idempotent(): void
     {
         $secret = 'qa18_webhook_secret_test';
-        putenv('RAZORPAY_WEBHOOK_SECRET='.$secret);
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = $secret;
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = $secret;
+        config(['store.razorpay_webhook_secret' => $secret]);
 
         $ctx = $this->placePendingRazorpayOrder();
         $token = $ctx['token'];
@@ -308,9 +299,7 @@ class Qa18ProductionPaymentTest extends TestCase
     public function test_invalid_webhook_signature_rejected(): void
     {
         $secret = 'qa18_webhook_secret_test';
-        putenv('RAZORPAY_WEBHOOK_SECRET='.$secret);
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = $secret;
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = $secret;
+        config(['store.razorpay_webhook_secret' => $secret]);
 
         $ctx = $this->placePendingRazorpayOrder();
         $this->withToken($ctx['token'])
@@ -339,9 +328,7 @@ class Qa18ProductionPaymentTest extends TestCase
     public function test_amount_mismatch_rejects_finalize(): void
     {
         $secret = 'qa18_webhook_secret_test';
-        putenv('RAZORPAY_WEBHOOK_SECRET='.$secret);
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = $secret;
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = $secret;
+        config(['store.razorpay_webhook_secret' => $secret]);
 
         $customer = $this->customer();
         $order = Order::query()->create([
@@ -391,9 +378,7 @@ class Qa18ProductionPaymentTest extends TestCase
     public function test_payment_failed_webhook_marks_failed_not_paid(): void
     {
         $secret = 'qa18_webhook_secret_test';
-        putenv('RAZORPAY_WEBHOOK_SECRET='.$secret);
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = $secret;
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = $secret;
+        config(['store.razorpay_webhook_secret' => $secret]);
 
         $ctx = $this->placePendingRazorpayOrder();
         $this->withToken($ctx['token'])
@@ -506,10 +491,8 @@ class Qa18ProductionPaymentTest extends TestCase
     public function test_production_stub_rejected_and_unauthorized_payment_access(): void
     {
         $this->app->detectEnvironment(fn () => 'production');
-        putenv('RAZORPAY_KEY=');
-        putenv('RAZORPAY_SECRET=');
-        $_ENV['RAZORPAY_KEY'] = '';
-        $_ENV['RAZORPAY_SECRET'] = '';
+        config(['store.razorpay_key' => '']);
+        config(['store.razorpay_secret' => '']);
 
         $gateway = new RazorpayGateway;
         try {
@@ -603,12 +586,8 @@ class Qa18ProductionPaymentTest extends TestCase
 
     public function test_webhook_secret_required_when_unsigned_disallowed(): void
     {
-        putenv('RAZORPAY_WEBHOOK_SECRET=');
-        $_ENV['RAZORPAY_WEBHOOK_SECRET'] = '';
-        $_SERVER['RAZORPAY_WEBHOOK_SECRET'] = '';
-        putenv('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS=false');
-        $_ENV['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
-        $_SERVER['PAYMENT_ALLOW_UNSIGNED_WEBHOOKS'] = 'false';
+        config(['store.razorpay_webhook_secret' => '']);
+        config(['store.allow_unsigned_webhooks' => 'false']);
 
         $payload = [
             'event' => 'payment.captured',

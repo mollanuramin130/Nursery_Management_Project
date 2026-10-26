@@ -14,6 +14,12 @@ return [
     |
     */
 
+    'fcm' => [
+        'server_key' => env('FCM_SERVER_KEY', ''),
+        'credentials' => env('FIREBASE_CREDENTIALS', ''),
+        'google_credentials' => env('GOOGLE_APPLICATION_CREDENTIALS', ''),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

@@ -6,6 +6,7 @@ use App\Modules\Admin\Services\AnalyticsService;
 use App\Modules\Auth\Models\Permission;
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
+use App\Modules\Cart\Services\CartService;
 use App\Modules\Catalog\Models\Product;
 use App\Modules\Customer\Models\Address;
 use App\Modules\Delivery\Models\ShippingMethod;
@@ -13,6 +14,7 @@ use App\Modules\Inventory\Models\InventoryItem;
 use App\Modules\Inventory\Models\Warehouse;
 use App\Modules\Order\Models\Order;
 use App\Modules\Order\Services\OrderStateMachine;
+use App\Shared\Exceptions\ApiException;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -183,7 +185,7 @@ class Qa13RegressionTest extends TestCase
             'placed_at' => now(),
         ]);
 
-        $this->expectException(\App\Shared\Exceptions\ApiException::class);
+        $this->expectException(ApiException::class);
         app(OrderStateMachine::class)->transition($order, 'CONFIRMED');
     }
 
@@ -299,10 +301,9 @@ class Qa13RegressionTest extends TestCase
 
     public function test_free_delivery_threshold_boundaries(): void
     {
-        putenv('FREE_DELIVERY_THRESHOLD=500');
-        $_ENV['FREE_DELIVERY_THRESHOLD'] = '500';
+        config(['store.free_delivery_threshold' => '500']);
 
-        $svc = app(\App\Modules\Cart\Services\CartService::class);
+        $svc = app(CartService::class);
         $below = $svc->freeDeliveryMeta(499.0);
         $exact = $svc->freeDeliveryMeta(500.0);
         $above = $svc->freeDeliveryMeta(501.0);

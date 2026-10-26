@@ -4,6 +4,7 @@ namespace App\Modules\Auth\Services;
 
 use App\Modules\Auth\Models\User;
 use App\Modules\Auth\Models\VerificationCode;
+use App\Shared\Exceptions\ApiException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -32,6 +33,10 @@ class OtpService
      */
     public function sendCode(string $mobile, string $purpose): array
     {
+        if (! app()->environment('local', 'testing')) {
+            throw new ApiException('SMS verification is temporarily unavailable', 503, 'SMS_UNAVAILABLE');
+        }
+
         $mobile = self::normalizeMobile($mobile);
 
         $this->enforceResendCooldown($mobile, $purpose);
@@ -131,9 +136,9 @@ class OtpService
     }
 
     /**
-     * Validate a verified-OTP token and return the decoded payload.
+     * Validate and atomically consume a verified-OTP proof. Call within the business transaction.
      */
-    public function validateVerifiedToken(string $token, string $expectedPurpose, string $expectedMobile): array
+    public function consumeVerifiedToken(string $token, string $expectedPurpose, string $expectedMobile): array
     {
         $parts = explode('.', $token, 2);
         if (count($parts) !== 2) {
@@ -163,6 +168,20 @@ class OtpService
         if (($payload['purpose'] ?? '') !== $expectedPurpose || ($payload['identifier'] ?? '') !== $normalizedMobile) {
             throw ValidationException::withMessages([
                 'otp_verified_token' => ['Verification token does not match this request.'],
+            ]);
+        }
+
+        $consumed = VerificationCode::query()
+            ->whereKey($payload['vid'] ?? 0)
+            ->where('identifier', $normalizedMobile)
+            ->where('purpose', $expectedPurpose)
+            ->whereNotNull('verified_at')
+            ->whereNull('consumed_at')
+            ->update(['consumed_at' => now()]);
+
+        if ($consumed !== 1) {
+            throw ValidationException::withMessages([
+                'otp_verified_token' => ['Verification has already been used or is no longer valid.'],
             ]);
         }
 

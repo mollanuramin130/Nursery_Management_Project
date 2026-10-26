@@ -17,16 +17,16 @@ final class ProductionReadinessChecker
         $debug = $config['debug'] ?? (bool) config('app.debug');
         $findings = [];
 
-        $razorpayKey = (string) ($config['razorpay_key'] ?? env('RAZORPAY_KEY', env('RAZORPAY_KEY_ID', '')));
-        $razorpaySecret = (string) ($config['razorpay_secret'] ?? env('RAZORPAY_SECRET', env('RAZORPAY_KEY_SECRET', '')));
-        $webhook = (string) ($config['razorpay_webhook'] ?? env('RAZORPAY_WEBHOOK_SECRET', ''));
-        $cors = (string) ($config['cors'] ?? env('CORS_ALLOWED_ORIGINS', ''));
+        $razorpayKey = (string) ($config['razorpay_key'] ?? config('store.razorpay_key', ''));
+        $razorpaySecret = (string) ($config['razorpay_secret'] ?? config('store.razorpay_secret', ''));
+        $webhook = (string) ($config['razorpay_webhook'] ?? config('store.razorpay_webhook_secret'));
+        $cors = (string) ($config['cors'] ?? implode(',', config('cors.allowed_origins', [])));
         $appUrl = (string) ($config['app_url'] ?? config('app.url'));
         $allowUnsigned = filter_var(
-            $config['allow_unsigned_webhooks'] ?? env('PAYMENT_ALLOW_UNSIGNED_WEBHOOKS', false),
+            $config['allow_unsigned_webhooks'] ?? config('store.allow_unsigned_webhooks'),
             FILTER_VALIDATE_BOOLEAN
         );
-        $jwt = (string) ($config['jwt_secret'] ?? env('JWT_SECRET', ''));
+        $jwt = (string) ($config['jwt_secret'] ?? config('jwt.secret', ''));
 
         if ($env === 'production' && $debug === true) {
             $findings[] = [

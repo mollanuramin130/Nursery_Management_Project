@@ -57,11 +57,14 @@ export async function refreshUpstream(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
-  if (!res.ok) return null;
+  if (res.status === 401 || res.status === 403) return null;
+  if (!res.ok) throw new Error("Authentication service temporarily unavailable");
   const json = (await res.json()) as Envelope;
   const access = json.data?.access_token;
   const refresh = json.data?.refresh_token;
-  if (typeof access !== "string" || typeof refresh !== "string") return null;
+  if (typeof access !== "string" || typeof refresh !== "string") {
+    throw new Error("Invalid authentication service response");
+  }
   return { access, refresh };
 }
 
@@ -76,12 +79,10 @@ export async function forwardLaravelResponse(
   const contentType = upstream.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");
 
-  let body: ArrayBuffer | string;
-  if (isJson) {
-    body = await upstream.text();
-  } else {
-    body = await upstream.arrayBuffer();
-  }
+  // Fetch forbids a body (even an empty buffer) for these statuses.
+  const body = [204, 205, 304].includes(upstream.status)
+    ? null
+    : isJson ? await upstream.text() : await upstream.arrayBuffer();
 
   const res = new NextResponse(body, {
     status: upstream.status,

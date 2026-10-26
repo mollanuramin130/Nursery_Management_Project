@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { EmptyState, ErrorState, LoadingBlock, PageHeader } from "@/components/feedback/States";
 import { Badge } from "@/components/ui/Badge";
@@ -26,6 +27,7 @@ function criteriaSummary(seg: CustomerSegment) {
 }
 
 export default function SegmentsPage() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const can = hasPermission(user, "customers.segment");
   const push = useToastStore((s) => s.push);
@@ -70,7 +72,7 @@ export default function SegmentsPage() {
   }
 
   function routerPush(id: number) {
-    window.location.href = `/customers/segments/${id}`;
+    router.push(`/customers/segments/${id}`);
   }
 
   async function onArchive(id: number) {

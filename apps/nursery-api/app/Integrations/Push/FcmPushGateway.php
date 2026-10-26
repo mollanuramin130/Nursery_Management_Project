@@ -19,7 +19,7 @@ class FcmPushGateway
             return $this->sendHttpV1($credentialsPath, $token, $title, $body, $data);
         }
 
-        $key = $this->envString('FCM_SERVER_KEY');
+        $key = $this->configString('services.fcm.server_key');
         if ($key !== '') {
             return $this->sendLegacy($key, $token, $title, $body, $data);
         }
@@ -40,7 +40,7 @@ class FcmPushGateway
         if ($this->resolveCredentialsPath() !== null) {
             return 'http_v1';
         }
-        if ($this->envString('FCM_SERVER_KEY') !== '') {
+        if ($this->configString('services.fcm.server_key') !== '') {
             return 'legacy_server_key';
         }
 
@@ -49,9 +49,9 @@ class FcmPushGateway
 
     private function resolveCredentialsPath(): ?string
     {
-        $path = $this->envString('FIREBASE_CREDENTIALS');
+        $path = $this->configString('services.fcm.credentials');
         if ($path === '') {
-            $path = $this->envString('GOOGLE_APPLICATION_CREDENTIALS');
+            $path = $this->configString('services.fcm.google_credentials');
         }
         if ($path === '') {
             return null;
@@ -69,15 +69,11 @@ class FcmPushGateway
         return null;
     }
 
-    private function envString(string $key): string
+    private function configString(string $key): string
     {
-        foreach ([$_ENV[$key] ?? null, $_SERVER[$key] ?? null, getenv($key)] as $value) {
-            if (is_string($value) && trim($value) !== '' && strtoupper(trim($value)) !== 'NULL') {
-                return trim($value);
-            }
-        }
+        $value = config($key);
 
-        return '';
+        return is_string($value) && strtoupper(trim($value)) !== 'NULL' ? trim($value) : '';
     }
 
     /**

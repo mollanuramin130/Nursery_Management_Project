@@ -4,14 +4,12 @@ namespace Tests\Feature;
 
 use App\Modules\Auth\Models\Role;
 use App\Modules\Auth\Models\User;
-use App\Modules\Cart\Models\Cart;
-use App\Modules\Cart\Models\CartItem;
 use App\Modules\Cart\Services\CartService;
 use App\Modules\Catalog\Models\Product;
+use App\Modules\Customer\Models\Address;
 use App\Modules\Delivery\Models\ShippingMethod;
 use App\Modules\Inventory\Models\InventoryItem;
 use App\Modules\Inventory\Models\Warehouse;
-use App\Modules\Customer\Models\Address;
 use App\Modules\Promotion\Models\Coupon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -69,8 +67,7 @@ class Qa03CartTotalsTest extends TestCase
 
     public function test_free_delivery_meta_uses_merchandise_argument(): void
     {
-        putenv('FREE_DELIVERY_THRESHOLD=999');
-        $_ENV['FREE_DELIVERY_THRESHOLD'] = '999';
+        config(['store.free_delivery_threshold' => '999']);
 
         $svc = app(CartService::class);
         $below = $svc->freeDeliveryMeta(900.0);
@@ -87,8 +84,7 @@ class Qa03CartTotalsTest extends TestCase
 
     public function test_cart_and_checkout_free_delivery_agree_with_coupon(): void
     {
-        putenv('FREE_DELIVERY_THRESHOLD=999');
-        $_ENV['FREE_DELIVERY_THRESHOLD'] = '999';
+        config(['store.free_delivery_threshold' => '999']);
 
         $user = $this->seedCustomer();
         $token = JWTAuth::fromUser($user);
@@ -268,8 +264,7 @@ class Qa03CartTotalsTest extends TestCase
 
     public function test_remove_coupon_restores_free_delivery_when_above_threshold(): void
     {
-        putenv('FREE_DELIVERY_THRESHOLD=999');
-        $_ENV['FREE_DELIVERY_THRESHOLD'] = '999';
+        config(['store.free_delivery_threshold' => '999']);
 
         $user = $this->seedCustomer();
         $token = JWTAuth::fromUser($user);

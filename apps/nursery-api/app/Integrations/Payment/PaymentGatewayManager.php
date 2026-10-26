@@ -8,7 +8,7 @@ class PaymentGatewayManager
 {
     public function driver(?string $name = null): PaymentGatewayInterface
     {
-        $name = $name ?: env('PAYMENT_DRIVER', 'razorpay');
+        $name = $name ?: config('store.payment_driver');
 
         return match ($name) {
             'razorpay' => new RazorpayGateway,

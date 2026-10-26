@@ -24,6 +24,7 @@ class VerificationCode extends Model
         return [
             'expires_at' => 'datetime',
             'verified_at' => 'datetime',
+            'consumed_at' => 'datetime',
         ];
     }
 
