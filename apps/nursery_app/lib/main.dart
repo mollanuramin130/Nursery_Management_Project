@@ -18,9 +18,9 @@ import 'package:nursery_app/providers/wishlist_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  installAppErrorHandling();
   runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    installAppErrorHandling();
     unawaited(_boot());
   }, (error, stack) {
     AppErrorHandler.record(error, stack, screen: 'zone');

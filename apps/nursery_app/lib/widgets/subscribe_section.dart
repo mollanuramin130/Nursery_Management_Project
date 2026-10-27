@@ -139,7 +139,7 @@ class _SubscribeSectionState extends State<SubscribeSection> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            value: _planId,
+            initialValue: _planId,
             decoration: const InputDecoration(labelText: 'Plan'),
             items: plans
                 .map(
@@ -178,7 +178,7 @@ class _SubscribeSectionState extends State<SubscribeSection> {
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<int>(
-                  value: _addressId,
+                  initialValue: _addressId,
                   decoration: const InputDecoration(labelText: 'Address'),
                   items: _addresses
                       .map(

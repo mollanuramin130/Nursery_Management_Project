@@ -4,6 +4,7 @@ import 'package:nursery_app/data/mock_asset_store.dart';
 import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// Remote image with local asset fallback — never shows a broken-image icon.
 ///
@@ -47,6 +48,17 @@ class ResilientNetworkImage extends StatelessWidget {
     } catch (_) {
       // Not under OfflineController (tests / admin).
     }
+    if (Uri.tryParse(u)?.path.toLowerCase().endsWith('.svg') == true) {
+      return SvgPicture.network(
+        u,
+        width: width,
+        height: height,
+        fit: fit,
+        headers: const {'Accept': 'image/svg+xml'},
+        placeholderBuilder: (_) => _Placeholder(width: width, height: height),
+        errorBuilder: (_, _, _) => _Fallback(width: width, height: height),
+      );
+    }
     return CachedNetworkImage(
       imageUrl: u,
       cacheKey: '$u#g$gen',
@@ -59,10 +71,10 @@ class ResilientNetworkImage extends StatelessWidget {
       httpHeaders: const {
         'User-Agent':
             'Mozilla/5.0 (Linux; Android 12; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36',
-        'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept': 'image/webp,image/png,image/jpeg,image/*;q=0.8',
       },
-      placeholder: (_, __) => _Placeholder(width: width, height: height),
-      errorWidget: (_, __, ___) => _Fallback(width: width, height: height),
+      placeholder: (_, _) => _Placeholder(width: width, height: height),
+      errorWidget: (_, _, _) => _Fallback(width: width, height: height),
     );
   }
 }
@@ -175,7 +187,7 @@ class _Fallback extends StatelessWidget {
         width: (width != null && width! < 48) ? width : 40,
         height: (height != null && height! < 48) ? height : 40,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => Icon(
+        errorBuilder: (_, _, _) => Icon(
           Icons.local_florist_rounded,
           color: AppColors.primary,
           size: 28,

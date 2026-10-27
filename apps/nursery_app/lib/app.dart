@@ -40,7 +40,7 @@ Widget _fullscreen(Widget child) => FullscreenBackScope(child: child);
 
 /// QA-36-007 — Shell architecture:
 /// Primary tabs (Home / Shop / Cart / Orders / Account) keep bottom navigation for
-/// browse + account section routes. Full-screen flows (auth, PDP, checkout, address
+/// browse + account section routes. Full-screen flows (auth, checkout, address
 /// edit) stay outside the shell intentionally.
 GoRouter createRouter() {
   return GoRouter(
@@ -64,6 +64,13 @@ GoRouter createRouter() {
               GoRoute(
                 path: '/categories',
                 builder: (context, state) => const CategoriesScreen(),
+              ),
+              GoRoute(
+                path: '/product/:slug',
+                builder: (context, state) => ProductDetailScreen(
+                  slug: state.pathParameters['slug']!,
+                  openReviewForm: state.uri.queryParameters['review'] == '1',
+                ),
               ),
               GoRoute(
                 path: '/catalog',
@@ -219,15 +226,6 @@ GoRouter createRouter() {
         ],
       ),
       // Full-screen flows — no bottom navigation (intentional).
-      GoRoute(
-        path: '/product/:slug',
-        builder: (context, state) => _fullscreen(
-          ProductDetailScreen(
-            slug: state.pathParameters['slug']!,
-            openReviewForm: state.uri.queryParameters['review'] == '1',
-          ),
-        ),
-      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => _fullscreen(
