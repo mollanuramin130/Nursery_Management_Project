@@ -7,8 +7,8 @@ import { serverGet } from "@/lib/server-api";
 import type { OffersFeed } from "@/lib/types";
 
 export const metadata = {
-  title: "Special Offers | GreenLeaf Nursery",
-  description: "Limited-time offers, seasonal collections, and sale plants from GreenLeaf Nursery.",
+  title: "Special Offers",
+  description: "Limited-time offers, seasonal collections, and sale plants from NUVIKOZ.",
 };
 
 function formatEnds(iso?: string | null) {

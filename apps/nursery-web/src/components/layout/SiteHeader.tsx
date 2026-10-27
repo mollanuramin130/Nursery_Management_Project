@@ -1,6 +1,9 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
+
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { SearchBox } from "@/components/layout/SearchBox";
@@ -11,7 +14,7 @@ import { useUiStore } from "@/store/ui";
 import { useWishlistStore } from "@/store/wishlist";
 import { cn } from "@/lib/cn";
 
-const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "GreenLeaf Nursery";
+const storeName = BRAND.name;
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -57,7 +60,7 @@ export function SiteHeader() {
           href="/"
           className="display shrink-0 text-[1.35rem] leading-none text-[var(--color-primary-deep)] md:text-[1.6rem]"
         >
-          {storeName}
+          <span className="flex items-center gap-2"><Image unoptimized src="/branding/icon.png" alt="" width={32} height={32} className="h-8 w-8" /><span>{storeName}</span></span>
         </Link>
 
         <div className="relative mx-auto hidden min-w-0 flex-1 max-w-xl md:block">

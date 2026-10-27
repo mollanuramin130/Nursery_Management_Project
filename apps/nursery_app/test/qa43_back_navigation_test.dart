@@ -16,7 +16,6 @@ import 'package:nursery_app/providers/cart_provider.dart';
 import 'package:nursery_app/providers/network_status_provider.dart';
 import 'package:nursery_app/providers/offline_controller.dart';
 import 'package:nursery_app/providers/wishlist_provider.dart';
-import 'package:lottie/lottie.dart';
 import 'package:nursery_app/screens/splash_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -219,9 +218,9 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(Lottie), findsOneWidget);
-      expect(find.text('GreenLeaf'), findsOneWidget);
-      expect(find.text('Grow Better. Live Greener.'), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+      expect(find.image(const AssetImage('assets/branding/nuvikoz-horizontal.png')), findsOneWidget);
+      expect(find.text('Grow Green. Live Better.'), findsOneWidget);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
       expect(finished, isTrue);
@@ -281,9 +280,9 @@ void main() {
           ),
         ),
       );
-      expect(find.text('GreenLeaf'), findsOneWidget);
-      expect(find.text('Grow Better. Live Greener.'), findsOneWidget);
-      expect(find.byType(Lottie), findsOneWidget);
+      expect(find.image(const AssetImage('assets/branding/nuvikoz-horizontal.png')), findsOneWidget);
+      expect(find.text('Grow Green. Live Better.'), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
     });
   });
 
@@ -310,11 +309,12 @@ void main() {
       }
     });
 
-    test('QA-43-017 customer adaptive mark is a seedling, not a shield', () {
+    test('QA-43-017 customer adaptive mark uses approved NUVIKOZ artwork', () {
       final xml = File(
         'android/app/src/main/res/drawable/ic_launcher_foreground.xml',
       ).readAsStringSync();
-      expect(xml.contains('seedling'), isTrue);
+      expect(xml.contains('@drawable/nuvikoz_icon'), isTrue);
+      expect(xml.contains('21dp'), isTrue);
       expect(xml.contains('shield'), isFalse);
     });
   });

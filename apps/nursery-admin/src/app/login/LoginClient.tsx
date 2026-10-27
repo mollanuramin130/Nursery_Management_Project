@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -62,8 +64,9 @@ export default function LoginClient() {
         className="w-full max-w-md rounded-[var(--admin-radius-lg)] border border-[var(--admin-border)] bg-white p-6 shadow-[var(--admin-shadow)]"
       >
         <div className="mb-6">
+          <Image unoptimized src="/branding/logo-horizontal.png" alt="NUVIKOZ" width={600} height={387} className="mb-3 h-24 w-52 object-contain object-left" />
           <div className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--admin-primary)]">
-            GreenLeaf Nursery
+            NUVIKOZ
           </div>
           <h1 className="mt-1 text-2xl font-semibold text-[var(--admin-ink)]">Admin Portal</h1>
           <p className="mt-1 text-sm text-[var(--admin-muted)]">

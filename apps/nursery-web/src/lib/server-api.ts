@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
 
@@ -11,7 +12,7 @@ if (
 }
 
 export const STORE_NAME =
-  process.env.NEXT_PUBLIC_STORE_NAME ?? "GreenLeaf Nursery";
+  BRAND.name;
 
 export async function serverGet<T>(
   path: string,

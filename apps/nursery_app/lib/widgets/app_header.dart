@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nursery_app/core/back_navigation.dart';
 import 'package:nursery_app/theme/tokens.dart';
 import 'package:nursery_app/widgets/cart_icon_button.dart';
+import 'package:nursery_app/widgets/brand_mark.dart';
 
 /// Compact mobile app header for home and secondary screens.
 class AppHeader extends StatelessWidget {
@@ -30,6 +31,10 @@ class AppHeader extends StatelessWidget {
     return AppHeader(
       key: key,
       title: storeName,
+      leading: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSpace.sm),
+        child: GreenLeafBrandMark(size: 36),
+      ),
       deliveryLabel: deliveryLabel,
       onCart: onCart,
       bottom: search,

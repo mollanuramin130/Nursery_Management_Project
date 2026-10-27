@@ -86,7 +86,7 @@ export default function PreferencesPage() {
       <div className="container max-w-xl">
         <div className="section-head">
           <h1 className="display text-4xl text-[var(--color-primary-deep)]">Preferences</h1>
-          <p>Choose how GreenLeaf keeps you updated.</p>
+          <p>Choose how NUVIKOZ keeps you updated.</p>
         </div>
 
         {!prefs ? (

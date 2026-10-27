@@ -60,7 +60,7 @@ ClassifiedNetworkError classifyDioException(DioException e) {
     return ClassifiedNetworkError(
       kind: NetworkKind.apiUnavailable,
       userMessage: refused
-          ? 'Unable to connect to GreenLeaf right now.'
+          ? 'Unable to connect to NUVIKOZ right now.'
           : 'Connection temporarily unavailable.',
       statusCode: status,
     );
@@ -132,7 +132,7 @@ ClassifiedNetworkError classifyHttpStatus(int? status, [String? apiMessage]) {
       return const ClassifiedNetworkError(
         kind: NetworkKind.serverError,
         userMessage:
-            'GreenLeaf server is temporarily unavailable. Please try again.',
+            'NUVIKOZ server is temporarily unavailable. Please try again.',
         statusCode: 500,
       );
     case 502:
@@ -140,7 +140,7 @@ ClassifiedNetworkError classifyHttpStatus(int? status, [String? apiMessage]) {
     case 504:
       return ClassifiedNetworkError(
         kind: NetworkKind.apiUnavailable,
-        userMessage: 'Unable to connect to GreenLeaf right now.',
+        userMessage: 'Unable to connect to NUVIKOZ right now.',
         statusCode: status,
       );
     default:
@@ -181,7 +181,7 @@ ClassifiedNetworkError classifyApiException(ApiException e) {
   if (lower.contains('unavailable') || lower.contains('unable to connect')) {
     return ClassifiedNetworkError(
       kind: NetworkKind.apiUnavailable,
-      userMessage: 'Unable to connect to GreenLeaf right now.',
+      userMessage: 'Unable to connect to NUVIKOZ right now.',
       statusCode: e.statusCode,
     );
   }
@@ -217,7 +217,7 @@ String _sanitize(String raw) {
   if (lower.contains('connection refused') ||
       lower.contains('api_proxy') ||
       lower.contains('artisan')) {
-    return 'Unable to connect to GreenLeaf right now.';
+    return 'Unable to connect to NUVIKOZ right now.';
   }
   if (lower.contains('socketexception') ||
       lower.contains('failed host lookup') ||
@@ -237,9 +237,9 @@ String bannerCopy(NetworkKind kind) {
     case NetworkKind.connecting:
       return 'Checking connection…';
     case NetworkKind.apiUnavailable:
-      return 'Unable to connect to GreenLeaf right now.';
+      return 'Unable to connect to NUVIKOZ right now.';
     case NetworkKind.serverError:
-      return 'GreenLeaf server is temporarily unavailable.';
+      return 'NUVIKOZ server is temporarily unavailable.';
     case NetworkKind.apiTimeout:
       return 'Connection is taking too long.';
     case NetworkKind.rateLimited:
@@ -269,13 +269,13 @@ String statusBannerText({
       );
     case NetworkKind.serverError:
       return base(
-        'GreenLeaf server is temporarily unavailable.',
-        'GreenLeaf server is temporarily unavailable · Showing saved data',
+        'NUVIKOZ server is temporarily unavailable.',
+        'NUVIKOZ server is temporarily unavailable · Showing saved data',
       );
     case NetworkKind.apiUnavailable:
       return base(
-        'Unable to connect to GreenLeaf right now.',
-        'Unable to connect to GreenLeaf right now · Showing saved data',
+        'Unable to connect to NUVIKOZ right now.',
+        'Unable to connect to NUVIKOZ right now · Showing saved data',
       );
     case NetworkKind.apiTimeout:
       return base(

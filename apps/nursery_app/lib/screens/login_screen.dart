@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nursery_app/widgets/brand_mark.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
 import 'package:nursery_app/core/back_navigation.dart';
@@ -134,22 +135,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: AppColors.primarySoft,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.local_florist_rounded,
-                        color: AppColors.primaryDeep,
-                        size: 32,
-                      ),
+                      child: const GreenLeafBrandMark(size: 64),
                     ),
                   ),
                   const SizedBox(height: AppSpace.xl),
                   Text(
-                    'Welcome back',
+                    'Welcome to NUVIKOZ',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: AppSpace.xs),
                   Text(
-                    'Sign in to continue growing your garden.',
+                    'Your Green Shopping Destination.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -250,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: AppSpace.xl),
                   Text(
-                    'New to GreenLeaf?',
+                    'New to NUVIKOZ?',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),

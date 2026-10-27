@@ -38,7 +38,7 @@ class RazorpayGateway implements PaymentGatewayInterface
                     'order_id' => $providerOrderId,
                     'amount' => $amountPaise,
                     'currency' => strtoupper($currency),
-                    'name' => config('app.name', 'GreenLeaf Nursery'),
+                    'name' => config('brand.name', 'NUVIKOZ'),
                     'notes' => $notes,
                     'mode' => 'local_stub',
                 ],
@@ -67,7 +67,7 @@ class RazorpayGateway implements PaymentGatewayInterface
                 'order_id' => $providerOrderId,
                 'amount' => $amountPaise,
                 'currency' => strtoupper($currency),
-                'name' => config('app.name', 'GreenLeaf Nursery'),
+                'name' => config('brand.name', 'NUVIKOZ'),
             ],
             'raw' => $json,
         ];
@@ -203,7 +203,7 @@ class RazorpayGateway implements PaymentGatewayInterface
     private function buildUpiDeepLink(float $amount, string $currency, string $receipt): string
     {
         $pa = (string) config('store.upi_payee_vpa');
-        $pn = rawurlencode((string) config('app.name', 'GreenLeaf Nursery'));
+        $pn = rawurlencode((string) config('brand.name', 'NUVIKOZ'));
         $am = number_format($amount, 2, '.', '');
         $cu = strtoupper($currency ?: 'INR');
         $tn = rawurlencode($receipt);
@@ -225,7 +225,7 @@ class RazorpayGateway implements PaymentGatewayInterface
         try {
             $payload = [
                 'type' => 'upi_qr',
-                'name' => config('app.name', 'GreenLeaf Nursery'),
+                'name' => config('brand.name', 'NUVIKOZ'),
                 'usage' => 'single_use',
                 'fixed_amount' => true,
                 'payment_amount' => $amountPaise,

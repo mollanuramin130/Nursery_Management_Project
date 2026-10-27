@@ -34,7 +34,7 @@ export function SupportContactDialog({
         className="w-full max-w-md rounded-[var(--admin-radius-lg)] bg-white p-5 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold text-[var(--admin-ink)]">GreenLeaf Support</h2>
+        <h2 className="text-base font-semibold text-[var(--admin-ink)]">NUVIKOZ Support</h2>
         <p className="mt-1 text-sm text-[var(--admin-muted)]">We’re here to help.</p>
         <p className="mt-3 text-sm font-semibold">Support: {GREENLEAF_SUPPORT_PHONE}</p>
         {reference ? (

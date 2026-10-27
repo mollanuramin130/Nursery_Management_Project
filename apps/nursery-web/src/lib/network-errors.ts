@@ -83,7 +83,7 @@ export function classifyHttpStatus(
     case 500:
       return {
         kind: "serverError",
-        userMessage: "GreenLeaf server is temporarily unavailable. Please try again.",
+        userMessage: "NUVIKOZ server is temporarily unavailable. Please try again.",
         statusCode: status,
         retryable: true,
       };
@@ -92,7 +92,7 @@ export function classifyHttpStatus(
     case 504:
       return {
         kind: "apiUnavailable",
-        userMessage: "Unable to connect to GreenLeaf right now.",
+        userMessage: "Unable to connect to NUVIKOZ right now.",
         statusCode: status,
         retryable: true,
       };
@@ -113,7 +113,7 @@ export function sanitizeTechnical(raw?: string | null): string {
     lower.includes("php artisan") ||
     lower.includes("api_proxy_target")
   ) {
-    return "Unable to connect to GreenLeaf right now.";
+    return "Unable to connect to NUVIKOZ right now.";
   }
   if (
     lower.includes("socketexception") ||
@@ -135,9 +135,9 @@ export function bannerCopy(kind: NetworkKind): string {
     case "connecting":
       return "Checking connection…";
     case "apiUnavailable":
-      return "Unable to connect to GreenLeaf right now.";
+      return "Unable to connect to NUVIKOZ right now.";
     case "serverError":
-      return "GreenLeaf server is temporarily unavailable.";
+      return "NUVIKOZ server is temporarily unavailable.";
     case "apiTimeout":
       return "Connection is taking too long.";
     case "rateLimited":
@@ -170,7 +170,7 @@ export function classifyTransport(opts: {
   }
   return {
     kind: "apiUnavailable",
-    userMessage: "Unable to connect to GreenLeaf right now.",
+    userMessage: "Unable to connect to NUVIKOZ right now.",
     retryable: true,
   };
 }

@@ -62,7 +62,7 @@ class AccountScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpace.xl),
                 Text(
-                  'Welcome to GreenLeaf',
+                  'Welcome to NUVIKOZ',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
@@ -242,7 +242,7 @@ class AccountScreen extends StatelessWidget {
             icon: Icons.help_outline_rounded,
             onTap: () => AppFeedback.info(
               context,
-              'Email support@greenleaf.example for help with your order.',
+              'Contact support from Help for assistance with your order.',
             ),
           ),
           _tile(

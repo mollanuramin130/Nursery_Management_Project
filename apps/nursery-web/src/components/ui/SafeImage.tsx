@@ -36,7 +36,7 @@ export function SafeImage({
         role="img"
         aria-label={alt || "Image unavailable"}
       >
-        <span className="text-xs font-semibold uppercase tracking-wide">GreenLeaf</span>
+        <span className="text-xs font-semibold uppercase tracking-wide">NUVIKOZ</span>
       </div>
     );
   }

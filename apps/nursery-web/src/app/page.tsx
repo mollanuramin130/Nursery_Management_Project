@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ContinueShoppingRail } from "@/components/home/ContinueShoppingRail";
@@ -6,7 +7,7 @@ import { bannerHref } from "@/lib/deep-link";
 import { serverGet } from "@/lib/server-api";
 import type { Category, HomeData } from "@/lib/types";
 
-const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "NUVIKOZ";
+const storeName = BRAND.name;
 
 const SHOP_BY_NEED: { title: string; q: string; blurb: string; href?: string }[] = [
   {

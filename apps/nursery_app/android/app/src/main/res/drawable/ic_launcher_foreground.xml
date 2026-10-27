@@ -1,28 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="100"
-    android:viewportHeight="100">
-    <!-- Customer seedling: botanical leaf in the adaptive safe zone. -->
-    <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="3.4"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:pathData="M50,76 L50,46" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M50,48
-            C62,40 74,42 76,54
-            C78,66 66,74 50,78
-            C34,74 22,66 24,54
-            C26,42 38,40 50,48 Z" />
-    <path
-        android:strokeColor="#0C2417"
-        android:strokeWidth="2.2"
-        android:strokeLineCap="round"
-        android:strokeAlpha="0.35"
-        android:fillColor="#00000000"
-        android:pathData="M50,50 Q50,62 50,74" />
-</vector>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="21dp" android:insetTop="21dp"
+    android:insetRight="21dp" android:insetBottom="21dp">
+    <!-- Approved NUVIKOZ artwork, padded inside the adaptive icon safe zone. -->
+    <bitmap android:src="@drawable/nuvikoz_icon" android:gravity="fill" />
+</inset>

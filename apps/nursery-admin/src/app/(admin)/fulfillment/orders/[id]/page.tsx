@@ -324,7 +324,7 @@ export default function FulfillmentOrderPage() {
         <div className="mt-4">
           <FormSection title="Create shipment" description="Leave tracking blank to auto-generate via Internal Delivery provider.">
             <div className="grid max-w-xl gap-3 sm:grid-cols-2">
-              <Input label="Carrier" value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder="GreenLeaf Delivery" />
+              <Input label="Carrier" value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder="NUVIKOZ Delivery" />
               <Input label="Tracking number" value={tracking} onChange={(e) => setTracking(e.target.value)} />
               <Input label="ETA" type="date" value={eta} onChange={(e) => setEta(e.target.value)} />
               <div className="flex items-end">

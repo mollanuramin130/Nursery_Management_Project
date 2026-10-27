@@ -96,7 +96,7 @@ class PaymentService
                     'order_id' => $pending->provider_order_id,
                     'amount' => (int) round(((float) $pending->amount) * 100),
                     'currency' => strtoupper((string) $pending->currency),
-                    'name' => config('app.name', 'GreenLeaf Nursery'),
+                    'name' => config('brand.name', 'NUVIKOZ'),
                     'mode' => $hasKeys ? 'live_or_test' : 'local_stub',
                 ];
                 if ($gateway instanceof RazorpayGateway) {

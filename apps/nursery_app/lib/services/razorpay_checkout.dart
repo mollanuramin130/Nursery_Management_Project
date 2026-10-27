@@ -68,7 +68,7 @@ Future<RazorpayCheckoutResult> openRazorpayCheckout({
     'key': key,
     'amount': amount,
     'currency': currency,
-    'name': clientPayload['name'] ?? 'GreenLeaf Nursery',
+    'name': clientPayload['name'] ?? 'NUVIKOZ',
     'description': description,
     'order_id': orderId,
     if (prefill is Map) 'prefill': Map<String, dynamic>.from(prefill),

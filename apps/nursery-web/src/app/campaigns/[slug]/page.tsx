@@ -35,7 +35,7 @@ export async function generateMetadata({
   const c = res?.data;
   if (!c) return { title: "Campaign" };
   return {
-    title: `${c.title} | GreenLeaf Nursery`,
+    title: `${c.title}`,
     description: c.subtitle || c.description || `Shop the ${c.title} collection.`,
   };
 }

@@ -10,7 +10,7 @@ void main() {
     expect(classifyHttpStatus(429).kind, isNot(NetworkKind.offline));
     expect(classifyHttpStatus(429).userMessage.toLowerCase(), isNot(contains('offline')));
     expect(classifyHttpStatus(503).kind, NetworkKind.apiUnavailable);
-    expect(classifyHttpStatus(503).userMessage, contains('GreenLeaf'));
+    expect(classifyHttpStatus(503).userMessage, contains('NUVIKOZ'));
     expect(classifyHttpStatus(500).userMessage, contains('unavailable'));
     expect(classifyHttpStatus(500).kind, NetworkKind.serverError);
   });

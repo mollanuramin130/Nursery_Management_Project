@@ -1,10 +1,12 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "GreenLeaf Nursery Admin",
-  description: "Operations portal for GreenLeaf Nursery",
+  title: BRAND.adminName,
+  description: `Operations portal for ${BRAND.name}`,
+  openGraph: { title: BRAND.adminName, description: `Operations portal for ${BRAND.name}` },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

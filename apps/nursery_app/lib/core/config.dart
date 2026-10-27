@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:nursery_app/core/brand.dart';
 
 class AppConfig {
   /// Override with HTTPS in production, e.g.:
@@ -10,7 +11,7 @@ class AppConfig {
 
   static const storeName = String.fromEnvironment(
     'STORE_NAME',
-    defaultValue: 'GreenLeaf Nursery',
+    defaultValue: Brand.name,
   );
 
   /// Online payments (Razorpay). Default on for local stub / sandbox.

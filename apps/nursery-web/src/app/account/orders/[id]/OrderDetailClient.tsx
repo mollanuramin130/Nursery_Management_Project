@@ -97,7 +97,7 @@ export function OrderDetailClient() {
               key: payload.key,
               amount: payload.amount,
               currency: payload.currency || "INR",
-              name: payload.name || "GreenLeaf Nursery",
+              name: payload.name || "NUVIKOZ",
               description: `Order ${order.order_number}`,
               order_id: providerOrderId,
               prefill: payload.prefill,

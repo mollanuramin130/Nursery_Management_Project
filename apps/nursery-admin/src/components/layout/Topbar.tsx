@@ -33,7 +33,7 @@ export function Topbar({ title }: { title?: string }) {
         </Button>
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold text-[var(--admin-ink)]">
-            {title ?? "GreenLeaf Nursery Admin"}
+            {title ?? "NUVIKOZ Admin"}
           </div>
         </div>
       </div>

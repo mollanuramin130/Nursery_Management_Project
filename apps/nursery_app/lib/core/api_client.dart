@@ -69,7 +69,7 @@ class ApiClient {
                   statusCode: 503,
                   data: {
                     'success': false,
-                    'message': 'GreenLeaf is temporarily unavailable.',
+                    'message': 'NUVIKOZ is temporarily unavailable.',
                   },
                 ),
               ),
@@ -333,7 +333,7 @@ class ApiClient {
     }
     if (status == 502 || status == 503 || status == 504) {
       return ApiException(
-        'GreenLeaf is temporarily unavailable. Please try again.',
+        'NUVIKOZ is temporarily unavailable. Please try again.',
         statusCode: status,
       );
     }
@@ -347,7 +347,7 @@ class ApiClient {
       return ApiException(apiMsg, statusCode: status, errorCode: code);
     }
     return ApiException(
-      'GreenLeaf is temporarily unavailable. Please try again.',
+      'NUVIKOZ is temporarily unavailable. Please try again.',
       statusCode: status,
     );
   }
