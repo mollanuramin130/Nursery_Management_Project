@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BRAND } from "@/lib/brand";
 import { usePathname } from "next/navigation";
 import { visibleNav } from "@/lib/auth/navigation";
 import { cn } from "@/lib/cn";
@@ -22,11 +23,11 @@ export function Sidebar() {
     >
       <div className="flex h-[var(--admin-topbar-h)] items-center gap-2 border-b border-white/10 px-4">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[var(--admin-primary)] text-xs font-bold text-white">
-          GL
+          N
         </div>
         {!sidebarCollapsed ? (
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-white">NUVIKOZ</div>
+            <div className="truncate text-sm font-semibold text-white">{BRAND.name}</div>
             <div className="truncate text-[11px] text-[var(--admin-sidebar-muted)]">
               Admin
             </div>
