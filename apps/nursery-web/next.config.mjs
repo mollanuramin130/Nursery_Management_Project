@@ -48,6 +48,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "api.nuvikoz.com", pathname: "/banners/nuvikoz/**", search: "" },
+      { protocol: "https", hostname: "api.nuvikoz.com", pathname: "/catalog/**", search: "" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "commons.wikimedia.org" },

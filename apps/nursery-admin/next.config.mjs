@@ -40,6 +40,7 @@ const nextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost", ...extraDevOrigins],
   images: {
     remotePatterns: [
+      { protocol: "https", hostname: "api.nuvikoz.com", pathname: "/catalog/**", search: "" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "commons.wikimedia.org" },

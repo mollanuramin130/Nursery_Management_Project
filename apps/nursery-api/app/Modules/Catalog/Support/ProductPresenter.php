@@ -21,11 +21,20 @@ class ProductPresenter
             'compare_at_price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : null,
             'currency' => $product->currency,
             'stock_status' => $product->stock_status,
-            'thumbnail_url' => $product->primaryImageUrl(),
+            'thumbnail_url' => self::getThumbnailUrl($product->primaryImageUrl()),
             'rating_avg' => (float) $product->rating_avg,
             'rating_count' => (int) $product->rating_count,
             'badges' => $product->badges(),
         ];
+    }
+
+    private static function getThumbnailUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        return str_replace('/catalog/detail/', '/catalog/listing/', $url);
     }
 
     public static function detail(Product $product): array
