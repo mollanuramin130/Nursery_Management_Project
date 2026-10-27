@@ -307,7 +307,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      value: itemId,
+                      initialValue: itemId,
                       decoration: const InputDecoration(labelText: 'Item'),
                       items: returnable
                           .map(
@@ -349,18 +349,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    ...reasons.map((r) {
-                      final code = r['code']?.toString() ?? '';
-                      final label = r['label']?.toString() ?? code;
-                      return RadioListTile<String>(
-                        dense: true,
-                        title: Text(label),
-                        value: code,
-                        groupValue: reasonCode,
-                        onChanged: (v) =>
-                            setModal(() => reasonCode = v ?? reasonCode),
-                      );
-                    }),
+                    RadioGroup<String>(
+                      groupValue: reasonCode,
+                      onChanged: (v) => setModal(() => reasonCode = v ?? reasonCode),
+                      child: Column(
+                        children: reasons.map((r) {
+                          final code = r['code']?.toString() ?? '';
+                          final label = r['label']?.toString() ?? code;
+                          return RadioListTile<String>(
+                            dense: true,
+                            title: Text(label),
+                            value: code,
+                          );
+                        }).toList(),
+                      ),
+                    ),
                     TextField(
                       controller: notesCtrl,
                       decoration: const InputDecoration(

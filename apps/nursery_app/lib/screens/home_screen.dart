@@ -30,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
   _HomeBundle? _bundle;
   Object? _error;
   bool _loading = true;
-  bool _softUpdating = false;
   final _page = PageController(viewportFraction: 0.92);
   final _bannerIndex = ValueNotifier<int>(0);
   int _lastSyncGen = -1;
@@ -85,14 +84,12 @@ class _HomeScreenState extends State<HomeScreen> {
             stale: peeked.stale,
           );
           _loading = false;
-          _softUpdating = true;
           _error = null;
         });
       } else if (!soft && mounted) {
         setState(() => _loading = true);
       }
     } else if (mounted) {
-      setState(() => _softUpdating = true);
     }
 
     try {
@@ -107,7 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
               stale: immediate.stale,
             );
             _loading = false;
-            _softUpdating = immediate.updating;
           });
         },
       );
@@ -125,7 +121,6 @@ class _HomeScreenState extends State<HomeScreen> {
           stale: homeRes.stale,
         );
         _loading = false;
-        _softUpdating = false;
         _error = null;
       });
       context.read<OfflineController>().endSync(
@@ -135,7 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _softUpdating = false;
         if (_bundle == null) _error = e;
       });
       context.read<OfflineController>().endSync(success: false);

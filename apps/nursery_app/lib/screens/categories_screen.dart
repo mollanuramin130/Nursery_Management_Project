@@ -50,7 +50,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   List<CategoryItem>? _cats;
   Object? _error;
   bool _loading = true;
-  bool _softUpdating = false;
   int _epoch = 0;
   int _lastSyncGen = -1;
   final _refresh = RefreshCoalescer();
@@ -82,7 +81,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final hasData = _cats != null;
     setState(() {
       if (hasData) {
-        _softUpdating = true;
       } else {
         _loading = true;
       }
@@ -94,14 +92,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       setState(() {
         _cats = cats;
         _loading = false;
-        _softUpdating = false;
         _error = null;
       });
     } catch (e) {
       if (!mounted || epoch != _epoch) return;
       setState(() {
         _loading = false;
-        _softUpdating = false;
         if (_cats == null) _error = e;
       });
     }

@@ -80,7 +80,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.all(AppSpace.screen),
               itemCount: rows.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpace.sm),
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
               itemBuilder: (context, i) {
                 final s = rows[i];
                 return ListTile(

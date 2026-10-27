@@ -447,16 +447,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 '/products/${product.summary.id}/stock-alert',
                                 map: (_) => true,
                               );
-                              if (!mounted) return;
+                              if (!context.mounted) return;
                               AppFeedback.success(
                                 context,
                                 'We will notify you when this is back in stock',
                               );
                             } on ApiException catch (e) {
-                              if (!mounted) return;
+                              if (!context.mounted) return;
                               AppFeedback.error(context, e.message);
                             } catch (_) {
-                              if (!mounted) return;
+                              if (!context.mounted) return;
                               AppFeedback.error(
                                 context,
                                 'Unable to create stock alert.',

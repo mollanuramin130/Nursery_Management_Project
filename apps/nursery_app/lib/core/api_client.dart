@@ -223,7 +223,7 @@ class ApiClient {
     try {
       final res = await _dio.get(path, queryParameters: query);
       onTransportSuccess?.call();
-      return _unwrap(res.data, map);
+      return await _unwrap(res.data, map);
     } on DioException catch (e) {
       final classified = classifyDioException(e);
       onTransportFailure?.call(classified);
@@ -271,7 +271,7 @@ class ApiClient {
         options: Options(method: method, headers: headers),
       );
       onTransportSuccess?.call();
-      return _unwrap(res.data, map);
+      return await _unwrap(res.data, map);
     } on DioException catch (e) {
       onTransportFailure?.call(classifyDioException(e));
       throw _toApiException(e);

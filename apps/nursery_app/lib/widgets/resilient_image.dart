@@ -56,7 +56,7 @@ class ResilientNetworkImage extends StatelessWidget {
         fit: fit,
         headers: const {'Accept': 'image/svg+xml'},
         placeholderBuilder: (_) => _Placeholder(width: width, height: height),
-        errorBuilder: (_, __, ___) => _Fallback(width: width, height: height),
+        errorBuilder: (_, _, _) => _Fallback(width: width, height: height),
       );
     }
     return CachedNetworkImage(
@@ -73,8 +73,8 @@ class ResilientNetworkImage extends StatelessWidget {
             'Mozilla/5.0 (Linux; Android 12; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36',
         'Accept': 'image/webp,image/png,image/jpeg,image/*;q=0.8',
       },
-      placeholder: (_, __) => _Placeholder(width: width, height: height),
-      errorWidget: (_, __, ___) => _Fallback(width: width, height: height),
+      placeholder: (_, _) => _Placeholder(width: width, height: height),
+      errorWidget: (_, _, _) => _Fallback(width: width, height: height),
     );
   }
 }
@@ -187,7 +187,7 @@ class _Fallback extends StatelessWidget {
         width: (width != null && width! < 48) ? width : 40,
         height: (height != null && height! < 48) ? height : 40,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => Icon(
+        errorBuilder: (_, _, _) => Icon(
           Icons.local_florist_rounded,
           color: AppColors.primary,
           size: 28,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
-import 'package:nursery_app/core/refresh_coalescer.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
@@ -57,7 +56,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
   bool _busyId = false;
   int _loadEpoch = 0;
   int _lastSyncGen = -1;
-  final _refresh = RefreshCoalescer();
 
   @override
   void initState() {

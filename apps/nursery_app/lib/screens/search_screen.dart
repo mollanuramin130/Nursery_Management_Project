@@ -305,9 +305,5 @@ class _Suggestion {
   final String label;
   final String slug;
 
-  factory _Suggestion.fromJson(Map<String, dynamic> json) => _Suggestion(
-    type: json['type']?.toString() ?? 'product',
-    label: json['label']?.toString() ?? '',
-    slug: json['slug']?.toString() ?? '',
-  );
+
 }
