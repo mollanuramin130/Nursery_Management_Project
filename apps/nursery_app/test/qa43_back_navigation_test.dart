@@ -89,13 +89,13 @@ void main() {
     });
 
     test('QA-43-005 deep fullscreen fallback is safe parent', () {
-      expect(BackNavigation.fallbackFor('/product/snake-plant'), '/');
+      expect(BackNavigation.fallbackFor('/product/snake-plant'), '/categories');
       expect(BackNavigation.fallbackFor('/checkout'), '/cart');
       expect(BackNavigation.fallbackFor('/account/addresses'), '/account');
       expect(BackNavigation.fallbackFor('/login'), '/');
     });
 
-    testWidgets('QA-43-001 product detail is fullscreen + pops to prior',
+    testWidgets('QA-43-001 product detail retains tabs + pops to prior',
         (tester) async {
       final router = await pumpRouter(tester);
       router.go('/');
@@ -104,7 +104,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      expect(ShellNavPolicy.isFullscreenLocation('/product/monstera'), isTrue);
+      expect(ShellNavPolicy.isFullscreenLocation('/product/monstera'), isFalse);
       expect(router.canPop(), isTrue);
 
       router.pop();
@@ -158,14 +158,15 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
     });
 
-    testWidgets('QA-43-005 deep product route is fullscreen safe',
+    testWidgets('QA-43-005 deep product route retains tabs',
         (tester) async {
       final router = await pumpRouter(tester, location: '/product/snake-plant');
-      expect(ShellNavPolicy.isFullscreenLocation(router.state.uri.path), isTrue);
+      expect(ShellNavPolicy.isFullscreenLocation(router.state.uri.path), isFalse);
       expect(router.state.uri.path, '/product/snake-plant');
+      expect(find.byType(NavigationBar), findsOneWidget);
       expect(
         BackNavigation.fallbackFor(router.state.uri.path),
-        '/',
+        '/categories',
       );
       await tester.pump(const Duration(seconds: 3));
     });

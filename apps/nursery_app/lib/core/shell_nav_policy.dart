@@ -17,6 +17,7 @@ abstract final class ShellNavPolicy {
     if (path == '/' || path.isEmpty) return true;
     const shellPrefixes = <String>[
       '/categories',
+      '/product',
       '/catalog',
       '/search',
       '/offers',
@@ -38,7 +39,6 @@ abstract final class ShellNavPolicy {
   static bool isFullscreenLocation(String location) {
     final path = Uri.tryParse(location)?.path ?? location;
     const fullscreenPrefixes = <String>[
-      '/product/',
       '/checkout',
       '/login',
       '/register',
@@ -71,6 +71,7 @@ abstract final class ShellNavPolicy {
   /// (cart Checkout strip). Snackbars must clear both.
   static bool shellHasStickyCommerce(String location) {
     final path = Uri.tryParse(location)?.path ?? location;
-    return path == '/cart' || path.startsWith('/cart/');
+    return path == '/cart' || path.startsWith('/cart/') ||
+        path.startsWith('/product/');
   }
 }

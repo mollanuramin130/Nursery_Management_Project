@@ -619,6 +619,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           ),
           bottomNavigationBar: StickyCommerceBar(
+            safeBottom: false,
             priceLabel: 'Total',
             price: money(product.summary.price * qty),
             secondaryLabel: 'Add',

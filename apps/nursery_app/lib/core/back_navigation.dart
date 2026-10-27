@@ -25,7 +25,8 @@ abstract final class BackNavigation {
     if (path == '/notifications' || path.startsWith('/notifications')) {
       return '/account';
     }
-    if (path.startsWith('/catalog') ||
+    if (path.startsWith('/product/') ||
+        path.startsWith('/catalog') ||
         path.startsWith('/search') ||
         path.startsWith('/offers') ||
         path.startsWith('/find-your-plant') ||
@@ -38,7 +39,7 @@ abstract final class BackNavigation {
   static String fallbackFor(String path) {
     if (path.startsWith('/account/addresses')) return '/account';
     if (path == '/checkout' || path.startsWith('/checkout')) return '/cart';
-    if (path.startsWith('/product/')) return '/';
+    if (path.startsWith('/product/')) return '/categories';
     if (path.startsWith('/login') ||
         path.startsWith('/register') ||
         path.startsWith('/forgot-password') ||

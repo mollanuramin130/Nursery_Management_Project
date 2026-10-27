@@ -13,6 +13,7 @@ void main() {
   test('ShellNavPolicy keeps tab destinations in shell', () {
     for (final loc in [
       '/',
+      '/product/monstera',
       '/categories',
       '/catalog',
       '/search',
@@ -29,9 +30,8 @@ void main() {
     }
   });
 
-  test('ShellNavPolicy marks auth/PDP/checkout as fullscreen', () {
+  test('ShellNavPolicy marks auth/checkout as fullscreen', () {
     for (final loc in [
-      '/product/monstera',
       '/checkout',
       '/login',
       '/register',
@@ -60,6 +60,7 @@ void main() {
     final router = createRouter();
     for (final loc in [
       '/',
+      '/product/monstera',
       '/categories',
       '/catalog',
       '/search',
@@ -78,10 +79,9 @@ void main() {
     }
   });
 
-  test('full-screen flows remain top-level (product/checkout/auth)', () {
+  test('full-screen flows remain top-level (checkout/auth)', () {
     final router = createRouter();
     for (final loc in [
-      '/product/monstera',
       '/checkout',
       '/login',
       '/register',

@@ -47,6 +47,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     _controller = TextEditingController(text: widget.initialQuery ?? '');
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _focus.requestFocus();
       _loadRecent();
       final q = _controller.text.trim();
@@ -86,6 +87,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onChanged(String value) {
     _debounce?.cancel();
+    ++_suggestionReq;
     final q = value.trim();
     if (q.length < 2) {
       setState(() {
@@ -124,7 +126,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (!mounted || req != _suggestionReq) return;
       setState(() {
         _loadingSuggestions = false;
-        _error = null;
+        _error = 'Suggestions are unavailable. Try searching all products.';
         _suggestions = [];
       });
     }
@@ -171,10 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
               onSubmitted: (_) => _submit(),
               onClear: () {
                 _controller.clear();
-                setState(() {
-                  _suggestions = [];
-                  _loadingSuggestions = false;
-                });
+                _onChanged('');
                 _focus.requestFocus();
               },
             ),
