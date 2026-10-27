@@ -1,11 +1,9 @@
-# Customer mobile reliability checkpoint
+# Customer mobile reliability delivery
 
-Baseline: cd7fd4a, development/v1.0.0. Feature branch: audit/mobile-ux-2026-10-27.
+Baseline cd7fd4a; PR #4. Scope: startup zone initialization, SVG images, product shell navigation, search response invalidation and Flutter analyzer fixes. Full app visual redesign remains separate work.
 
-Implemented: same-zone Flutter initialization; SVG image renderer and Android-compatible raster Accept header; product details in existing Shop shell; product deep-link Back to Categories; purchase-bar inset and snackbar clearance; search invalidation on typing/clear and visible failure message. Navigation regression expectations updated.
+Verified on GitHub Actions with Flutter 3.47.8, JDK 17: flutter pub get PASS, flutter analyze PASS (zero issues), flutter test PASS, debug Android APK PASS. API, Admin Web and Customer Web CI PASS. Workflow run 40489062196. Debug APK artifact 12728350782 uses API_BASE_URL=https://api.nuvikoz.com/api/v1. No device/emulator visual or payment testing claimed.
 
-Scope is the first reliability patch, not completion of the full UI redesign. No backend data or infrastructure changes.
+Resolved lockfile committed from the passing CI environment; exact Flutter version pinned and lock enforced. This source merge does not install an Android app on users' phones. Download the debug APK from the workflow artifact to install for testing; release signing/Google Play publication were not performed. No website UI or API/database changes were required by this mobile patch.
 
-Local diff whitespace check passed. Local Flutter bootstrap was blocked by network policy at pub.dev. Analyzer, tests, APK build and dependency lock resolution have not passed locally. New GitHub workflow resolves dependencies, analyzes, runs tests and uploads a debug APK. Do not merge unless checks pass; review the resolved pubspec.lock before integration. No release-signing credentials or Play publishing workflow used.
-
-Pending: complete catalog request race fixes, live-data fallback audit, address shell policy, responsive components and screen-by-screen visual/device testing. Debug APK is a test artifact, not an installed app update. Existing Android installations require installing a newly built APK; source merge does not update phones.
+Follow-up: catalog request races, default mock fallback audit, responsive layouts and screen-by-screen device/visual checks. Rollback: revert the PR merge commit and rebuild/install the preceding app version. No production data mutations performed.

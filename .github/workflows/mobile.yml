@@ -5,7 +5,7 @@ on:
       - 'apps/nursery_app/**'
       - '.github/workflows/mobile.yml'
   push:
-    branches: ['audit/mobile-ux-2026-10-27', 'development/v1.0.0']
+    branches: ['development/v1.0.0']
     paths:
       - 'apps/nursery_app/**'
       - '.github/workflows/mobile.yml'
@@ -26,8 +26,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.47.8'
           cache: true
-      - run: flutter pub get
+      - run: flutter pub get --enforce-lockfile
       - name: Resolved dependency lock
         run: cat pubspec.lock
       - run: flutter analyze
