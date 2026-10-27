@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: GreenLeaf Nursery API
+  title: NUVIKOZ API
   version: 1.0.0
   description: |
     Contract source of truth for clients. Expand per endpoint from

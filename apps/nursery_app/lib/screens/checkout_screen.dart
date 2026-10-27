@@ -298,7 +298,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (cartState.localOnly) {
       AppFeedback.error(
         context,
-        "You're offline. Your order can't be placed until we reconnect to GreenLeaf. Your cart is safe.",
+        "You're offline. Your order can't be placed until we reconnect to NUVIKOZ. Your cart is safe.",
       );
       return;
     }

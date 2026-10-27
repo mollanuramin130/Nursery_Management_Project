@@ -1,6 +1,6 @@
-# GreenLeaf Nursery Admin
+# NUVIKOZ Admin
 
-Next.js Admin Web Portal for GreenLeaf Nursery operations.
+Next.js Admin Web Portal for NUVIKOZ operations.
 
 Consumes the existing Laravel Admin REST API (`/api/v1/admin/*`) — does not talk to MySQL directly.
 

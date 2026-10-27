@@ -74,7 +74,7 @@ class NetworkStatusProvider extends ChangeNotifier {
       reportSuccess();
     } else {
       _kind = NetworkKind.apiUnavailable;
-      _message = 'Unable to connect to GreenLeaf right now.';
+      _message = 'Unable to connect to NUVIKOZ right now.';
       notifyListeners();
       _scheduleAutoProbe();
     }

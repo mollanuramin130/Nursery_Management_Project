@@ -1,5 +1,7 @@
 "use client";
 
+import { BRAND } from "@/lib/brand";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -11,7 +13,7 @@ import { useUiStore } from "@/store/ui";
 import { useWishlistStore } from "@/store/wishlist";
 import { cn } from "@/lib/cn";
 
-const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "GreenLeaf Nursery";
+const storeName = BRAND.name;
 
 export function SiteHeader() {
   const pathname = usePathname();

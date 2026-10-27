@@ -143,13 +143,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: AppSpace.xl),
                   Text(
-                    'Welcome back',
+                    'Welcome to NUVIKOZ',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: AppSpace.xs),
                   Text(
-                    'Sign in to continue growing your garden.',
+                    'Your Green Shopping Destination.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -250,7 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: AppSpace.xl),
                   Text(
-                    'New to GreenLeaf?',
+                    'New to NUVIKOZ?',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),

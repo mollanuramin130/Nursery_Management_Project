@@ -63,7 +63,7 @@ function ResetPasswordForm() {
       <div className="container-narrow">
         <div className="section-head">
           <h1 className="display text-4xl text-[var(--color-primary-deep)]">Reset password</h1>
-          <p>Choose a new password for your GreenLeaf account.</p>
+          <p>Choose a new password for your NUVIKOZ account.</p>
         </div>
         {done ? (
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6">

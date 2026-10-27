@@ -11,7 +11,7 @@ class GreenLeafErrorView extends StatelessWidget {
     super.key,
     this.title = 'Something went wrong',
     this.message =
-        "We're sorry, something unexpected happened while loading this part of GreenLeaf.\n\nYou can try again or contact our support team if the problem continues.",
+        "We're sorry, something unexpected happened while loading this part of NUVIKOZ.\n\nYou can try again or contact our support team if the problem continues.",
     this.reference,
     this.onRetry,
     this.orderNumber,
@@ -111,7 +111,7 @@ class GreenLeafErrorView extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpace.xs),
                   const Text(
-                    'If you contact GreenLeaf Support, please mention this reference number.',
+                    'If you contact NUVIKOZ Support, please mention this reference number.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.muted,
@@ -128,7 +128,7 @@ class GreenLeafErrorView extends StatelessWidget {
                     ),
                   if (onRetry != null) const SizedBox(height: AppSpace.sm),
                   AppButton(
-                    label: 'Contact GreenLeaf Support',
+                    label: 'Contact NUVIKOZ Support',
                     onPressed: () => showSupportContactSheet(
                       context,
                       reference: ref,

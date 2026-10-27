@@ -306,7 +306,7 @@ class NurseryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'GreenLeaf Nursery',
+      title: 'NUVIKOZ',
       theme: AppTheme.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,

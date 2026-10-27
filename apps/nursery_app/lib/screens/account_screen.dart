@@ -62,7 +62,7 @@ class AccountScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpace.xl),
                 Text(
-                  'Welcome to GreenLeaf',
+                  'Welcome to NUVIKOZ',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),

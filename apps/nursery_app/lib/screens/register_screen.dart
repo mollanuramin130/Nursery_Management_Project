@@ -120,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: AppSpace.xs),
                   Text(
-                    'Start growing your garden with GreenLeaf.',
+                    'Start growing your garden with NUVIKOZ.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: AppSpace.xxl),

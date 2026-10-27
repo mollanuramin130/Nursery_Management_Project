@@ -1,6 +1,7 @@
+import { BRAND } from "@/lib/brand";
 import Link from "next/link";
 
-const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "GreenLeaf Nursery";
+const storeName = BRAND.name;
 
 export function SiteFooter() {
   return (
@@ -9,7 +10,7 @@ export function SiteFooter() {
         <div className="container flex flex-col items-start justify-between gap-4 py-10 md:flex-row md:items-center">
           <div>
             <h2 className="display text-3xl text-[var(--color-primary-deep)] md:text-4xl">
-              Let’s grow something beautiful.
+              {BRAND.tagline}
             </h2>
             <p className="mt-2 max-w-xl text-[var(--color-ink-soft)]">
               Plants, gardening essentials, and clear care guidance — all in one place.

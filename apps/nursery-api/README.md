@@ -1,4 +1,4 @@
-# GreenLeaf Nursery API
+# NUVIKOZ API
 
 Laravel modular monolith. Base path: `/api/v1`.
 

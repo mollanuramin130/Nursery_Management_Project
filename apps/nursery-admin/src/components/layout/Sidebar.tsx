@@ -26,9 +26,9 @@ export function Sidebar() {
         </div>
         {!sidebarCollapsed ? (
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-white">GreenLeaf</div>
+            <div className="truncate text-sm font-semibold text-white">NUVIKOZ</div>
             <div className="truncate text-[11px] text-[var(--admin-sidebar-muted)]">
-              Nursery Admin
+              Admin
             </div>
           </div>
         ) : null}

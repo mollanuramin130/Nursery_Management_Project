@@ -12,8 +12,8 @@ Hello {{ $customerName }},
 @endif
 
 Thanks,<br>
-{{ config('app.name', 'GreenLeaf Nursery') }}
+{{ config('brand.name', 'NUVIKOZ') }}
 
 ---
-This is a transactional message from GreenLeaf Nursery. Marketing preferences do not disable order and account emails.
+This is a transactional message from {{ config('brand.name', 'NUVIKOZ') }}. Marketing preferences do not disable order and account emails.
 @endcomponent

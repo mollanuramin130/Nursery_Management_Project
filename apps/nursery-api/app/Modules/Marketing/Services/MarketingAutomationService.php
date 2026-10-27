@@ -301,7 +301,7 @@ class MarketingAutomationService
                 'name' => 'Welcome Journey',
                 'type' => 'welcome',
                 'status' => 'active',
-                'title_template' => 'Welcome to GreenLeaf Nursery',
+                'title_template' => 'Welcome to NUVIKOZ',
                 'body_template' => 'Thanks for joining. Explore plants curated for Indian homes — use Find Your Plant if you need a match.',
                 'channels_json' => ['in_app', 'email'],
             ],

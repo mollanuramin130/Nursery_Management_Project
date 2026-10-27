@@ -7,7 +7,7 @@ import { newErrorReference } from "@/lib/support";
 
 export function GreenLeafErrorView({
   title = "Something went wrong",
-  message = "We're sorry, something unexpected happened while loading this part of GreenLeaf. You can try again or contact our support team if the problem continues.",
+  message = "We're sorry, something unexpected happened while loading this part of NUVIKOZ. You can try again or contact our support team if the problem continues.",
   reference,
   onRetry,
   payment = false,
@@ -42,7 +42,7 @@ export function GreenLeafErrorView({
         Reference: {ref}
       </p>
       <p className="mt-1 text-xs text-[var(--color-muted)]">
-        If you contact GreenLeaf Support, please mention this reference number.
+        If you contact NUVIKOZ Support, please mention this reference number.
       </p>
       <div className="mt-6 flex flex-col items-center gap-2">
         {onRetry ? (
@@ -51,7 +51,7 @@ export function GreenLeafErrorView({
           </Button>
         ) : null}
         <Button variant="outline" onClick={() => setHelpOpen(true)}>
-          Contact GreenLeaf Support
+          Contact NUVIKOZ Support
         </Button>
       </div>
       <SupportContactDialog

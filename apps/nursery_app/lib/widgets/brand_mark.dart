@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nursery_app/theme/tokens.dart';
 
-/// GreenLeaf leaf mark — shared by about surfaces and tests.
+/// NUVIKOZ leaf mark — shared by about surfaces and tests.
 class GreenLeafBrandMark extends StatelessWidget {
   const GreenLeafBrandMark({
     super.key,
@@ -17,7 +17,7 @@ class GreenLeafBrandMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'GreenLeaf',
+      label: 'NUVIKOZ',
       child: SizedBox(
         width: size,
         height: size,

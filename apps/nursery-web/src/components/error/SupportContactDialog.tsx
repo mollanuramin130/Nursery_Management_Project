@@ -47,7 +47,7 @@ export function SupportContactDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="gl-support-title" className="display text-2xl text-[var(--color-primary-deep)]">
-          GreenLeaf Support
+          NUVIKOZ Support
         </h2>
         <p className="mt-2 text-sm text-[var(--color-muted)] leading-relaxed">
           {payment
@@ -65,7 +65,7 @@ export function SupportContactDialog({
         ) : null}
         {reference ? (
           <p className="mt-2 text-xs text-[var(--color-muted)]">
-            If you contact GreenLeaf Support, please mention this reference number.
+            If you contact NUVIKOZ Support, please mention this reference number.
           </p>
         ) : null}
         {hint ? <p className="mt-2 text-sm text-[var(--color-warning)]">{hint}</p> : null}

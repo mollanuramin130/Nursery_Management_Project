@@ -1,3 +1,4 @@
+import 'package:nursery_app/core/brand.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -8,7 +9,7 @@ import 'package:nursery_app/theme/tokens.dart';
 /// Branded overlay shown after the native Android launch screen.
 ///
 /// Uses a trimmed Lottie (seed drop → green bloom → basket) with no phone
-/// frame or third-party lettering. [GreenLeaf] wordmark is drawn in Flutter.
+/// frame or third-party lettering. [NUVIKOZ] wordmark is drawn in Flutter.
 ///
 /// Local UI only — must not wait for API, cart, or catalog.
 class GreenLeafSplashScreen extends StatefulWidget {
@@ -188,7 +189,7 @@ class _GreenLeafSplashScreenState extends State<GreenLeafSplashScreen>
                             end: Offset.zero,
                           ).animate(word),
                           child: Text(
-                            'GreenLeaf',
+                            Brand.name,
                             textAlign: TextAlign.center,
                             style: Theme.of(context)
                                 .textTheme
@@ -218,7 +219,7 @@ class _GreenLeafSplashScreenState extends State<GreenLeafSplashScreen>
                             end: Offset.zero,
                           ).animate(tag),
                           child: Text(
-                            'Grow Better. Live Greener.',
+                            Brand.tagline,
                             textAlign: TextAlign.center,
                             style: Theme.of(context)
                                 .textTheme

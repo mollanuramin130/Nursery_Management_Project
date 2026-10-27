@@ -291,7 +291,7 @@ class Phase7FulfillmentTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token)->postJson("/api/v1/admin/fulfillment/orders/{$id}/pick/complete");
         $this->withHeader('Authorization', 'Bearer '.$token)->postJson("/api/v1/admin/fulfillment/orders/{$id}/pack", []);
         $this->withHeader('Authorization', 'Bearer '.$token)->postJson("/api/v1/admin/fulfillment/orders/{$id}/ship", [
-            'carrier' => 'GreenLeaf Delivery',
+            'carrier' => 'NUVIKOZ Delivery',
         ]);
 
         $customer = $seed['customer']->fresh();

@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import type { Metadata } from "next";
 import { Fraunces, Figtree } from "next/font/google";
 import { Providers } from "@/components/Providers";
@@ -18,17 +19,25 @@ const body = Figtree({
   subsets: ["latin"],
 });
 
-const storeName = process.env.NEXT_PUBLIC_STORE_NAME ?? "GreenLeaf Nursery";
+const storeName = BRAND.name;
 const siteEnv = (process.env.NEXT_PUBLIC_SITE_ENV ?? "local").toLowerCase();
 const allowIndex = siteEnv === "production";
 
 export const metadata: Metadata = {
   title: {
-    default: storeName,
+    default: BRAND.title,
     template: `%s · ${storeName}`,
   },
-  description:
-    "Premium plants, pots, and gardening essentials with clear plant-care guidance — delivered across India.",
+  description: BRAND.description,
+  metadataBase: new URL(BRAND.website),
+  applicationName: BRAND.name,
+  openGraph: {
+    type: "website",
+    siteName: BRAND.name,
+    title: BRAND.title,
+    description: BRAND.description,
+  },
+  twitter: { card: "summary", title: BRAND.title, description: BRAND.description },
   robots: allowIndex
     ? { index: true, follow: true }
     : { index: false, follow: false },

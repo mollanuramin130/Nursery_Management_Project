@@ -73,7 +73,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Text(
                   _sent
                       ? 'If an account exists for that email, reset instructions have been sent.'
-                      : 'Enter the email associated with your GreenLeaf account.',
+                      : 'Enter the email associated with your NUVIKOZ account.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: AppSpace.xxl),

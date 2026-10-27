@@ -78,9 +78,9 @@ String escalationCopy(ErrorCategory category, int retryCount) {
     return 'Payment could not be completed.';
   }
   if (category == ErrorCategory.unexpected) {
-    return "We're sorry, something unexpected happened while loading this part of GreenLeaf.";
+    return "We're sorry, something unexpected happened while loading this part of NUVIKOZ.";
   }
   if (retryCount <= 0) return 'Unable to refresh.';
   if (retryCount == 1) return 'Still having trouble connecting.';
-  return "We're sorry, something unexpected happened while loading this part of GreenLeaf.";
+  return "We're sorry, something unexpected happened while loading this part of NUVIKOZ.";
 }

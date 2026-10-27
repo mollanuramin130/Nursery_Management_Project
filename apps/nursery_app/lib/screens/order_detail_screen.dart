@@ -658,7 +658,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                   widget.paymentPending
                               ? 'Complete payment to confirm. Your cart remains available if you cancel this unpaid order.'
                               : order.status == 'PAYMENT_FAILED'
-                              ? 'Payment could not be completed. No charge is confirmed until GreenLeaf verifies it.'
+                              ? 'Payment could not be completed. No charge is confirmed until NUVIKOZ verifies it.'
                               : order.status == 'CONFIRMED'
                               ? 'Thank you for your purchase! ${order.orderNumber} · ${money(order.grandTotal)}'
                               : 'Order ${order.orderNumber} · ${money(order.grandTotal)}',

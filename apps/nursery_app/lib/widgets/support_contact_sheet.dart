@@ -99,7 +99,7 @@ class _SupportContactSheetState extends State<SupportContactSheet> {
           ),
           const SizedBox(height: AppSpace.lg),
           const Text(
-            'GreenLeaf Support',
+            'NUVIKOZ Support',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 20,
@@ -127,7 +127,7 @@ class _SupportContactSheetState extends State<SupportContactSheet> {
           if (widget.reference != null) ...[
             const SizedBox(height: AppSpace.sm),
             const Text(
-              'If you contact GreenLeaf Support, please mention this reference number.',
+              'If you contact NUVIKOZ Support, please mention this reference number.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.4),
             ),

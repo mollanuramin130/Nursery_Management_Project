@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:url_launcher/url_launcher.dart';
 
-/// GreenLeaf customer helpline. Dialer only — never auto-call.
+/// NUVIKOZ customer helpline. Dialer only — never auto-call.
 const kGreenLeafSupportPhone = '8926627220';
 
 Uri supportTelUri() => Uri(scheme: 'tel', path: kGreenLeafSupportPhone);

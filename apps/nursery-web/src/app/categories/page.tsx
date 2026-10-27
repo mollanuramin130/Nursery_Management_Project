@@ -5,7 +5,7 @@ import { serverGet } from "@/lib/server-api";
 import type { Category } from "@/lib/types";
 
 export const metadata = {
-  title: "Categories | GreenLeaf Nursery",
+  title: "Categories",
   description: "Browse indoor plants, outdoor plants, pots, seeds, and gardening essentials.",
 };
 

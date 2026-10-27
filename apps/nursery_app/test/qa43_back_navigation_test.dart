@@ -220,8 +220,8 @@ void main() {
         ),
       );
       expect(find.byType(Lottie), findsOneWidget);
-      expect(find.text('GreenLeaf'), findsOneWidget);
-      expect(find.text('Grow Better. Live Greener.'), findsOneWidget);
+      expect(find.text('NUVIKOZ'), findsOneWidget);
+      expect(find.text('Grow Green. Live Better.'), findsOneWidget);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 80));
       expect(finished, isTrue);
@@ -281,8 +281,8 @@ void main() {
           ),
         ),
       );
-      expect(find.text('GreenLeaf'), findsOneWidget);
-      expect(find.text('Grow Better. Live Greener.'), findsOneWidget);
+      expect(find.text('NUVIKOZ'), findsOneWidget);
+      expect(find.text('Grow Green. Live Better.'), findsOneWidget);
       expect(find.byType(Lottie), findsOneWidget);
     });
   });

@@ -142,14 +142,14 @@ function unwrapError(error: unknown, fallback: string) {
       return new ApiError(
         offline
           ? "Connection temporarily unavailable."
-          : "Unable to connect to GreenLeaf right now.",
+          : "Unable to connect to NUVIKOZ right now.",
       );
     }
     if (status && status >= 500) {
       return new ApiError(
         status === 500
-          ? "GreenLeaf server is temporarily unavailable."
-          : "Unable to connect to GreenLeaf right now.",
+          ? "NUVIKOZ server is temporarily unavailable."
+          : "Unable to connect to NUVIKOZ right now.",
         { status, requestId },
       );
     }

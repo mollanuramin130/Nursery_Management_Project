@@ -23,7 +23,7 @@ class InternalDeliveryProvider implements ShippingProvider
             $tracking = 'GL-'.strtoupper($this->code()).'-'.$payload['order_number'].'-'.now()->format('YmdHis');
         }
 
-        $carrier = $payload['carrier'] ?? 'GreenLeaf Delivery';
+        $carrier = $payload['carrier'] ?? 'NUVIKOZ Delivery';
 
         return [
             'carrier' => $carrier,

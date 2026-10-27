@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "GreenLeaf Nursery API",
+    "name": "NUVIKOZ API",
     "description": "Phase 0 Auth + App config. Expand with Catalog/Cart/Orders as endpoints ship.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

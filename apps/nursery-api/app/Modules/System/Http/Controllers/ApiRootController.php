@@ -11,7 +11,7 @@ class ApiRootController extends Controller
     public function __invoke(): JsonResponse
     {
         return ApiResponse::success([
-            'name' => 'GreenLeaf Nursery API',
+            'name' => 'NUVIKOZ API',
             'version' => 'v1',
             'docs' => [
                 'openapi' => 'openapi.yaml (repo root of nursery-api)',
@@ -58,6 +58,6 @@ class ApiRootController extends Controller
                 'POST /api/v1/devices/register',
                 'POST /api/v1/orders/{id}/returns',
             ],
-        ], 'GreenLeaf Nursery API v1');
+        ], 'NUVIKOZ API v1');
     }
 }
