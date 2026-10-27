@@ -28,9 +28,13 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      - name: Resolved dependency lock
+        run: cat pubspec.lock
       - run: flutter analyze
       - run: flutter test
+        if: ${{ !cancelled() }}
       - run: flutter build apk --debug --dart-define=API_BASE_URL=https://api.nuvikoz.com/api/v1
+        if: ${{ !cancelled() }}
       - uses: actions/upload-artifact@v4
         with:
           name: nuvikoz-customer-debug-apk
