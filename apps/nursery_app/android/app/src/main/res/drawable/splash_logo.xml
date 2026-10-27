@@ -1,18 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="96dp"
-    android:height="96dp"
-    android:viewportWidth="96"
-    android:viewportHeight="96">
-    <path
-        android:fillColor="#06AA87"
-        android:pathData="M16,24
-            C16,19.6 19.6,16 24,16
-            H72
-            C76.4,16 80,19.6 80,24
-            V72
-            C80,76.4 76.4,80 72,80
-            H24
-            C19.6,80 16,76.4 16,72
-            Z" />
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:width="160dp" android:height="160dp" android:gravity="center">
+        <bitmap android:src="@drawable/nuvikoz_icon" android:gravity="fill" />
+    </item>
+</layer-list>

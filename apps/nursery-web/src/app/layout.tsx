@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     title: BRAND.title,
     description: BRAND.description,
   },
-  twitter: { card: "summary", title: BRAND.title, description: BRAND.description },
+  twitter: { card: "summary_large_image", title: BRAND.title, description: BRAND.description },
   robots: allowIndex
     ? { index: true, follow: true }
     : { index: false, follow: false },

@@ -68,6 +68,8 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/branding/nuvikoz-icon.png
+    - assets/branding/nuvikoz-horizontal.png
     - assets/mock_data/
     - assets/mock_data/images/
     - assets/lottie/splash_motion.json

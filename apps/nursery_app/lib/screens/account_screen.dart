@@ -242,7 +242,7 @@ class AccountScreen extends StatelessWidget {
             icon: Icons.help_outline_rounded,
             onTap: () => AppFeedback.info(
               context,
-              'Email support@greenleaf.example for help with your order.',
+              'Contact support from Help for assistance with your order.',
             ),
           ),
           _tile(

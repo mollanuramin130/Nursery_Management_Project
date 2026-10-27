@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { BRAND } from "@/lib/brand";
 import { usePathname } from "next/navigation";
 import { visibleNav } from "@/lib/auth/navigation";
@@ -23,7 +24,7 @@ export function Sidebar() {
     >
       <div className="flex h-[var(--admin-topbar-h)] items-center gap-2 border-b border-white/10 px-4">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-[var(--admin-primary)] text-xs font-bold text-white">
-          N
+          <Image unoptimized src="/branding/icon.png" alt={BRAND.name} width={32} height={32} />
         </div>
         {!sidebarCollapsed ? (
           <div className="min-w-0">

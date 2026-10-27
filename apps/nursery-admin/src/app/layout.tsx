@@ -6,6 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: BRAND.adminName,
   description: `Operations portal for ${BRAND.name}`,
+  openGraph: { title: BRAND.adminName, description: `Operations portal for ${BRAND.name}` },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

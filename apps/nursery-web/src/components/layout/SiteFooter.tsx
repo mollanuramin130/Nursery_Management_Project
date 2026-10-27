@@ -1,5 +1,6 @@
 import { BRAND } from "@/lib/brand";
 import Link from "next/link";
+import Image from "next/image";
 
 const storeName = BRAND.name;
 
@@ -28,7 +29,7 @@ export function SiteFooter() {
       <footer className="bg-[var(--color-primary-deep)] text-[#e7f0ea]">
         <div className="container grid gap-10 py-12 md:grid-cols-4">
           <div className="md:col-span-1">
-            <p className="display text-3xl text-white">{storeName}</p>
+            <div className="inline-block rounded-xl bg-white px-3 py-1"><Image unoptimized src="/branding/logo-horizontal.png" alt={storeName} width={600} height={387} className="h-20 w-44 object-contain" /></div>
             <p className="mt-3 text-sm leading-relaxed text-[#c5d8cc]">
               Healthy plants and gardening essentials for Indian homes — from balconies to indoor corners.
             </p>

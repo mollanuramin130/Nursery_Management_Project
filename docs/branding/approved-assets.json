@@ -1,0 +1,90 @@
+{
+  "approved_source": "NUVIKOZ_Final_Logo_Asset_Pack(1).zip",
+  "processing": "Provided images copied unchanged; adaptive XML only adds safe-zone inset.",
+  "files": {
+    "apps/nursery-admin/public/branding/icon.png": {
+      "sha256": "809707eb1da07bac564bacf0d1dcd02375535f4927c37efc4c62ed5222452f63",
+      "bytes": 18219
+    },
+    "apps/nursery-admin/public/branding/logo-horizontal.png": {
+      "sha256": "efa79764e077fb87b82d590fbe8a94a348f55ada254792e56b11894c8e3d1bb6",
+      "bytes": 119976
+    },
+    "apps/nursery-admin/src/app/apple-icon.png": {
+      "sha256": "e40c2258ebcaa4caf8ad1ebd953e7472515eacc220d90861757bfb6e9992b591",
+      "bytes": 31887
+    },
+    "apps/nursery-admin/src/app/favicon.ico": {
+      "sha256": "fbdf97637c41045059ff3c94c0e8f47aaf7af157b0f298000ee0e127bae9dd5b",
+      "bytes": 6639
+    },
+    "apps/nursery-admin/src/app/opengraph-image.jpg": {
+      "sha256": "60ed1d404b24ae68bc9a28b16d5d2e026fd939be922dedd4556a5ed1fc44806d",
+      "bytes": 49132
+    },
+    "apps/nursery-admin/src/app/twitter-image.jpg": {
+      "sha256": "60ed1d404b24ae68bc9a28b16d5d2e026fd939be922dedd4556a5ed1fc44806d",
+      "bytes": 49132
+    },
+    "apps/nursery-api/public/favicon.ico": {
+      "sha256": "fbdf97637c41045059ff3c94c0e8f47aaf7af157b0f298000ee0e127bae9dd5b",
+      "bytes": 6639
+    },
+    "apps/nursery-web/public/branding/icon.png": {
+      "sha256": "809707eb1da07bac564bacf0d1dcd02375535f4927c37efc4c62ed5222452f63",
+      "bytes": 18219
+    },
+    "apps/nursery-web/public/branding/logo-horizontal.png": {
+      "sha256": "efa79764e077fb87b82d590fbe8a94a348f55ada254792e56b11894c8e3d1bb6",
+      "bytes": 119976
+    },
+    "apps/nursery-web/src/app/apple-icon.png": {
+      "sha256": "e40c2258ebcaa4caf8ad1ebd953e7472515eacc220d90861757bfb6e9992b591",
+      "bytes": 31887
+    },
+    "apps/nursery-web/src/app/favicon.ico": {
+      "sha256": "fbdf97637c41045059ff3c94c0e8f47aaf7af157b0f298000ee0e127bae9dd5b",
+      "bytes": 6639
+    },
+    "apps/nursery-web/src/app/opengraph-image.jpg": {
+      "sha256": "60ed1d404b24ae68bc9a28b16d5d2e026fd939be922dedd4556a5ed1fc44806d",
+      "bytes": 49132
+    },
+    "apps/nursery-web/src/app/twitter-image.jpg": {
+      "sha256": "60ed1d404b24ae68bc9a28b16d5d2e026fd939be922dedd4556a5ed1fc44806d",
+      "bytes": 49132
+    },
+    "apps/nursery_app/android/app/src/main/res/drawable-nodpi/nuvikoz_icon.png": {
+      "sha256": "569c0e48201728247ea9a2c39c45c1b30973f0fcf1be6b7b4e24ca4bccbd2941",
+      "bytes": 215133
+    },
+    "apps/nursery_app/android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+      "sha256": "b7a2f21f696eb7a1525ea80eb1e937b41086cf21d37b894ad9ebc9e5a2049627",
+      "bytes": 7218
+    },
+    "apps/nursery_app/android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+      "sha256": "fb3df7482543de345c08dab0beb23ea0af0e59c8b16adbce436e7800ea4eeb2c",
+      "bytes": 3802
+    },
+    "apps/nursery_app/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+      "sha256": "9ea6a4f275bdd9ed92f3587725bcec56e3f3824344ceeb7dad67a6c0a179ae9f",
+      "bytes": 11443
+    },
+    "apps/nursery_app/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+      "sha256": "0d1288f8feaf260a5a565202ff530758b5951e858ad8e5498e040874fc26388c",
+      "bytes": 22046
+    },
+    "apps/nursery_app/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+      "sha256": "c0c1b58330e9a59ac7831b9a718626ae106a04d1de863fdff7e31f9634b2230c",
+      "bytes": 35649
+    },
+    "apps/nursery_app/assets/branding/nuvikoz-horizontal.png": {
+      "sha256": "efa79764e077fb87b82d590fbe8a94a348f55ada254792e56b11894c8e3d1bb6",
+      "bytes": 119976
+    },
+    "apps/nursery_app/assets/branding/nuvikoz-icon.png": {
+      "sha256": "569c0e48201728247ea9a2c39c45c1b30973f0fcf1be6b7b4e24ca4bccbd2941",
+      "bytes": 215133
+    }
+  }
+}
