@@ -103,9 +103,16 @@ class NuvikozCatalogSeeder extends Seeder
                     'meta' => json_encode(['seed_source' => $data['version'], 'care_note' => 'General starting guidance; adapt to local growing conditions.'], JSON_THROW_ON_ERROR),
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
+                $imagePath = '/catalog/starter/'.$plant['slug'].'.svg';
+                $imageAlt = $plant['name'].' — illustrative artwork, not a product photograph';
+                if (is_file(base_path('public/catalog/detail/'.$plant['slug'].'.webp'))) {
+                    $imagePath = '/catalog/detail/'.$plant['slug'].'.webp';
+                    $imageAlt = $plant['name'].' product photograph';
+                }
+
                 DB::table('product_images')->insert([
-                    'product_id' => $id, 'url' => $baseUrl.'/catalog/starter/'.$plant['slug'].'.svg',
-                    'alt' => $plant['name'].' — illustrative artwork, not a product photograph',
+                    'product_id' => $id, 'url' => $baseUrl.$imagePath,
+                    'alt' => $imageAlt,
                     'is_primary' => true, 'sort_order' => 0, 'created_at' => $now, 'updated_at' => $now,
                 ]);
                 DB::table('inventory_items')->insert([
