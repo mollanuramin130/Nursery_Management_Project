@@ -40,14 +40,10 @@ def should_keep(layer: dict) -> bool:
 def trim_layer(layer: dict) -> dict:
     layer = copy.deepcopy(layer)
     layer["op"] = END_FRAME
-    ks = layer.get("ks", {})
-    for prop in ks.values():
-        if (
-            isinstance(prop, dict)
-            and prop.get("a") == 1
-            and isinstance(prop.get("k"), list)
-        ):
-            prop["k"] = [k for k in prop["k"] if k.get("t", 0) <= END_FRAME]
+    # Clip playback with the layer/composition out-point, not by deleting
+    # keyframes. Tracks starting after END_FRAME still supply their initial
+    # value; deleting them creates empty animations that crash Lottie Flutter.
+    # Future endpoints are also needed to interpolate across END_FRAME.
     return layer
 
 
