@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nursery_app/core/app_error.dart';
+import 'package:nursery_app/core/crash_reporting_service.dart';
 import 'package:nursery_app/core/network_errors.dart';
 import 'package:nursery_app/core/support.dart';
 import 'package:nursery_app/theme/tokens.dart';
@@ -32,6 +35,7 @@ class AppErrorRecord {
 class AppErrorHandler {
   static final List<AppErrorRecord> records = <AppErrorRecord>[];
   static VoidCallback? onRebuildRequested;
+  static CrashReportingService crashReporter = const NoOpCrashReportingService();
 
   static AppErrorRecord record(
     Object error,
@@ -65,6 +69,24 @@ class AppErrorHandler {
         'http=${rec.statusCode ?? "-"} $safe',
       );
     }
+    final isFatal =
+        screen == 'flutter_error' || screen == 'platform' || screen == 'zone';
+    if (crashReporter.isEnabled && _shouldReportRemotely(resolved, isFatal)) {
+      unawaited(
+        crashReporter
+            .recordCrash(
+              error,
+              stack,
+              reference: rec.reference,
+              category: resolved.name,
+              screen: screen,
+              operation: operation,
+              statusCode: rec.statusCode,
+              isFatal: isFatal,
+            )
+            .catchError((_) {}),
+      );
+    }
     return rec;
   }
 
@@ -84,25 +106,129 @@ class AppErrorHandler {
     if (error is ClassifiedNetworkError) return error.statusCode;
     return null;
   }
+
+  static bool _shouldReportRemotely(ErrorCategory category, bool isFatal) {
+    if (isFatal) return true;
+    return switch (category) {
+      ErrorCategory.unexpected ||
+      ErrorCategory.payment ||
+      ErrorCategory.apiUnavailable =>
+        true,
+      ErrorCategory.validation ||
+      ErrorCategory.authentication ||
+      ErrorCategory.temporaryNetwork ||
+      ErrorCategory.rateLimited =>
+        false,
+    };
+  }
+}
+
+/// Standard Luhn algorithm checksum verification for payment cards.
+bool isValidLuhn(String digits) {
+  if (digits.length < 13 || digits.length > 19) return false;
+  int sum = 0;
+  bool alternate = false;
+  for (int i = digits.length - 1; i >= 0; i--) {
+    int n = int.parse(digits[i]);
+    if (alternate) {
+      n *= 2;
+      if (n > 9) n = (n % 10) + 1;
+    }
+    sum += n;
+    alternate = !alternate;
+  }
+  return (sum % 10 == 0);
+}
+
+/// Identifies candidate strings that represent actual payment cards.
+/// Distinguishes valid cards from 13-digit Unix timestamps and request IDs.
+bool looksLikePaymentCard(String candidate) {
+  final digits = candidate.replaceAll(RegExp(r'\D'), '');
+  if (digits.length < 13 || digits.length > 19) return false;
+
+  // Unix epoch millisecond timestamps (2023–2033) are exactly 13 continuous digits
+  // starting with 16, 17, 18, 19 without spaces/hyphens.
+  if (!candidate.contains(RegExp(r'[\s-]')) && digits.length == 13) {
+    final prefix = digits.substring(0, 2);
+    if (prefix == '16' || prefix == '17' || prefix == '18' || prefix == '19') {
+      return false; // Legitimate Unix timestamp, not a payment card
+    }
+  }
+
+  // Major Industry Identifiers (MII):
+  // 4 = Visa, 5 = Mastercard, 3 = Amex/Diners, 6 = Discover/RuPay, 2 = Mastercard (22-27), 8 = RuPay
+  final first = digits[0];
+  if (first != '4' &&
+      first != '5' &&
+      first != '3' &&
+      first != '6' &&
+      first != '2' &&
+      first != '8') {
+    return false;
+  }
+
+  return isValidLuhn(digits);
 }
 
 String redactSecrets(String raw) {
   var out = raw;
+
+  // 1. Redact JWT tokens
   out = out.replaceAll(
     RegExp(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'),
     '[redacted]',
   );
+
+  // 2. Redact Bearer authorization tokens
   out = out.replaceAll(
-    RegExp(
-      r'(password|passwd|secret|token|jwt|cookie|authorization|razorpay[_-]?key|webhook[_-]?secret)[=:]\s*\S+',
-      caseSensitive: false,
-    ),
-    r'$1=[redacted]',
+    RegExp(r'bearer\s+[A-Za-z0-9._~+/-]+=*', caseSensitive: false),
+    'Bearer [redacted]',
   );
+
+  // 3. Redact key-value secrets (plain assignment, single/double quoted JSON keys)
+  final sensitiveKeyPattern = RegExp(
+    r'''(?<prefix>["']?(?:password|passwd|secret|token|access_token|refresh_token|jwt|cookie|authorization|razorpay[_-]?key|webhook[_-]?secret|api[_-]?key)["']?\s*[:=]\s*)(?<val>"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s,;}{]+)''',
+    caseSensitive: false,
+  );
+  out = out.replaceAllMapped(sensitiveKeyPattern, (m) {
+    final match = m as RegExpMatch;
+    final prefix = match.namedGroup('prefix') ?? '';
+    final val = match.namedGroup('val') ?? '';
+    if (val == '[redacted]' ||
+        val == '"[redacted]"' ||
+        val == "'[redacted]'" ||
+        val.toLowerCase() == 'bearer') {
+      return m.group(0)!;
+    }
+    final isDoubleQuoted = val.startsWith('"') && val.endsWith('"');
+    final isSingleQuoted = val.startsWith("'") && val.endsWith("'");
+    final replacement = isDoubleQuoted
+        ? '"[redacted]"'
+        : (isSingleQuoted ? "'[redacted]'" : '[redacted]');
+    return '$prefix$replacement';
+  });
+
+  // 4. Redact Razorpay key identifiers
   out = out.replaceAll(
     RegExp(r'rzp_(live|test)_[A-Za-z0-9]+'),
     '[redacted]',
   );
+
+  // 5. Redact payment cards using Luhn + IIN verification (eliminates timestamp false positives)
+  out = out.replaceAllMapped(RegExp(r'\b(?:\d[ -]*?){13,19}\b'), (m) {
+    final candidate = m.group(0)!;
+    if (looksLikePaymentCard(candidate)) {
+      return '[redacted_card]';
+    }
+    return candidate;
+  });
+
+  // 6. Redact UPI virtual payment handles
+  out = out.replaceAll(
+    RegExp(r'\b[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}\b'),
+    '[redacted_upi]',
+  );
+
   return out;
 }
 

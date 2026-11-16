@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nursery_app/core/app_error_handler.dart';
 import 'package:nursery_app/core/auth_navigation.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/providers/auth_provider.dart';
@@ -281,6 +284,7 @@ class AccountScreen extends StatelessWidget {
               final cart = context.read<CartProvider>();
               final wishlist = context.read<WishlistProvider>();
               await auth.logout();
+              unawaited(AppErrorHandler.crashReporter.setUserId(null));
               wishlist.clearLocal();
               await cart.fetch();
               if (!context.mounted) return;

@@ -257,6 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ResilientNetworkImage(
                                               url: b.imageUrl,
                                               fit: BoxFit.cover,
+                                              memCacheWidth: 720,
                                             ),
                                             Container(
                                               decoration: const BoxDecoration(
@@ -583,6 +584,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ResilientNetworkImage(
                                     url: image,
                                     fit: BoxFit.cover,
+                                    memCacheWidth: 720,
                                   ),
                                   Container(color: Colors.black38),
                                   Positioned(

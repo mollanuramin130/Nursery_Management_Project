@@ -13,11 +13,15 @@ class SessionStorage {
   static const _cart = 'gl_cart_token';
   static const _device = 'gl_device_id';
   static const _user = 'gl_user_json';
+  static const _installation = 'gl_anonymous_installation_uuid';
 
   Future<String?> getAccessToken() => _storage.read(key: _access);
   Future<String?> getRefreshToken() => _storage.read(key: _refresh);
   Future<String?> getCartToken() => _storage.read(key: _cart);
   Future<String?> getDeviceId() => _storage.read(key: _device);
+  Future<String?> getInstallationId() => _storage.read(key: _installation);
+  Future<void> saveInstallationId(String id) =>
+      _storage.write(key: _installation, value: id);
 
   Future<String> ensureDeviceId() async {
     final existing = await getDeviceId();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -126,20 +127,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
 
-      final addrs = await api.getData(
-        '/customer/addresses',
-        map: (data) => (data as List)
-            .whereType<Map>()
-            .map((e) => Address.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-      );
-      final ship = await api.getData(
-        '/shipping/methods',
-        map: (data) => (data as List)
-            .whereType<Map>()
-            .map((e) => ShippingMethod.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-      );
+      final (addrs, ship) = await (
+        api.getData<List<Address>>(
+          '/customer/addresses',
+          map: (data) => (data as List)
+              .whereType<Map>()
+              .map((e) => Address.fromJson(Map<String, dynamic>.from(e)))
+              .toList(),
+        ),
+        api.getData<List<ShippingMethod>>(
+          '/shipping/methods',
+          map: (data) => (data as List)
+              .whereType<Map>()
+              .map((e) => ShippingMethod.fromJson(Map<String, dynamic>.from(e)))
+              .toList(),
+        ),
+      ).wait;
       if (!mounted) return;
 
       Address? preferred;
@@ -160,6 +163,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         loading = false;
       });
       await _refreshPreview(force: true);
+    } on ParallelWaitError catch (e) {
+      if (!mounted) return;
+      final firstError = e.errors.$1?.error ?? e.errors.$2?.error ?? e;
+      setState(() {
+        loading = false;
+        if (!soft) error = firstError.toString();
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {

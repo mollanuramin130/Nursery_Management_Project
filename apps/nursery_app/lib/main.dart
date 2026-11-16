@@ -6,6 +6,8 @@ import 'package:nursery_app/app.dart';
 import 'package:nursery_app/core/api_client.dart';
 import 'package:nursery_app/core/app_error_handler.dart';
 import 'package:nursery_app/core/config.dart';
+import 'package:nursery_app/core/installation_id.dart';
+import 'package:nursery_app/core/sentry_crash_reporting_service.dart';
 import 'package:nursery_app/core/session_storage.dart';
 import 'package:nursery_app/data/catalog_repository.dart';
 import 'package:nursery_app/data/mock_data_mode.dart';
@@ -18,19 +20,30 @@ import 'package:nursery_app/providers/wishlist_provider.dart';
 import 'package:provider/provider.dart';
 
 void main() {
-  runZonedGuarded(() {
+  runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     installAppErrorHandling();
+    await _initCrashReporting();
     unawaited(_boot());
   }, (error, stack) {
     AppErrorHandler.record(error, stack, screen: 'zone');
   });
 }
 
+Future<void> _initCrashReporting() async {
+  final sentry = SentryCrashReportingService();
+  if (sentry.isEnabled) {
+    await sentry.init();
+    AppErrorHandler.crashReporter = sentry;
+  }
+}
+
 Future<void> _boot() async {
   AppConfig.assertReleaseConfiguration();
 
   final storage = SessionStorage();
+  final installationId = await InstallationIdManager.getOrCreate(storage);
+  unawaited(AppErrorHandler.crashReporter.setUserId(installationId));
   final local = OfflineLocalStore();
   final offline = OfflineController(mode: defaultMockDataMode());
   final api = ApiClient(storage);
@@ -47,6 +60,7 @@ Future<void> _boot() async {
   api.onSessionExpired = () {
     auth.clearLocalSession();
     wishlist.clearLocal();
+    unawaited(AppErrorHandler.crashReporter.setUserId(null));
   };
   api.onTransportFailure = network.reportFailure;
   api.onTransportSuccess = () {

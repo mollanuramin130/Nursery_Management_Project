@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:nursery_app/core/api_client.dart';
+import 'package:nursery_app/core/app_error_handler.dart';
 import 'package:nursery_app/core/auth_messages.dart';
 import 'package:nursery_app/core/config.dart';
+import 'package:nursery_app/core/installation_id.dart';
 import 'package:nursery_app/core/session_storage.dart';
 import 'package:nursery_app/models/models.dart';
 import 'package:nursery_app/services/push_registration.dart';
@@ -260,6 +262,7 @@ class AuthProvider extends ChangeNotifier {
     // Clear auth only — do not invent cart deletion. Guest cart resumes via API.
     await _storage.clearTokens();
     user = null;
+    unawaited(AppErrorHandler.crashReporter.setUserId(null));
     notifyListeners();
   }
 
@@ -271,6 +274,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Local sign-out after refresh failure (tokens already cleared by ApiClient).
   void clearLocalSession() {
+    unawaited(AppErrorHandler.crashReporter.setUserId(null));
     if (user == null && error == null) return;
     user = null;
     error = null;
@@ -288,6 +292,8 @@ class AuthProvider extends ChangeNotifier {
     await _storage.saveCartToken(null);
     user = User.fromJson(Map<String, dynamic>.from(data['user'] as Map));
     await _storage.saveUserJson(user!.toJson());
+    final installationId = await InstallationIdManager.getOrCreate(_storage);
+    unawaited(AppErrorHandler.crashReporter.setUserId(installationId));
     await _registerDeviceQuietly();
   }
 
